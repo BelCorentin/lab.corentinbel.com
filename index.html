@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lab · Corentin Bel</title>
+<meta name="description" content="Experiments and brain visualisations.">
+<style>
+  :root { --bg:#07080c; --fg:#e8e6df; --dim:#8a8fa3; --accent:#6ea8ff; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body { background:var(--bg); color:var(--fg); font-family:ui-sans-serif,system-ui,sans-serif; overflow:hidden; }
+  canvas { position:fixed; inset:0; display:block; }
+  header {
+    position:fixed; top:0; left:0; right:0; z-index:2;
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:1.4rem 2rem; pointer-events:none;
+  }
+  header a { pointer-events:auto; color:var(--dim); text-decoration:none; font-size:.9rem; }
+  header a:hover { color:var(--accent); }
+  h1 { font-weight:300; font-size:1.4rem; letter-spacing:.06em; }
+  h1 b { font-weight:600; }
+  #panel {
+    position:fixed; bottom:0; left:0; right:0; z-index:2;
+    padding:1.4rem 2rem; display:flex; justify-content:space-between; align-items:flex-end;
+    pointer-events:none;
+  }
+  #panel .hint { color:#4a4f61; font-size:.8rem; }
+  #experiments { pointer-events:auto; }
+  #experiments h2 { font-size:.8rem; color:var(--dim); font-weight:500; text-transform:uppercase; letter-spacing:.12em; margin-bottom:.5rem; }
+  #experiments ul { list-style:none; }
+  #experiments li { margin:.25rem 0; font-size:.95rem; color:#5a5f73; }
+  #experiments li.soon::after { content:" — soon"; font-size:.8rem; color:#3a3e4f; }
+</style>
+</head>
+<body>
+<header>
+  <h1><b>lab</b>.corentinbel.com</h1>
+  <a href="https://corentinbel.com">← home</a>
+</header>
+<canvas id="c"></canvas>
+<div id="panel">
+  <div id="experiments">
+    <h2>Experiments</h2>
+    <ul>
+      <li class="soon">real cortical surface (FreeSurfer → WebGL)</li>
+      <li class="soon">MEG evoked response explorer</li>
+      <li class="soon">python in the browser</li>
+    </ul>
+  </div>
+  <div class="hint">drag to rotate · scroll to zoom · ~40k points, procedural</div>
+</div>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+camera.position.set(0, 0.4, 3.4);
+
+function resize() {
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+
+// --- pseudo-noise: layered sines, cheap and dependency-free
+function wrinkle(x, y, z) {
+  return (
+    Math.sin(x * 9.1 + Math.sin(y * 7.3)) * 0.5 +
+    Math.sin(y * 11.7 + Math.sin(z * 8.2)) * 0.3 +
+    Math.sin(z * 13.3 + Math.sin(x * 6.1)) * 0.2
+  );
+}
+
+// --- procedural brain-ish point cloud: two hemispheres, folded surface
+const N = 40000;
+const pos = new Float32Array(N * 3);
+const col = new Float32Array(N * 3);
+const cA = new THREE.Color('#6ea8ff'); // gyri
+const cB = new THREE.Color('#b48ce8'); // sulci
+const tmp = new THREE.Color();
+
+for (let i = 0; i < N; i++) {
+  const hemi = i % 2 === 0 ? 1 : -1;
+  // random direction on unit sphere
+  const u = Math.random() * 2 - 1;
+  const phi = Math.random() * Math.PI * 2;
+  const s = Math.sqrt(1 - u * u);
+  let dx = s * Math.cos(phi), dy = u, dz = s * Math.sin(phi);
+  // flatten the medial wall (inner face of each hemisphere)
+  if (dz * hemi < 0.12) dz = 0.12 * hemi + (dz * hemi - 0.12) * 0.15 * hemi;
+
+  const w = wrinkle(dx * 2 + hemi, dy * 2, dz * 2);
+  const r = 1 + w * 0.055;
+  // ellipsoid axes: long front-back, squashed sides
+  let x = dx * 1.25 * r;
+  let y = dy * 0.92 * r;
+  let z = (dz * 0.72 * r) + hemi * 0.045;
+  // frontal taper + temporal-lobe droop, crude but reads as a brain
+  y -= Math.max(0, (Math.abs(x) - 0.55)) * 0.22;
+  if (x < -0.35 && y < -0.1) y -= 0.12 * Math.min(1, (-0.35 - x));
+
+  pos[i * 3] = x; pos[i * 3 + 1] = y; pos[i * 3 + 2] = z;
+  const t = THREE.MathUtils.clamp(w * 0.5 + 0.5, 0, 1);
+  tmp.lerpColors(cB, cA, t);
+  col[i * 3] = tmp.r; col[i * 3 + 1] = tmp.g; col[i * 3 + 2] = tmp.b;
+}
+
+const geo = new THREE.BufferGeometry();
+geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+const mat = new THREE.PointsMaterial({
+  size: 0.011, vertexColors: true, transparent: true, opacity: 0.75,
+  blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true
+});
+const brain = new THREE.Points(geo, mat);
+scene.add(brain);
+
+// --- interaction: inertia drag + zoom
+let rx = 0.1, ry = 0.6, vrx = 0, vry = 0.003, dragging = false, px = 0, py = 0;
+canvas.addEventListener('pointerdown', e => { dragging = true; px = e.clientX; py = e.clientY; });
+addEventListener('pointerup', () => dragging = false);
+addEventListener('pointermove', e => {
+  if (!dragging) return;
+  vry = (e.clientX - px) * 0.005; vrx = (e.clientY - py) * 0.005;
+  px = e.clientX; py = e.clientY;
+});
+addEventListener('wheel', e => {
+  camera.position.z = THREE.MathUtils.clamp(camera.position.z + e.deltaY * 0.002, 1.8, 6);
+}, { passive: true });
+
+function animate() {
+  ry += vry; rx += vrx;
+  if (!dragging) { vry += (0.003 - vry) * 0.02; vrx *= 0.95; }
+  rx = THREE.MathUtils.clamp(rx, -1.2, 1.2);
+  brain.rotation.set(rx, ry, 0);
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>
