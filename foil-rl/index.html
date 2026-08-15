@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>foil pilot · lab.corentinbel.com</title>
+<meta name="description" content="A stickman learns to wing foil with a tiny evolution strategy. Pure JS, no libraries.">
+<style>
+  :root { --bg:#07080c; --fg:#e8e6df; --dim:#8a8fa3; --accent:#6ea8ff; --teal:#8ceedd; --border:#232b3a; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--fg); font-family:ui-sans-serif,system-ui,sans-serif; }
+  header {
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:1.2rem 2rem; max-width:1100px; margin:0 auto;
+  }
+  header a { color:var(--dim); text-decoration:none; font-size:.9rem; }
+  header a:hover { color:var(--accent); }
+  h1 { font-weight:300; font-size:1.25rem; letter-spacing:.04em; }
+  h1 b { font-weight:600; }
+  main { max-width:1100px; margin:0 auto; padding:0 2rem 3rem; }
+  #stage { position:relative; border:1px solid var(--border); border-radius:12px; overflow:hidden; background:#07080c; }
+  canvas#sim { display:block; width:100%; height:460px; }
+  #hud {
+    position:absolute; top:.7rem; left:.9rem; font-size:.78rem; color:var(--dim);
+    line-height:1.55; pointer-events:none; text-shadow:0 1px 3px #000;
+  }
+  #hud b { color:var(--fg); font-weight:600; }
+  #hud .teal { color:var(--teal); }
+  #sparkbox {
+    position:absolute; top:.7rem; right:.9rem; text-align:right; pointer-events:none;
+  }
+  #sparkbox .lbl { font-size:.62rem; text-transform:uppercase; letter-spacing:.12em; color:#4a4f61; margin-bottom:.2rem; }
+  canvas#spark { background:rgba(13,16,24,.6); border:1px solid var(--border); border-radius:6px; }
+  #controls {
+    display:flex; flex-wrap:wrap; gap:.5rem; align-items:center;
+    padding:.8rem 0 0;
+  }
+  #controls button {
+    background:rgba(13,16,24,.9); color:var(--dim); border:1px solid var(--border);
+    border-radius:8px; padding:.42rem .8rem; font-size:.82rem; cursor:pointer;
+    font-family:inherit; transition:border-color .15s, color .15s;
+  }
+  #controls button:hover { border-color:var(--teal); color:var(--fg); }
+  #controls button.on { border-color:var(--teal); color:var(--teal); }
+  #controls .sep { color:#2a2f40; }
+  #manualHelp { font-size:.75rem; color:#4a4f61; margin-left:auto; display:none; }
+  #about { margin-top:1.6rem; font-size:.85rem; color:var(--dim); line-height:1.65; max-width:760px; }
+  #about h2 { font-size:.78rem; text-transform:uppercase; letter-spacing:.12em; color:var(--dim); margin:1.2rem 0 .4rem; font-weight:600; }
+  #about code { color:var(--teal); font-size:.8rem; background:rgba(140,238,221,.06); padding:.05rem .3rem; border-radius:4px; }
+  #reward { color:var(--fg); }
+</style>
+</head>
+<body>
+<header>
+  <h1><b>🏄 foil pilot</b> — stickman learns to foil</h1>
+  <nav>
+    <a href="https://lab.corentinbel.com">← lab</a> &nbsp;·&nbsp;
+    <a href="https://corentinbel.com">home</a>
+  </nav>
+</header>
+<main>
+  <div id="stage">
+    <canvas id="sim"></canvas>
+    <div id="hud">
+      <div>gen <b id="gen">0</b> · <span id="who">agent <b id="agentIdx">1</b>/24</span></div>
+      <div>best <b class="teal" id="bestDist">0.0</b> m · now <b id="curDist">0.0</b> m · <b id="curSpeed">0.0</b> m/s</div>
+      <div id="vsRow" style="display:none">👤 you <b id="youBest">0.0</b> m vs 🤖 machine <b id="machineBest2">0.0</b> m</div>
+      <div id="reason" class="teal"></div>
+    </div>
+    <div id="sparkbox">
+      <div class="lbl">fitness / generation</div>
+      <canvas id="spark" width="220" height="54"></canvas>
+    </div>
+  </div>
+  <div id="controls">
+    <button id="spd1">×1</button>
+    <button id="spd4" class="on">×4</button>
+    <button id="spd16">×16</button>
+    <span class="sep">|</span>
+    <button id="btnPause">⏸ pause</button>
+    <button id="btnReset">🔄 reset evolution</button>
+    <span class="sep">|</span>
+    <button id="btnManual">👤 manual</button>
+    <span id="manualHelp">↑/↓ weight shift · space = pump</span>
+  </div>
+  <div id="about">
+    <h2>what is this</h2>
+    <p>A 2-D wing-foil simulator and a tiny neural policy that learns to fly it, entirely in your
+    browser, no libraries. The board starts on foil at 5&nbsp;m/s; the rider must pump to keep speed
+    and shift weight to hold the hydrofoil at a sweet depth. Touch the water → crash. Pull the foil
+    out of the water → stall. Both end the run (with appropriate ragdolling).</p>
+    <h2>the objective</h2>
+    <p id="reward"><code>fitness = distance (m) + 4 × seconds near sweet foil depth (0.45 m) − 3 × pump-seconds</code></p>
+    <h2>the learner</h2>
+    <p>Policy: MLP <code>6 → 12 tanh → 2</code> (110 weights). Inputs: board height, vertical speed,
+    pitch, forward speed, foil depth, local chop. Outputs: weight shift (pitch rate) and pump.
+    Trained by a plain evolution strategy: population 24, each evaluated for one episode
+    (max 12&nbsp;s), top 6 kept, the rest refilled by Gaussian mutation (σ = 0.15) of random elites,
+    plus one fresh random each generation. Every run you watch is a real evaluation. Random
+    policies die in seconds; give it ~20 generations (crank to ×16).</p>
+    <h2>the physics</h2>
+    <p>dt = 1/60 s · mast 0.9 m · 90 kg all-up · lift = 294·v²·α (α = pitch + trim − v<sub>y</sub>/v,
+    stalls past ±0.35 rad, ventilates when the wing nears the surface) · drag = (3 + 60α²)·v² ·
+    pump thrust ≤ 170 N. Level flight needs ≈ 5 m/s — stop pumping and you sink.</p>
+  </div>
+</main>
+<script>
+'use strict';
+// ============================================================ physics
+const DT = 1 / 60, MAST = 0.9, G = 9.8, M = 90;
+const CL = 294, TRIM = 0.12, ALPHA_STALL = 0.35;
+const KD = 3.0, KDA = 60, TMAX = 170;
+const MAXTH = 0.26, PITCHRATE = 0.9;
+const EP_MAX = 12;                 // s, episode cap
+const SWEET_D = 0.45, SWEET_W = 0.15;
+const START_Y = 0.45, START_V = 5;
+
+function chop(x, t) {
+  return 0.06 * Math.sin(0.6 * x - 1.3 * t) + 0.03 * Math.sin(1.7 * x + 0.9 * t);
+}
+
+function newEpisode(params) {
+  return {
+    params,                        // null → manual
+    x: 0, y: START_Y, vy: 0, th: 0, v: START_V,
+    t: 0, energy: 0, sweet: 0,
+    dist: 0, reason: null, pump: 0, lean: 0
+  };
+}
+
+// step one physics tick; returns null (alive), 'timeout', or crash reason
+function stepEpisode(ep, a1, a2) {
+  ep.lean = a1;
+  ep.th = Math.max(-MAXTH, Math.min(MAXTH, ep.th + a1 * PITCHRATE * DT));
+  const w = chop(ep.x, ep.t);
+  const d = MAST - ep.y + w;                       // foil depth below surface
+  const alpha = ep.th + TRIM - ep.vy / Math.max(ep.v, 0.5);
+  const aEff = Math.max(-ALPHA_STALL, Math.min(ALPHA_STALL, alpha));
+  const ventFac = Math.max(0, Math.min(1, d / 0.12));   // ventilation near surface
+  const lift = CL * ep.v * ep.v * aEff * ventFac;
+  ep.vy += (lift - M * G) / M * DT;
+  ep.y += ep.vy * DT;
+
+  const pump = Math.max(0, Math.min(1, (a2 + 1) / 2));
+  ep.pump = pump;
+  const drag = (KD + KDA * alpha * alpha) * ep.v * ep.v;
+  ep.v = Math.max(0, ep.v + (pump * TMAX - drag) / M * DT);
+  ep.x += ep.v * DT;
+  ep.t += DT;
+  ep.energy += pump * DT;
+  const dd = (d - SWEET_D) / SWEET_W;
+  ep.sweet += Math.exp(-dd * dd) * DT;
+  ep.dist = ep.x;
+
+  if (ep.y <= w + 0.02) return 'touchdown';
+  if (MAST - ep.y + chop(ep.x, ep.t) <= 0) return 'breach';
+  if (ep.t >= EP_MAX) return 'timeout';
+  return null;
+}
+
+function fitness(ep) { return ep.dist + 4 * ep.sweet - 3 * ep.energy; }
+
+// ============================================================ policy MLP 6-12-2
+const NIN = 6, NH = 12, NOUT = 2;
+const NPAR = NIN * NH + NH + NH * NOUT + NOUT;   // 110
+const OFF_B1 = NIN * NH, OFF_W2 = OFF_B1 + NH, OFF_B2 = OFF_W2 + NH * NOUT;
+
+function gauss() {
+  let u = 0, v2 = 0;
+  while (u === 0) u = Math.random();
+  while (v2 === 0) v2 = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v2);
+}
+function randomParams() {
+  const p = new Float32Array(NPAR);
+  for (let i = 0; i < NPAR; i++) p[i] = gauss() * 0.38;
+  p[OFF_B2 + 1] += 0.8;            // bias toward pumping: untrained agents keep some speed
+  return p;
+}
+function mutate(base, sigma) {
+  const p = new Float32Array(base);
+  for (let i = 0; i < NPAR; i++) p[i] += gauss() * sigma;
+  return p;
+}
+const _h = new Float32Array(NH);
+function act(p, ep) {
+  const w = chop(ep.x, ep.t);
+  const inp = [
+    ep.y / MAST, ep.vy / 2, ep.th / MAXTH, ep.v / 8,
+    (MAST - ep.y + w) / MAST, w / 0.1
+  ];
+  for (let j = 0; j < NH; j++) {
+    let s = p[OFF_B1 + j];
+    for (let i = 0; i < NIN; i++) s += p[j * NIN + i] * inp[i];
+    _h[j] = Math.tanh(s);
+  }
+  const out = [0, 0];
+  for (let k = 0; k < NOUT; k++) {
+    let s = p[OFF_B2 + k];
+    for (let j = 0; j < NH; j++) s += p[OFF_W2 + k * NH + j] * _h[j];
+    out[k] = Math.tanh(s);
+  }
+  return out;
+}
+
+// ============================================================ evolution strategy
+const POP = 24, ELITE = 6, SIGMA = 0.15;
+let pop, gen, evalIdx, history, machineBestDist, machineBestFit;
+function initEvolution() {
+  pop = [];
+  for (let i = 0; i < POP; i++) pop.push({ p: randomParams(), fit: -1e9, dist: 0 });
+  gen = 0; evalIdx = 0; history = [];
+  machineBestDist = 0; machineBestFit = -1e9;
+  drawSpark();
+}
+function evolve() {
+  pop.sort((a, b) => b.fit - a.fit);
+  history.push(pop[0].fit);
+  const next = [];
+  for (let i = 0; i < ELITE; i++) next.push({ p: pop[i].p, fit: -1e9, dist: 0 });
+  for (let i = ELITE; i < POP - 1; i++)
+    next.push({ p: mutate(pop[i % ELITE].p, SIGMA), fit: -1e9, dist: 0 });
+  next.push({ p: randomParams(), fit: -1e9, dist: 0 });  // one immigrant / gen
+  pop = next;
+  gen++; evalIdx = 0;
+  drawSpark();
+}
+
+// ============================================================ app state
+let mode = 'train';                // 'train' | 'manual'
+let speed = 4, paused = false;
+let humanBest = 0;
+let ep = newEpisode(null);
+let ragdoll = null;                // set on crash
+let particles = [];
+let lastReason = '', reasonAge = 99;
+const keys = { up: false, down: false, pump: false };
+
+function startRun() {
+  ep = newEpisode(mode === 'train' ? pop[evalIdx].p : null);
+}
+
+function finishRun() {
+  if (mode === 'train') {
+    pop[evalIdx].fit = fitness(ep);
+    pop[evalIdx].dist = ep.dist;
+    if (ep.dist > machineBestDist) machineBestDist = ep.dist;
+    if (pop[evalIdx].fit > machineBestFit) machineBestFit = pop[evalIdx].fit;
+    evalIdx++;
+    if (evalIdx >= POP) evolve();
+  } else {
+    if (ep.dist > humanBest) humanBest = ep.dist;
+  }
+  startRun();
+}
+
+function startRagdoll(reason) {
+  lastReason = reason === 'touchdown' ? 'touchdown 💥' : 'foil breached 🫧';
+  reasonAge = 0;
+  const w = chop(ep.x, ep.t);
+  ragdoll = {
+    x: ep.x, y: Math.max(ep.y, w + 0.05), boardY: ep.y, boardTh: ep.th,
+    vx: ep.v * 0.7, vy: reason === 'breach' ? 1.8 : 1.2,
+    rot: 0, rotv: 6 + Math.random() * 5, t: 0, splashed: false
+  };
+}
+
+function splash(x, y, n, spd0) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI, s = spd0 * (0.4 + Math.random());
+    particles.push({ x: x + (Math.random() - .5) * 0.4, y,
+                     vx: Math.cos(a) * s * 0.6, vy: Math.sin(a) * s,
+                     life: 0.5 + Math.random() * 0.5 });
+  }
+}
+
+// one physics tick of the whole app
+function physicsStep() {
+  reasonAge += DT;
+  // particles always advance
+  for (const q of particles) {
+    q.vy -= G * DT * 0.6; q.x += q.vx * DT; q.y += q.vy * DT; q.life -= DT;
+  }
+  particles = particles.filter(q => q.life > 0);
+
+  if (ragdoll) {
+    const r = ragdoll;
+    r.t += DT;
+    r.vy -= G * DT; r.x += r.vx * DT; r.y += r.vy * DT;
+    r.rot += r.rotv * DT; r.vx *= 0.985;
+    const w = chop(r.x, ep.t + r.t);
+    if (r.y <= w && !r.splashed) { r.splashed = true; splash(r.x, w, 36, 3.5); }
+    if (r.y <= w) { r.y = w; r.vy = 0; r.rotv *= 0.9; }
+    if (r.t >= 1.0) { ragdoll = null; finishRun(); }
+    return;
+  }
+
+  let a1, a2;
+  if (mode === 'manual') {
+    a1 = keys.up ? 1 : keys.down ? -1 : 0;
+    a2 = keys.pump ? 1 : -1;
+  } else {
+    [a1, a2] = act(ep.params, ep);
+  }
+  const end = stepEpisode(ep, a1, a2);
+  if (end === 'timeout') {
+    lastReason = 'survived the full 12 s ✓'; reasonAge = 0;
+    finishRun();
+  } else if (end) {
+    startRagdoll(end);
+  }
+}
+
+// ============================================================ rendering
+const canvas = document.getElementById('sim');
+const ctx = canvas.getContext('2d');
+let W = 0, H = 0, dpr = 1;
+function resize() {
+  dpr = Math.min(devicePixelRatio || 1, 2);
+  W = canvas.clientWidth; H = canvas.clientHeight;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+addEventListener('resize', resize);
+
+const SC = 55;                     // px per metre
+const AGX = 200;                   // agent screen x
+function sx(wx, camX) { return AGX + (wx - camX) * SC; }
+function sy(wy) { return H * 0.60 - wy * SC; }
+
+function drawWater(camX, t) {
+  // sky
+  const sky = ctx.createLinearGradient(0, 0, 0, H * 0.6);
+  sky.addColorStop(0, '#07080c'); sky.addColorStop(1, '#0d1626');
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H * 0.62);
+  // water body under the chop line
+  ctx.beginPath();
+  ctx.moveTo(0, H);
+  for (let px = 0; px <= W + 10; px += 10) {
+    const wx = camX + (px - AGX) / SC;
+    ctx.lineTo(px, sy(chop(wx, t)));
+  }
+  ctx.lineTo(W, H); ctx.closePath();
+  const wat = ctx.createLinearGradient(0, H * 0.55, 0, H);
+  wat.addColorStop(0, '#0d2c42'); wat.addColorStop(0.35, '#0a1e30'); wat.addColorStop(1, '#050a12');
+  ctx.fillStyle = wat; ctx.fill();
+  // surface line
+  ctx.beginPath();
+  for (let px = 0; px <= W + 10; px += 10) {
+    const wx = camX + (px - AGX) / SC;
+    const y = sy(chop(wx, t));
+    px === 0 ? ctx.moveTo(px, y) : ctx.lineTo(px, y);
+  }
+  ctx.strokeStyle = 'rgba(140,238,221,0.35)'; ctx.lineWidth = 1.5; ctx.stroke();
+  // distance buoys every 10 m
+  ctx.textAlign = 'center'; ctx.font = '10px ui-sans-serif,system-ui';
+  for (let m = Math.floor((camX - AGX / SC) / 10) * 10; m < camX + (W - AGX) / SC + 10; m += 10) {
+    if (m <= 0) continue;
+    const bx = sx(m, camX), by = sy(chop(m, t));
+    ctx.fillStyle = '#e8654a';
+    ctx.beginPath(); ctx.arc(bx, by - 4, 3, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#e8654a'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx, by - 4); ctx.stroke();
+    if (m % 50 === 0) { ctx.fillStyle = '#4a4f61'; ctx.fillText(m + ' m', bx, by - 12); }
+  }
+}
+
+function drawRider(bx, by, lean, pump, tumble) {
+  // stick figure in px, origin at feet level (board deck), facing +x
+  ctx.save();
+  ctx.translate(bx, by);
+  if (tumble !== 0) ctx.rotate(tumble);
+  const crouch = pump * 10;                    // knees bend when pumping
+  const hipX = -3 + lean * 6, hipY = -34 + crouch;
+  const shX = 2 + lean * 8, shY = -62 + crouch * 0.7;
+  const flail = tumble ? Math.sin(tumble * 2.7) * 10 : 0;
+  ctx.strokeStyle = '#e8e6df'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+  // legs: feet at -14 and +12
+  ctx.beginPath();
+  ctx.moveTo(-14, 0); ctx.lineTo(-8, -18 + crouch * 0.6 + flail); ctx.lineTo(hipX, hipY);
+  ctx.moveTo(12, 0); ctx.lineTo(10, -18 + crouch * 0.6 - flail); ctx.lineTo(hipX, hipY);
+  // torso
+  ctx.moveTo(hipX, hipY); ctx.lineTo(shX, shY);
+  ctx.stroke();
+  // head
+  ctx.beginPath(); ctx.arc(shX + 2, shY - 8, 5.5, 0, 7); ctx.stroke();
+  // arms to wing handles
+  const h1x = shX + 16, h1y = shY - 4 + flail, h2x = shX + 24, h2y = shY - 14 - flail;
+  ctx.beginPath();
+  ctx.moveTo(shX, shY); ctx.lineTo(h1x, h1y);
+  ctx.moveTo(shX, shY); ctx.lineTo(h2x, h2y);
+  ctx.stroke();
+  // the wing: curved sail above/front
+  ctx.beginPath();
+  ctx.moveTo(h1x - 4, h1y + 2);
+  ctx.quadraticCurveTo(h2x + 26, h2y - 40, h2x - 14, h2y - 52);
+  ctx.quadraticCurveTo(h2x - 2, h2y - 26, h1x - 4, h1y + 2);
+  ctx.fillStyle = 'rgba(110,168,255,0.22)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(110,168,255,0.8)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.restore();
+}
+
+function drawAgent(camX) {
+  const t = ep.t;
+  if (ragdoll) {
+    const r = ragdoll;
+    // board floats where it died
+    ctx.save();
+    ctx.translate(sx(r.x - r.t * r.vx * 0.5, camX) - 30, sy(chop(r.x - 2, t + r.t)) - 2);
+    ctx.rotate(0.15 * Math.sin(r.t * 5));
+    ctx.strokeStyle = '#d8d4c8'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-38, 0); ctx.lineTo(38, 0); ctx.stroke();
+    ctx.restore();
+    // tumbling rider
+    drawRider(sx(r.x, camX), sy(r.y), 0, 0, r.rot);
+    return;
+  }
+  const bx = sx(ep.x, camX), by = sy(ep.y);
+  ctx.save();
+  ctx.translate(bx, by);
+  ctx.rotate(-ep.th);                          // nose up = front rises (screen y down)
+  // board
+  ctx.strokeStyle = '#d8d4c8'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-0.75 * SC, 0); ctx.lineTo(0.75 * SC, 0); ctx.stroke();
+  // mast
+  ctx.strokeStyle = '#9aa2b5'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(0, 2); ctx.lineTo(0, MAST * SC); ctx.stroke();
+  // fuselage + front wing + stab
+  const fy = MAST * SC;
+  ctx.beginPath(); ctx.moveTo(-0.32 * SC, fy); ctx.lineTo(0.30 * SC, fy); ctx.stroke();
+  ctx.strokeStyle = '#8ceedd'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(0.08 * SC, fy); ctx.lineTo(0.42 * SC, fy - 2); ctx.stroke();
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(-0.32 * SC, fy); ctx.lineTo(-0.46 * SC, fy - 2); ctx.stroke();
+  // rider stands on the board (drawn in board frame so he leans with it)
+  drawRider(0, -2, ep.lean, ep.pump, 0);
+  ctx.restore();
+}
+
+function drawParticles(camX) {
+  for (const q of particles) {
+    ctx.globalAlpha = Math.max(0, q.life);
+    ctx.fillStyle = '#bfe6f2';
+    ctx.beginPath(); ctx.arc(sx(q.x, camX), sy(q.y), 2, 0, 7); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function draw() {
+  if (W !== canvas.clientWidth) resize();
+  const camX = ragdoll ? ragdoll.x : ep.x;
+  drawWater(camX, ep.t + (ragdoll ? ragdoll.t : 0));
+  drawAgent(camX);
+  drawParticles(camX);
+  if (reasonAge < 1.6 && lastReason) {
+    ctx.globalAlpha = Math.min(1, 1.6 - reasonAge);
+    ctx.fillStyle = '#e8e6df'; ctx.font = '600 20px ui-sans-serif,system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText(lastReason, W / 2, H * 0.3);
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ============================================================ sparkline
+const spark = document.getElementById('spark');
+const sctx = spark.getContext('2d');
+function drawSpark() {
+  sctx.clearRect(0, 0, spark.width, spark.height);
+  if (!history || history.length < 2) return;
+  const lo = Math.min(...history), hi = Math.max(...history);
+  const span = Math.max(hi - lo, 1e-6);
+  sctx.beginPath();
+  history.forEach((f, i) => {
+    const x = 6 + (spark.width - 12) * i / (history.length - 1);
+    const y = spark.height - 6 - (spark.height - 12) * (f - lo) / span;
+    i === 0 ? sctx.moveTo(x, y) : sctx.lineTo(x, y);
+  });
+  sctx.strokeStyle = '#8ceedd'; sctx.lineWidth = 1.5; sctx.stroke();
+}
+
+// ============================================================ HUD + controls
+const $ = id => document.getElementById(id);
+function updateHUD() {
+  $('gen').textContent = gen;
+  $('who').innerHTML = mode === 'manual'
+    ? '👤 <b>manual</b>'
+    : 'agent <b>' + (evalIdx + 1) + '</b>/' + POP;
+  $('bestDist').textContent = machineBestDist.toFixed(1);
+  $('curDist').textContent = ep.dist.toFixed(1);
+  $('curSpeed').textContent = ep.v.toFixed(1);
+  if (humanBest > 0 || mode === 'manual') {
+    $('vsRow').style.display = 'block';
+    $('youBest').textContent = humanBest.toFixed(1);
+    $('machineBest2').textContent = machineBestDist.toFixed(1);
+  }
+  $('reason').textContent = reasonAge < 2.5 ? lastReason : '';
+}
+
+function setSpeed(n) {
+  speed = n;
+  for (const [id, v] of [['spd1', 1], ['spd4', 4], ['spd16', 16]])
+    $(id).classList.toggle('on', v === n);
+}
+$('spd1').onclick = () => setSpeed(1);
+$('spd4').onclick = () => setSpeed(4);
+$('spd16').onclick = () => setSpeed(16);
+$('btnPause').onclick = () => {
+  paused = !paused;
+  $('btnPause').textContent = paused ? '▶ resume' : '⏸ pause';
+  $('btnPause').classList.toggle('on', paused);
+};
+$('btnReset').onclick = () => {
+  initEvolution(); ragdoll = null; particles = [];
+  lastReason = ''; reasonAge = 99;
+  if (mode === 'train') startRun();
+};
+$('btnManual').onclick = () => {
+  mode = mode === 'train' ? 'manual' : 'train';
+  $('btnManual').classList.toggle('on', mode === 'manual');
+  $('manualHelp').style.display = mode === 'manual' ? 'inline' : 'none';
+  ragdoll = null; particles = [];
+  startRun();
+};
+
+addEventListener('keydown', e => {
+  if (mode !== 'manual') return;
+  if (e.code === 'ArrowUp') { keys.up = true; e.preventDefault(); }
+  else if (e.code === 'ArrowDown') { keys.down = true; e.preventDefault(); }
+  else if (e.code === 'Space') { keys.pump = true; e.preventDefault(); }
+});
+addEventListener('keyup', e => {
+  if (e.code === 'ArrowUp') keys.up = false;
+  else if (e.code === 'ArrowDown') keys.down = false;
+  else if (e.code === 'Space') keys.pump = false;
+});
+
+// ============================================================ main loop
+initEvolution();
+startRun();
+resize();
+function frame() {
+  if (!paused) for (let i = 0; i < speed; i++) physicsStep();
+  draw();
+  updateHUD();
+  requestAnimationFrame(frame);
+}
+frame();
+</script>
+</body>
+</html>

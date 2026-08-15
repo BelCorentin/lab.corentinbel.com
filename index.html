@@ -6,11 +6,11 @@
 <title>lab · Corentin Bel</title>
 <meta name="description" content="Experiments and brain visualisations.">
 <style>
-  :root { --bg:#07080c; --fg:#e8e6df; --dim:#8a8fa3; --accent:#6ea8ff; }
+  :root { --bg:#07080c; --fg:#e8e6df; --dim:#8a8fa3; --accent:#6ea8ff; --teal:#8ceedd; --border:#232b3a; }
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body { height:100%; }
   body { background:var(--bg); color:var(--fg); font-family:ui-sans-serif,system-ui,sans-serif; overflow:hidden; }
-  canvas { position:fixed; inset:0; display:block; }
+  canvas#c { position:fixed; inset:0; display:block; }
   header {
     position:fixed; top:0; left:0; right:0; z-index:2;
     display:flex; justify-content:space-between; align-items:baseline;
@@ -22,15 +22,27 @@
   h1 b { font-weight:600; }
   #panel {
     position:fixed; bottom:0; left:0; right:0; z-index:2;
-    padding:1.4rem 2rem; display:flex; justify-content:space-between; align-items:flex-end;
-    pointer-events:none;
+    padding:1.2rem 2rem 1.4rem; pointer-events:none;
   }
-  #panel .hint { color:#4a4f61; font-size:.8rem; }
-  #experiments { pointer-events:auto; }
-  #experiments h2 { font-size:.8rem; color:var(--dim); font-weight:500; text-transform:uppercase; letter-spacing:.12em; margin-bottom:.5rem; }
-  #experiments ul { list-style:none; }
-  #experiments li { margin:.25rem 0; font-size:.95rem; color:#5a5f73; }
-  #experiments li.soon::after { content:" — soon"; font-size:.8rem; color:#3a3e4f; }
+  #panel .hint { color:#4a4f61; font-size:.8rem; text-align:right; margin-bottom:.6rem; }
+  #experiments h2 { font-size:.8rem; color:var(--dim); font-weight:500; text-transform:uppercase; letter-spacing:.12em; margin-bottom:.6rem; }
+  #cards {
+    display:grid; gap:.7rem;
+    grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+    max-width:980px;
+  }
+  .card {
+    pointer-events:auto; display:block; text-decoration:none; color:var(--fg);
+    background:rgba(13,16,24,.72); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    border:1px solid var(--border); border-radius:12px;
+    padding:.8rem .95rem; transition:border-color .18s ease, transform .18s ease;
+  }
+  a.card:hover { border-color:var(--teal); transform:translateY(-2px); }
+  .card .kicker { font-size:.62rem; text-transform:uppercase; letter-spacing:.14em; color:var(--dim); margin-bottom:.3rem; }
+  .card .title { font-size:.95rem; font-weight:600; margin-bottom:.15rem; }
+  .card .sub { font-size:.78rem; color:#5a5f73; }
+  .card.soon { opacity:.55; }
+  @media (max-height:600px) { #panel .hint { display:none; } }
 </style>
 </head>
 <body>
@@ -40,15 +52,32 @@
 </header>
 <canvas id="c"></canvas>
 <div id="panel">
+  <div class="hint">click the cortex to stimulate it · drag to rotate · scroll to zoom</div>
   <div id="experiments">
     <h2>Experiments</h2>
-    <ul>
-      <li class="soon">real cortical surface (FreeSurfer → WebGL)</li>
-      <li class="soon">MEG evoked response explorer</li>
-      <li class="soon">python in the browser</li>
-    </ul>
+    <div id="cards">
+      <a class="card" href="foil-rl/">
+        <div class="kicker">reinforcement learning</div>
+        <div class="title">🏄 foil pilot</div>
+        <div class="sub">a stickman learns to wing foil</div>
+      </a>
+      <div class="card">
+        <div class="kicker">you're looking at it</div>
+        <div class="title">🧠 glass brain</div>
+        <div class="sub">click to stimulate</div>
+      </div>
+      <div class="card soon">
+        <div class="kicker">soon</div>
+        <div class="title">🎬 movie → brain</div>
+        <div class="sub">à la TRIBE</div>
+      </div>
+      <div class="card soon">
+        <div class="kicker">soon</div>
+        <div class="title">🐍 python in the browser</div>
+        <div class="sub">numpy without the install</div>
+      </div>
+    </div>
   </div>
-  <div class="hint">drag to rotate · scroll to zoom · ~40k points, procedural</div>
 </div>
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.js" } }
@@ -63,13 +92,6 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
 camera.position.set(0, 0.4, 3.4);
 
-function resize() {
-  renderer.setSize(innerWidth, innerHeight);
-  camera.aspect = innerWidth / innerHeight;
-  camera.updateProjectionMatrix();
-}
-addEventListener('resize', resize); resize();
-
 // --- pseudo-noise: layered sines, cheap and dependency-free
 function wrinkle(x, y, z) {
   return (
@@ -83,6 +105,7 @@ function wrinkle(x, y, z) {
 const N = 40000;
 const pos = new Float32Array(N * 3);
 const col = new Float32Array(N * 3);
+const glow = new Float32Array(N);
 const cA = new THREE.Color('#6ea8ff'); // gyri
 const cB = new THREE.Color('#b48ce8'); // sulci
 const tmp = new THREE.Color();
@@ -116,19 +139,132 @@ for (let i = 0; i < N; i++) {
 const geo = new THREE.BufferGeometry();
 geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
 geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-const mat = new THREE.PointsMaterial({
-  size: 0.011, vertexColors: true, transparent: true, opacity: 0.75,
-  blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true
+geo.setAttribute('aGlow', new THREE.BufferAttribute(glow, 1));
+
+// custom point shader: per-point glow drives warm colour shift + size boost
+const mat = new THREE.ShaderMaterial({
+  uniforms: { uScale: { value: 1000 } },
+  vertexColors: true,
+  transparent: true,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+  vertexShader: `
+    attribute float aGlow;
+    varying vec3 vColor;
+    varying float vGlow;
+    uniform float uScale;
+    void main() {
+      vGlow = aGlow;
+      vColor = mix(color, vec3(1.0, 0.92, 0.62), aGlow);
+      vec4 mv = modelViewMatrix * vec4(position, 1.0);
+      gl_PointSize = uScale * 0.011 * (1.0 + 1.6 * aGlow) / -mv.z;
+      gl_Position = projectionMatrix * mv;
+    }`,
+  fragmentShader: `
+    varying vec3 vColor;
+    varying float vGlow;
+    void main() {
+      vec2 uv = gl_PointCoord - 0.5;
+      float r = length(uv);
+      if (r > 0.5) discard;
+      float a = smoothstep(0.5, 0.1, r) * (0.55 + 0.45 * vGlow);
+      gl_FragColor = vec4(vColor * (1.0 + 1.2 * vGlow), a);
+    }`
 });
 const brain = new THREE.Points(geo, mat);
 scene.add(brain);
 
-// --- interaction: inertia drag + zoom
+// --- faint starfield / dust backdrop, counter-rotating
+const SN = 500;
+const spos = new Float32Array(SN * 3);
+for (let i = 0; i < SN; i++) {
+  const u = Math.random() * 2 - 1;
+  const phi = Math.random() * Math.PI * 2;
+  const s = Math.sqrt(1 - u * u);
+  const rad = 5 + Math.random() * 7;
+  spos[i * 3] = s * Math.cos(phi) * rad;
+  spos[i * 3 + 1] = u * rad;
+  spos[i * 3 + 2] = s * Math.sin(phi) * rad;
+}
+const sgeo = new THREE.BufferGeometry();
+sgeo.setAttribute('position', new THREE.BufferAttribute(spos, 3));
+const smat = new THREE.PointsMaterial({
+  size: 0.035, color: 0x50597a, transparent: true, opacity: 0.4,
+  sizeAttenuation: true, depthWrite: false
+});
+const stars = new THREE.Points(sgeo, smat);
+scene.add(stars);
+
+function resize() {
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  mat.uniforms.uScale.value =
+    renderer.domElement.height / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+}
+addEventListener('resize', resize); resize();
+
+// --- activation waves: spherical front expanding from a stimulated point
+let waves = []; // {x,y,z,age} in brain-local coords
+const WAVE_LIFE = 1.6, WAVE_SPEED = 1.9, BAND = 0.3;
+function spawnWaveAt(i) {
+  waves.push({ x: pos[i * 3], y: pos[i * 3 + 1], z: pos[i * 3 + 2], age: 0 });
+  if (waves.length > 4) waves.shift();
+}
+let glowWasActive = false;
+function updateWaves(dt) {
+  for (const wv of waves) wv.age += dt;
+  waves = waves.filter(w => w.age < WAVE_LIFE);
+  if (waves.length === 0) {
+    if (glowWasActive) { glow.fill(0); geo.attributes.aGlow.needsUpdate = true; glowWasActive = false; }
+    return;
+  }
+  glow.fill(0);
+  for (const wv of waves) {
+    const front = wv.age * WAVE_SPEED;
+    const env = 1 - wv.age / WAVE_LIFE;
+    for (let i = 0; i < N; i++) {
+      const dx = pos[i * 3] - wv.x, dy = pos[i * 3 + 1] - wv.y, dz = pos[i * 3 + 2] - wv.z;
+      const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      const bd = d - front;
+      let g = 0;
+      if (bd > -0.0001 && bd < BAND) {          // leading edge
+        const q = 1 - bd / BAND; g = q * q * env;
+      } else if (bd <= 0) {                      // afterglow behind the front
+        g = Math.max(0, 1 + bd / 0.9) * 0.35 * env;
+      }
+      if (g > glow[i]) glow[i] = g;
+    }
+  }
+  geo.attributes.aGlow.needsUpdate = true;
+  glowWasActive = true;
+}
+
+// --- raycast click-to-stimulate
+const raycaster = new THREE.Raycaster();
+raycaster.params.Points.threshold = 0.04;
+const ndc = new THREE.Vector2();
+function tryStimulate(cx, cy) {
+  ndc.set((cx / innerWidth) * 2 - 1, -(cy / innerHeight) * 2 + 1);
+  raycaster.setFromCamera(ndc, camera);
+  const hits = raycaster.intersectObject(brain);
+  if (hits.length) spawnWaveAt(hits[0].index);
+}
+
+// --- interaction: inertia drag + zoom + click detection
 let rx = 0.1, ry = 0.6, vrx = 0, vry = 0.003, dragging = false, px = 0, py = 0;
-canvas.addEventListener('pointerdown', e => { dragging = true; px = e.clientX; py = e.clientY; });
-addEventListener('pointerup', () => dragging = false);
+let downX = 0, downY = 0, moved = false;
+canvas.addEventListener('pointerdown', e => {
+  dragging = true; moved = false;
+  px = downX = e.clientX; py = downY = e.clientY;
+});
+addEventListener('pointerup', e => {
+  if (dragging && !moved) tryStimulate(e.clientX, e.clientY);
+  dragging = false;
+});
 addEventListener('pointermove', e => {
   if (!dragging) return;
+  if (Math.abs(e.clientX - downX) + Math.abs(e.clientY - downY) > 6) moved = true;
   vry = (e.clientX - px) * 0.005; vrx = (e.clientY - py) * 0.005;
   px = e.clientX; py = e.clientY;
 });
@@ -136,11 +272,25 @@ addEventListener('wheel', e => {
   camera.position.z = THREE.MathUtils.clamp(camera.position.z + e.deltaY * 0.002, 1.8, 6);
 }, { passive: true });
 
+// --- automatic ambient stimulation every ~6 s
+let autoTimer = 2.5;
+
+const clock = new THREE.Clock();
 function animate() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+
+  autoTimer -= dt;
+  if (autoTimer <= 0) {
+    spawnWaveAt(Math.floor(Math.random() * N));
+    autoTimer = 5 + Math.random() * 2.5;
+  }
+  updateWaves(dt);
+
   ry += vry; rx += vrx;
   if (!dragging) { vry += (0.003 - vry) * 0.02; vrx *= 0.95; }
   rx = THREE.MathUtils.clamp(rx, -1.2, 1.2);
   brain.rotation.set(rx, ry, 0);
+  stars.rotation.y -= 0.0004;   // slow counter-rotation vs brain drift
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
 }
