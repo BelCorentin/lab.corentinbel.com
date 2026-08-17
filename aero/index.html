@@ -304,6 +304,7 @@ let W = 0, H = 0, DPR = 1;
 let cx = 0, cy = 0, chordPx = 240, pxPerM = 240;
 
 function resize() {
+  const pw = W, ph = H;
   DPR = Math.min(window.devicePixelRatio || 1, 2);
   W = window.innerWidth; H = window.innerHeight;
   flowCv.width = Math.round(W * DPR); flowCv.height = Math.round(H * DPR);
@@ -318,6 +319,10 @@ function resize() {
   cpCv.width = Math.round(r.width * DPR); cpCv.height = Math.round(r.height * DPR);
   cpx.setTransform(DPR, 0, 0, DPR, 0, 0);
   sizeFly();
+  if (pw && ph && (pw !== W || ph !== H)) {   // keep particles at the same relative spot (foil moves with W,H)
+    const kx = W / pw, ky = H / ph;
+    for (const p of parts) { p.x *= kx; p.px *= kx; p.y *= ky; p.py *= ky; }
+  }
   fx.fillStyle = "#07080c"; fx.fillRect(0, 0, W, H);
   placeCallouts();
 }
@@ -510,9 +515,21 @@ function stepParticles(dt) {
     fieldVel(xm, ym, _v);
     const sr = Math.hypot(_v[0], _v[1]) / state.U;
     p.px = p.x; p.py = p.y;
-    p.x += (_v[0] / state.U) * visPx * dt;
-    p.y += (_v[1] / state.U) * visPx * dt;
-    if (sep > 0.05) {                            // turbulent jitter in the separated wake
+    const kv = visPx / state.U;
+    // substep fast particles: one big step can cross the foil (thin plate ≈ 9 px) without ever testing inside
+    const steps = Math.min(8, Math.max(1, Math.ceil(sr * visPx * dt / 8)));
+    const sdt = dt / steps;
+    let hit = false;
+    for (let s = 0; s < steps; s++) {
+      if (s > 0) fieldVel((p.x - cx) / pxPerM, (p.y - cy) / pxPerM, _v);
+      const hx = p.x + _v[0] * kv * sdt / 2, hy = p.y + _v[1] * kv * sdt / 2;
+      p.x += _v[0] * kv * sdt;
+      p.y += _v[1] * kv * sdt;
+      // midpoint too: the trailing edge is thinner than any fixed substep
+      if (insideFoil((p.x - cx) / pxPerM, (p.y - cy) / pxPerM)
+          || insideFoil((hx - cx) / pxPerM, (hy - cy) / pxPerM)) { hit = true; break; }
+    }
+    if (!hit && sep > 0.05) {                    // turbulent jitter in the separated wake
       toLocal(xm, ym, _p);
       if (_p[0] > 0.35 && _p[0] < 3.2 && Math.abs(_p[1]) < 0.65 * CHORD) {
         p.x += (Math.random() - 0.5) * sep * visPx * 0.9 * dt;
@@ -520,8 +537,9 @@ function stepParticles(dt) {
       }
     }
     p.age += dt;
-    if (p.x > W + 12 || p.x < -60 || p.y < -12 || p.y > H + 12 || p.age > p.max
-        || insideFoil((p.x - cx) / pxPerM, (p.y - cy) / pxPerM)) {
+    // !isFinite: a NaN fails every bounds comparison and would otherwise live forever
+    if (hit || !isFinite(p.x + p.y) || p.x > W + 12 || p.x < -60 || p.y < -12 || p.y > H + 12
+        || p.age > p.max) {
       seedParticle(p, sep > 0.3 && Math.random() < 0.3);
       continue;
     }
@@ -534,10 +552,12 @@ function stepParticles(dt) {
 
 /* ================= drawing ================= */
 function drawParticles() {
-  const fade = Math.max(0.045, 0.55 - 0.5 * state.pTrail);   // trail slider: short (0.55) → long (0.05)
+  const glow = state.pMode === "glow";
+  // trail slider: short (0.55) → long (0.05); "lighter" accumulates ≈ stroke/fade per pixel,
+  // so glow mode needs a higher fade floor or slow regions wash out to solid white
+  const fade = Math.max(glow ? 0.12 : 0.045, 0.55 - 0.5 * state.pTrail);
   fx.fillStyle = `rgba(7,8,12,${fade.toFixed(3)})`;
   fx.fillRect(0, 0, W, H);
-  const glow = state.pMode === "glow";
   const halo = !glow && state.pMode !== "ink";
   const lw = state.pMode === "ink" ? 1 : glow ? 1.4 : 1.2;
   if (glow) fx.globalCompositeOperation = "lighter";
@@ -833,7 +853,10 @@ $("partN").addEventListener("input", (e) => { state.pN = +e.target.value; setPar
 $("partVel").addEventListener("input", (e) => { state.pVel = +e.target.value; syncUI(); });
 $("partFocus").addEventListener("input", (e) => { state.pFocus = +e.target.value / 100; syncUI(); });
 $("partTrail").addEventListener("input", (e) => { state.pTrail = +e.target.value / 100; syncUI(); });
-$("partMode").addEventListener("change", (e) => { state.pMode = e.target.value; rebuildBuckets(); });
+$("partMode").addEventListener("change", (e) => {
+  state.pMode = e.target.value; rebuildBuckets();
+  fx.fillStyle = "#07080c"; fx.fillRect(0, 0, W, H);   // drop additive residue when leaving glow
+});
 
 $("flyMass").addEventListener("input", (e) => { state.flyMass = +e.target.value; syncUI(); });
 $("flyVel").addEventListener("input", (e) => { state.flyVel = +e.target.value; syncUI(); });
@@ -883,7 +906,7 @@ function tick(ts) {
 }
 
 resize();
-state.pN = Math.max(600, Math.min(3200, Math.round(W * H / 620)));   // denser default than before
+state.pN = Math.max(600, Math.min(3200, Math.round(W * H / 620 / 50) * 50));   // denser default; snapped to the slider's step
 rebuildBuckets();
 setParticleCount(state.pN);
 syncUI();
