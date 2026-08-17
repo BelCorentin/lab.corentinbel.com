@@ -73,6 +73,29 @@
   }
   .fine { font-size:.62rem; color:#4a4f61; line-height:1.45; margin-top:.7rem; border-top:1px solid var(--border); padding-top:.5rem; }
 
+  /* ---------- collapsible groups ---------- */
+  details.grp { border-top:1px solid var(--border); margin-top:.75rem; padding-top:.1rem; }
+  details.grp summary {
+    list-style:none; cursor:pointer; user-select:none; -webkit-user-select:none;
+    font-size:.66rem; color:var(--dim); font-weight:600; text-transform:uppercase; letter-spacing:.14em;
+    padding:.55rem 0 .35rem; display:flex; justify-content:space-between; align-items:center;
+  }
+  details.grp summary::-webkit-details-marker { display:none; }
+  details.grp summary::after { content:"▾"; color:#4a4f61; transition:transform .2s; }
+  details.grp[open] summary::after { transform:rotate(180deg); }
+  details.grp summary:hover { color:var(--fg); }
+  select {
+    width:100%; background:rgba(35,43,58,.45); color:var(--fg); border:1px solid var(--border);
+    border-radius:8px; padding:.32rem .4rem; font-size:.76rem; font-family:inherit; cursor:pointer;
+  }
+  select:hover { border-color:var(--accent); }
+  #flycv { display:block; width:100%; height:170px; border:1px solid var(--border); border-radius:8px; background:rgba(7,8,12,.5); margin:.5rem 0 .4rem; }
+  .flyline { font-size:.72rem; line-height:1.45; margin:.25rem 0; }
+  .flyline b { font-variant-numeric:tabular-nums; }
+  #flyVAir { color:var(--accent); } #flyVWater { color:var(--teal); }
+  .flynote { font-size:.64rem; color:#4a4f61; line-height:1.5; margin:.35rem 0 .1rem; }
+  .flynote b { color:var(--dim); }
+
   /* ---------- overlays on the flow ---------- */
   #probe {
     position:fixed; z-index:5; pointer-events:none; display:none;
@@ -204,6 +227,45 @@
     <button id="presetPlate">flat plate</button>
   </div>
 
+  <details class="grp" id="grpParts">
+    <summary>✨ particles</summary>
+    <div class="ctl"><label for="partN">count <output id="partNVal">–</output></label>
+      <input type="range" id="partN" min="300" max="5000" step="50" value="2000"></div>
+    <div class="ctl"><label for="partVel">visual speed <output id="partVelVal">1.0×</output></label>
+      <input type="range" id="partVel" min="0.2" max="3" step="0.1" value="1"></div>
+    <div class="ctl"><label for="partFocus">focus on the foil <output id="partFocusVal">65%</output></label>
+      <input type="range" id="partFocus" min="0" max="100" step="5" value="65"></div>
+    <div class="ctl"><label for="partTrail">trail length <output id="partTrailVal">60%</output></label>
+      <input type="range" id="partTrail" min="0" max="100" step="5" value="60"></div>
+    <div class="ctl"><label for="partMode">colour by</label>
+      <select id="partMode">
+        <option value="speed" selected>speed (fast = bright)</option>
+        <option value="pressure">pressure (warm = high Cp)</option>
+        <option value="glow">plasma glow</option>
+        <option value="ink">mono ink</option>
+      </select></div>
+  </details>
+
+  <details class="grp" id="grpFly">
+    <summary>🪂 could you fly?</summary>
+    <div class="flynote" style="margin-top:.1rem">with <b>this</b> foil at <b>this</b> angle (Cl <b id="flyCl">–</b>):
+      wing area S = m·g / (½ρv²·Cl), at <b>your</b> speed below — not the flow slider.</div>
+    <div class="ctl"><label for="flyMass">your weight <output id="flyMassVal">75 kg</output></label>
+      <input type="range" id="flyMass" min="30" max="190" step="1" value="75"></div>
+    <div class="presets" style="margin:.2rem 0 .45rem">
+      <button id="flyKid">kid · 30</button>
+      <button id="flyAdult">adult · 75</button>
+      <button id="flyGear">+ gear · 95</button>
+      <button id="flyTandem">tandem · 190</button>
+    </div>
+    <div class="ctl"><label for="flyVel">your speed <output id="flyVelVal">10 m/s</output></label>
+      <input type="range" id="flyVel" min="2" max="30" step="0.5" value="10"></div>
+    <canvas id="flycv"></canvas>
+    <div class="flyline">✈️ air <b id="flyAAir">–</b> — <span id="flyVAir">–</span></div>
+    <div class="flyline">🌊 water <b id="flyAWater">–</b> — <span id="flyVWater">–</span></div>
+    <div class="flynote" id="flyRatio">–</div>
+  </details>
+
   <h2>Explain</h2>
   <button id="infoToggle" aria-pressed="true">ℹ️ annotations: on</button>
 
@@ -212,8 +274,9 @@
     circulation (5 vortices on the camber line, Γ = π·U·c·(α + 2h/c)) + thickness sources.
     Cl = 2π(α + 2h/c), faded smoothly past ~15° effective AoA (post-stall floor 0.3).
     Drag = profile + induced (AR 8, e 0.85) + separation term. Lift/drag magnitudes come
-    from these formulas at chord 1 m, per metre of span. Particles colour by local speed:
-    fast = low pressure (Bernoulli).
+    from these formulas at chord 1 m, per metre of span. Particles colour by local speed
+    or by Cp = 1 − (v/U)² (Bernoulli) — fast = low pressure. “Could you fly?” inverts the
+    lift equation: S = m·g / (½ρv²·Cl), with the same Cl (and stall fade) as everything else.
   </div>
 </aside>
 
@@ -226,12 +289,15 @@ const G80 = 80 * 9.81;                 // weight to hold, N
 
 const state = {
   aoaDeg: 6, camber: 0.04, thick: 0.12, U: 30, fluid: "air", info: true,
+  pN: 0, pVel: 1, pFocus: 0.65, pTrail: 0.6, pMode: "speed",   // particle visuals
+  flyMass: 75, flyVel: 10,                                     // "could you fly?"
 };
 
 /* ================= DOM ================= */
 const $ = (id) => document.getElementById(id);
 const flowCv = $("flow"), fx = flowCv.getContext("2d");
 const cpCv = $("cpplot"), cpx = cpCv.getContext("2d");
+const flyCv = $("flycv"), flyx = flyCv.getContext("2d");
 const probe = $("probe");
 
 let W = 0, H = 0, DPR = 1;
@@ -251,8 +317,16 @@ function resize() {
   const r = cpCv.getBoundingClientRect();
   cpCv.width = Math.round(r.width * DPR); cpCv.height = Math.round(r.height * DPR);
   cpx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  sizeFly();
   fx.fillStyle = "#07080c"; fx.fillRect(0, 0, W, H);
   placeCallouts();
+}
+function sizeFly() {   // fly canvas lives in a <details>: has zero size while closed
+  const r = flyCv.getBoundingClientRect();
+  if (r.width > 0) {
+    flyCv.width = Math.round(r.width * DPR); flyCv.height = Math.round(r.height * DPR);
+    flyx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
 }
 window.addEventListener("resize", resize);
 
@@ -362,7 +436,7 @@ function updateShed(dt) {
     shed.push({ x: _p[0], y: _p[1],
       g: shedSign * 0.5 * Math.PI * state.U * CHORD * Math.abs(aEff) * sep, age: 0 });
   }
-  const visM = (90 + 1.8 * state.U) / pxPerM;   // visual freestream speed in m/s — match the particles
+  const visM = (90 + 1.8 * state.U) * state.pVel / pxPerM;   // visual freestream speed in m/s — match the particles
   for (let i = shed.length - 1; i >= 0; i--) {
     const o = shed[i];
     o.x += 0.78 * visM * dt * (0.9 + 0.2 * Math.random());
@@ -381,38 +455,53 @@ function seedParticle(p, intoWake) {
     p.y = cy + _p[1] * pxPerM + (Math.random() - 0.5) * 0.3 * chordPx;
   } else {
     p.x = -10 - Math.random() * 40;
-    p.y = Math.random() * H;
+    if (Math.random() < state.pFocus) {
+      // focused spawn: ~gaussian band around the stagnation-streamline region of the foil
+      const g = (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;  // approx N(0,.33), clipped ±1
+      p.y = cy + chordPx * (0.06 + 1.15 * g);
+    } else p.y = Math.random() * H;
   }
   p.px = p.x; p.py = p.y;
   p.age = 0; p.max = 4 + Math.random() * 8;
 }
-function initParticles() {
-  const n = Math.max(700, Math.min(2600, Math.round(W * H / 900)));
-  parts = [];
-  for (let i = 0; i < n; i++) {
-    const p = { x: Math.random() * W, y: Math.random() * H, px: 0, py: 0, age: Math.random() * 6, max: 4 + Math.random() * 8 };
-    p.px = p.x; p.py = p.y;
+function setParticleCount(n) {
+  if (parts.length > n) parts.length = n;
+  while (parts.length < n) {
+    const p = { x: 0, y: 0, px: 0, py: 0, age: Math.random() * 6, max: 4 + Math.random() * 8 };
+    seedParticle(p, false);
+    p.x = Math.random() * W; p.px = p.x;    // scatter the initial batch across the screen
     parts.push(p);
   }
 }
 
-/* speed → colour: 14 buckets, slow dim blue → accent → teal → near-white */
-const STOPS = [[0.45, 42, 56, 92], [1.0, 91, 147, 239], [1.35, 140, 238, 221], [1.75, 240, 255, 250]];
-function speedColor(sr) {
-  let a = STOPS[0], b = STOPS[STOPS.length - 1];
-  for (let i = 0; i < STOPS.length - 1; i++)
-    if (sr >= STOPS[i][0] && sr <= STOPS[i + 1][0]) { a = STOPS[i]; b = STOPS[i + 1]; break; }
-  const f = Math.max(0, Math.min(1, (sr - a[0]) / (b[0] - a[0] || 1)));
-  const r = Math.round(a[1] + (b[1] - a[1]) * f), g = Math.round(a[2] + (b[2] - a[2]) * f),
-        bl = Math.round(a[3] + (b[3] - a[3]) * f);
-  return `rgba(${r},${g},${bl},0.75)`;
+/* colour modes: 14 buckets over a normalized value u ∈ [0,1]; stops = [u, r, g, b, a] */
+const MODE_RAMPS = {
+  speed:    [[0, 42, 56, 92, .55], [.42, 91, 147, 239, .75], [.7, 140, 238, 221, .8], [1, 242, 255, 250, .9]],
+  pressure: [[0, 255, 143, 110, .85], [.24, 226, 166, 141, .6], [.33, 150, 155, 168, .45],
+             [.55, 101, 150, 235, .7], [1, 140, 238, 221, .9]],
+  glow:     [[0, 26, 34, 90, .3], [.45, 64, 98, 224, .5], [.75, 122, 170, 255, .7], [1, 228, 242, 255, .95]],
+  ink:      [[0, 232, 230, 223, .14], [.55, 232, 230, 223, .4], [1, 232, 230, 223, .85]],
+};
+function rampColor(stops, u) {
+  u = Math.max(0, Math.min(1, u));
+  let a = stops[0], b = stops[stops.length - 1];
+  for (let i = 0; i < stops.length - 1; i++)
+    if (u >= stops[i][0] && u <= stops[i + 1][0]) { a = stops[i]; b = stops[i + 1]; break; }
+  const f = (u - a[0]) / ((b[0] - a[0]) || 1);
+  const L = (k) => a[k] + (b[k] - a[k]) * f;
+  return `rgba(${Math.round(L(1))},${Math.round(L(2))},${Math.round(L(3))},${L(4).toFixed(2)})`;
 }
-const NB = 14, bucketCols = [], bucketSegs = [];
-for (let i = 0; i < NB; i++) { bucketCols.push(speedColor(0.45 + (i + 0.5) / NB * 1.3)); bucketSegs.push([]); }
+const NB = 14, bucketCols = new Array(NB), bucketSegs = [];
+for (let i = 0; i < NB; i++) bucketSegs.push([]);
+function rebuildBuckets() {
+  const stops = MODE_RAMPS[state.pMode] || MODE_RAMPS.speed;
+  for (let i = 0; i < NB; i++) bucketCols[i] = rampColor(stops, (i + 0.5) / NB);
+}
 
 const _v = [0, 0];
 function stepParticles(dt) {
-  const visPx = 90 + 1.8 * state.U;              // freestream visual speed, px/s
+  const visPx = (90 + 1.8 * state.U) * state.pVel;   // freestream visual speed, px/s
+  const pressureMode = state.pMode === "pressure";
   const sep = 1 - stallF;
   for (let i = 0; i < NB; i++) bucketSegs[i].length = 0;
   for (let n = 0; n < parts.length; n++) {
@@ -436,24 +525,36 @@ function stepParticles(dt) {
       seedParticle(p, sep > 0.3 && Math.random() < 0.3);
       continue;
     }
-    const b = Math.max(0, Math.min(NB - 1, Math.round((sr - 0.45) / 1.3 * (NB - 1))));
+    // normalized colour value: speed-ish modes span sr 0.45→1.75; pressure spans Cp +1→−2 (u = sr²/3)
+    const u = pressureMode ? sr * sr / 3 : (sr - 0.45) / 1.3;
+    const b = Math.max(0, Math.min(NB - 1, Math.round(u * (NB - 1))));
     bucketSegs[b].push(p.px, p.py, p.x, p.y);
   }
 }
 
 /* ================= drawing ================= */
 function drawParticles() {
-  fx.fillStyle = "rgba(7,8,12,0.27)";
+  const fade = Math.max(0.045, 0.55 - 0.5 * state.pTrail);   // trail slider: short (0.55) → long (0.05)
+  fx.fillStyle = `rgba(7,8,12,${fade.toFixed(3)})`;
   fx.fillRect(0, 0, W, H);
-  fx.lineWidth = 1.1; fx.lineCap = "round";
+  const glow = state.pMode === "glow";
+  const halo = !glow && state.pMode !== "ink";
+  const lw = state.pMode === "ink" ? 1 : glow ? 1.4 : 1.2;
+  if (glow) fx.globalCompositeOperation = "lighter";
+  fx.lineCap = "round";
   for (let b = 0; b < NB; b++) {
     const seg = bucketSegs[b];
     if (!seg.length) continue;
     fx.strokeStyle = bucketCols[b];
     fx.beginPath();
     for (let i = 0; i < seg.length; i += 4) { fx.moveTo(seg[i], seg[i + 1]); fx.lineTo(seg[i + 2], seg[i + 3]); }
+    if (halo && b >= NB - 4) {                 // subtle wide under-stroke = glow on the hottest buckets
+      fx.lineWidth = 3.6; fx.globalAlpha = 0.16; fx.stroke(); fx.globalAlpha = 1;
+    }
+    fx.lineWidth = lw;
     fx.stroke();
   }
+  if (glow) fx.globalCompositeOperation = "source-over";
 }
 
 function drawFoil() {
@@ -565,7 +666,8 @@ function fmtArea(s) {
   if (!isFinite(s) || s <= 0) return "—";
   if (s >= 10) return s.toFixed(0) + " m²";
   if (s >= 1) return s.toFixed(1) + " m²";
-  return s.toFixed(3) + " m²";
+  if (s >= 0.01) return s.toFixed(3) + " m²";
+  return (s * 1e4).toFixed(1) + " cm²";
 }
 function updateReadouts() {
   $("roCl").textContent = Cl.toFixed(2);
@@ -580,6 +682,102 @@ function updateReadouts() {
   document.body.classList.toggle("stalled", aEffDeg > 15);
   document.body.classList.toggle("water", state.fluid === "water");
 }
+/* ---------- "could you fly?" — S = m·g / (½ρv²·Cl) with the page's Cl (incl. stall fade) ---------- */
+const grpFly = $("grpFly");
+function airVerdict(S, stalled) {
+  if (stalled) return "stalled — no wing size saves you here 🌀";
+  if (!isFinite(S)) return "no upward lift at this angle";
+  if (S > 40) return "not at this speed — pump harder or run faster 🏃";
+  if (S >= 20) return "paraglider territory 🪂";
+  if (S >= 8) return "hang-glider territory 🪁";
+  if (S >= 2) return "small, fast wing — speedwing / aircraft ✈️";
+  return "jet-grade wing loading — hold on tight ✈️";
+}
+function waterVerdict(S, stalled) {
+  if (stalled) return "stalled — even water can't help 🌀";
+  if (!isFinite(S)) return "no upward lift at this angle";
+  if (S >= 10) return "too big even for water — more speed 🐌";
+  if (S >= 3) return "boat-foil sized — pump hard 🌊";
+  if (S >= 0.05) return "that's a wing-foil ✅";
+  return "race-foil tiny — barely bigger than your hands 🏁";
+}
+function updateFly() {
+  const Wn = state.flyMass * 9.81, v = state.flyVel;
+  const stalled = aEffDeg > 15;
+  const ok = Cl > 0.02;
+  const Sa = ok ? Wn / (0.5 * RHO.air * v * v * Cl) : Infinity;
+  const Sw = ok ? Wn / (0.5 * RHO.water * v * v * Cl) : Infinity;
+  $("flyCl").textContent = Cl.toFixed(2);
+  $("flyAAir").textContent = fmtArea(Sa);
+  $("flyAWater").textContent = fmtArea(Sw);
+  $("flyVAir").textContent = airVerdict(Sa, stalled);
+  $("flyVWater").textContent = waterVerdict(Sw, stalled);
+  $("flyRatio").textContent = ok
+    ? `same person, same speed — the water wing is ${(Sa / Sw).toFixed(0)}× smaller in area. That's just ` +
+      `ρ_water/ρ_air = ${RHO.water}/${RHO.air} ≈ ${(RHO.water / RHO.air).toFixed(0)}: density does all the work.`
+    : "no upward lift at this angle — no wing area works, in any fluid.";
+  drawFly(Sa, Sw, stalled);
+}
+function flyPlanform(x, y, bpx, cpx_, fill, stroke) {   // crescent planform, top view
+  flyx.beginPath();
+  flyx.moveTo(x - bpx / 2, y);
+  flyx.quadraticCurveTo(x, y - cpx_ * 0.62, x + bpx / 2, y);
+  flyx.quadraticCurveTo(x, y + cpx_ * 1.05, x - bpx / 2, y);
+  flyx.closePath();
+  flyx.fillStyle = fill; flyx.fill();
+  flyx.strokeStyle = stroke; flyx.lineWidth = 1.2; flyx.stroke();
+}
+function flyHuman(x, baseY, sc) {                        // 1.8 m stick figure, SAME scale as the wings
+  const hh = 1.8 * sc;
+  flyx.strokeStyle = "#c9cbd6"; flyx.fillStyle = "#c9cbd6"; flyx.lineWidth = Math.max(1, sc * 0.06);
+  if (hh < 5) {   // person nearly invisible at this scale — that IS the message
+    flyx.beginPath(); flyx.arc(x, baseY - hh / 2, Math.max(1.2, hh / 2), 0, 6.2832); flyx.fill();
+    return;
+  }
+  const r = 0.12 * sc;
+  flyx.beginPath(); flyx.arc(x, baseY - hh + r, r, 0, 6.2832); flyx.fill();
+  flyx.beginPath();
+  flyx.moveTo(x, baseY - hh + 2 * r); flyx.lineTo(x, baseY - 0.8 * sc);
+  flyx.moveTo(x, baseY - 0.8 * sc); flyx.lineTo(x - 0.16 * sc, baseY);
+  flyx.moveTo(x, baseY - 0.8 * sc); flyx.lineTo(x + 0.16 * sc, baseY);
+  flyx.moveTo(x - 0.22 * sc, baseY - 1.05 * sc); flyx.lineTo(x, baseY - hh + 2.6 * r);
+  flyx.lineTo(x + 0.22 * sc, baseY - 1.05 * sc);
+  flyx.stroke();
+}
+function drawFly(Sa, Sw, stalled) {
+  const w = flyCv.width / DPR, h = flyCv.height / DPR;
+  if (!w || !h) return;
+  flyx.clearRect(0, 0, w, h);
+  flyx.font = "10px ui-sans-serif,system-ui,sans-serif";
+  flyx.textAlign = "center";
+  if (!isFinite(Sa)) {
+    flyx.fillStyle = "#8a8fa3";
+    flyx.fillText("no lift → no wing to draw", w / 2, h / 2);
+    flyx.textAlign = "left";
+    return;
+  }
+  const ARa = 5.5, ARw = 4;                    // drawing aspect ratios only — areas are exact
+  const bA = Math.sqrt(ARa * Sa), cA = Sa / bA;
+  const bW = Math.sqrt(ARw * Sw), cW = Sw / bW;
+  const baseY = h - 26;
+  const xA = w * 0.28, xH = w * 0.63, xW = w * 0.86;
+  const sc = Math.min((w * 0.52) / bA, (baseY - 18) / Math.max(1.9, 1.7 * cA), 60);  // one px-per-m for everything
+  const yWing = (baseY + 4) / 2;
+  flyPlanform(xA, yWing, bA * sc, cA * sc, "rgba(110,168,255,.16)", "#6ea8ff");
+  flyPlanform(xW, yWing, Math.max(bW * sc, 2.5), Math.max(cW * sc, 1.4), "rgba(140,238,221,.2)", "#8ceedd");
+  flyHuman(xH, baseY, sc);
+  flyx.fillStyle = "#8a8fa3";
+  flyx.fillText("air · " + fmtArea(Sa), xA, h - 10);
+  flyx.fillText("water · " + fmtArea(Sw), xW, h - 10);
+  flyx.fillText(1.8 * sc >= 5 ? "you" : "you →·← to scale", xH, h - 10);
+  if (stalled) {
+    flyx.fillStyle = "rgba(255,143,110,.9)";
+    flyx.font = "700 11px ui-sans-serif,system-ui,sans-serif";
+    flyx.fillText("STALLED — areas explode", w / 2, 13);
+  }
+  flyx.textAlign = "left";
+}
+
 function placeCallouts() {
   const put = (id, x, y, tx, ty) => {
     const el = $(id);
@@ -616,6 +814,13 @@ function syncUI() {
   $("speed").value = state.U; $("speedVal").textContent = state.U + " m/s";
   $("fluidAir").setAttribute("aria-pressed", state.fluid === "air");
   $("fluidWater").setAttribute("aria-pressed", state.fluid === "water");
+  $("partN").value = state.pN; $("partNVal").textContent = state.pN;
+  $("partVel").value = state.pVel; $("partVelVal").textContent = state.pVel.toFixed(1) + "×";
+  $("partFocus").value = Math.round(state.pFocus * 100); $("partFocusVal").textContent = Math.round(state.pFocus * 100) + "%";
+  $("partTrail").value = Math.round(state.pTrail * 100); $("partTrailVal").textContent = Math.round(state.pTrail * 100) + "%";
+  $("partMode").value = state.pMode;
+  $("flyMass").value = state.flyMass; $("flyMassVal").textContent = state.flyMass + " kg";
+  $("flyVel").value = state.flyVel; $("flyVelVal").textContent = state.flyVel + " m/s";
 }
 $("aoa").addEventListener("input", (e) => { state.aoaDeg = +e.target.value; syncUI(); });
 $("camber").addEventListener("input", (e) => { state.camber = +e.target.value / 100; syncUI(); });
@@ -623,6 +828,20 @@ $("thick").addEventListener("input", (e) => { state.thick = +e.target.value / 10
 $("speed").addEventListener("input", (e) => { state.U = +e.target.value; syncUI(); });
 $("fluidAir").addEventListener("click", () => { state.fluid = "air"; syncUI(); });
 $("fluidWater").addEventListener("click", () => { state.fluid = "water"; syncUI(); });
+
+$("partN").addEventListener("input", (e) => { state.pN = +e.target.value; setParticleCount(state.pN); syncUI(); });
+$("partVel").addEventListener("input", (e) => { state.pVel = +e.target.value; syncUI(); });
+$("partFocus").addEventListener("input", (e) => { state.pFocus = +e.target.value / 100; syncUI(); });
+$("partTrail").addEventListener("input", (e) => { state.pTrail = +e.target.value / 100; syncUI(); });
+$("partMode").addEventListener("change", (e) => { state.pMode = e.target.value; rebuildBuckets(); });
+
+$("flyMass").addEventListener("input", (e) => { state.flyMass = +e.target.value; syncUI(); });
+$("flyVel").addEventListener("input", (e) => { state.flyVel = +e.target.value; syncUI(); });
+const PAYLOADS = { flyKid: 30, flyAdult: 75, flyGear: 95, flyTandem: 190 };
+for (const id of Object.keys(PAYLOADS)) {
+  $(id).addEventListener("click", () => { state.flyMass = PAYLOADS[id]; syncUI(); });
+}
+grpFly.addEventListener("toggle", sizeFly);
 
 const PRESETS = {
   presetAirliner: { aoaDeg: 3, camber: 0.04, thick: 0.12, U: 68, fluid: "air" },
@@ -659,11 +878,14 @@ function tick(ts) {
   sampleCp();
   drawCp();
   updateReadouts();
+  if (grpFly.open) updateFly();
   requestAnimationFrame(tick);
 }
 
 resize();
-initParticles();
+state.pN = Math.max(600, Math.min(3200, Math.round(W * H / 620)));   // denser default than before
+rebuildBuckets();
+setParticleCount(state.pN);
 syncUI();
 requestAnimationFrame(tick);
 </script>
