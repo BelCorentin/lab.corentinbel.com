@@ -47,6 +47,43 @@
     border:1px solid var(--border); border-radius:12px; padding:.35rem .65rem;
   }
 
+  #zcount {
+    margin-top:.85rem; max-width:100%;
+    background:var(--glass); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    border:1px solid var(--border); border-radius:12px;
+    padding:.6rem .8rem .55rem;
+    opacity:0; transform:translateY(-6px); visibility:hidden;
+    transition:opacity .5s ease, transform .5s ease, visibility 0s linear .5s;
+  }
+  #zcount.on { opacity:1; transform:none; visibility:visible; transition:opacity .5s ease, transform .5s ease; }
+  #zc-title { font-size:.64rem; letter-spacing:.05em; color:var(--dim); margin-bottom:.4rem; }
+  #zc-num {
+    display:flex; flex-direction:row-reverse; flex-wrap:wrap-reverse; justify-content:flex-end;
+    font-family:ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:clamp(.58rem, 2.5vw, .8rem); line-height:1.6; color:var(--fg);
+  }
+  #zc-num .zd { display:inline-block; }
+  #zc-num .zd:nth-child(3n+2):not(:nth-child(2)) { margin-right:.34ch; }
+  #zc-num .zm { color:var(--fg); font-weight:600; }
+  #zc-num .z { color:#a9b1c6; }
+  #zc-num .z:not(.pop) { animation:zwob 3.8s ease-in-out infinite; }
+  #zc-num .z:not(.pop):nth-child(3n) { animation-delay:-1.3s; }
+  #zc-num .z:not(.pop):nth-child(4n+1) { animation-delay:-2.6s; }
+  #zc-num .z.pop { animation:zpop .5s cubic-bezier(.3,1.4,.4,1) backwards; }
+  #zc-num .zd.out { animation:zout .18s ease-in forwards !important; }
+  #zc-unit { color:var(--teal); margin-left:.6ch; }
+  #zc-note { margin-top:.35rem; font-size:.72rem; color:var(--teal); font-style:italic; }
+  @keyframes zpop {
+    0%   { opacity:0; transform:scale(.2) translateY(-.55em); color:var(--teal); text-shadow:0 0 14px rgba(140,238,221,.95); }
+    55%  { opacity:1; transform:scale(1.28); color:var(--teal); text-shadow:0 0 10px rgba(140,238,221,.6); }
+    100% { transform:scale(1); text-shadow:none; }
+  }
+  @keyframes zwob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-.09em); } }
+  @keyframes zout { to { opacity:0; transform:scale(.2) translateY(.45em); } }
+  @media (prefers-reduced-motion: reduce) {
+    #zc-num .z:not(.pop), #zc-num .z.pop { animation:none; }
+  }
+
   #caption {
     position:fixed; left:50%; top:22%; transform:translateX(-50%);
     z-index:3; pointer-events:none; opacity:0;
@@ -60,33 +97,69 @@
     z-index:4; width:min(720px, 90vw);
     background:var(--glass); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
     border:1px solid var(--border); border-radius:12px;
-    padding:.85rem 1.1rem 1.5rem; user-select:none; -webkit-user-select:none;
+    padding:.75rem 1.1rem 1.5rem; user-select:none; -webkit-user-select:none;
   }
-  #hint { font-size:.72rem; color:#4a4f61; text-align:center; margin-bottom:.55rem; transition:opacity 1.2s ease; }
+  #hint { font-size:.72rem; color:#4a4f61; text-align:center; margin-bottom:.3rem; transition:opacity 1.2s ease; }
   #track {
-    position:relative; height:22px; cursor:pointer; touch-action:none;
+    position:relative; height:26px; margin-top:16px; cursor:pointer; touch-action:none;
   }
-  #rail { position:absolute; left:0; right:0; top:10px; height:2px; background:var(--border); border-radius:1px; }
-  #fill { position:absolute; left:0; top:10px; height:2px; width:0; border-radius:1px;
-          background:linear-gradient(90deg, var(--accent), var(--teal)); opacity:.8; }
-  .tick { position:absolute; top:7px; width:1px; height:8px; background:#2c3550; }
-  .tick.major { top:5px; height:12px; background:#3d4a6b; }
+  #rail { position:absolute; left:0; right:0; top:12px; height:2px; background:var(--border); border-radius:1px; }
+  #fill { position:absolute; left:0; top:12px; height:2px; width:0; border-radius:1px;
+          background:linear-gradient(90deg, var(--accent), var(--teal)); opacity:.55; }
+  .tick { position:absolute; top:9px; width:1px; height:8px; background:#2c3550; }
+  .tick.major { top:7px; height:12px; background:#3d4a6b; }
   .tlabel {
-    position:absolute; top:22px; transform:translateX(-50%);
+    position:absolute; top:26px; transform:translateX(-50%);
     font-size:.62rem; color:var(--dim); white-space:nowrap;
   }
   #thumb {
-    position:absolute; top:11px; width:15px; height:15px; border-radius:50%;
+    position:absolute; top:13px; width:15px; height:15px; border-radius:50%; z-index:3;
     transform:translate(-50%,-50%); background:var(--accent);
     box-shadow:0 0 10px rgba(110,168,255,.8), 0 0 26px rgba(110,168,255,.4);
     pointer-events:none;
+  }
+  .dot {
+    position:absolute; top:13px; width:18px; height:18px; z-index:2;
+    transform:translate(-50%,-50%); cursor:pointer;
+  }
+  .dot::after {
+    content:''; position:absolute; inset:0; margin:auto; width:7px; height:7px;
+    border-radius:50%; background:currentColor;
+    opacity:.5; box-shadow:0 0 2px currentColor;
+    transition:opacity .35s ease, box-shadow .35s ease;
+  }
+  .dot.past::after { opacity:1; box-shadow:0 0 9px currentColor; }
+  .dlabel {
+    position:absolute; top:-14px; transform:translateX(-50%); font-size:.6rem;
+    color:#5d6478; white-space:nowrap; pointer-events:none; transition:color .35s ease;
+  }
+  .dlabel.past { color:var(--dim); }
+  #ttip {
+    position:absolute; top:-44px; transform:translateX(-50%); z-index:6;
+    background:var(--glass); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    border:1px solid var(--border); border-radius:8px; padding:.3rem .6rem;
+    font-size:.7rem; color:var(--fg); white-space:nowrap; pointer-events:none;
+    opacity:0; transition:opacity .15s ease;
+  }
+  @media (pointer:coarse) {
+    #track { height:34px; }
+    #rail, #fill { top:16px; }
+    .tick { top:13px; }
+    .tick.major { top:11px; }
+    .tlabel { top:32px; }
+    #thumb { top:17px; width:19px; height:19px; }
+    .dot { top:17px; width:26px; height:26px; }
+    #zoomer { padding-bottom:1.7rem; }
   }
   @media (max-width:640px) {
     header { padding:.9rem 1rem; }
     header a { margin-left:.8rem; }
     #hud { left:1rem; top:4.2rem; }
+    #zcount { padding:.5rem .6rem .45rem; }
     #zoomer { padding:.7rem .8rem 1.4rem; }
     .tlabel { font-size:.56rem; }
+    .dlabel { display:none; }
+    #track { margin-top:6px; }
   }
 </style>
 </head>
@@ -106,16 +179,22 @@
   <div id="hud-unit"></div>
   <div id="hud-cmp"></div>
   <div id="hud-you"></div>
+  <div id="zcount" aria-hidden="true">
+    <div id="zc-title">written out in metres</div>
+    <div id="zc-num"></div>
+    <div id="zc-note"></div>
+  </div>
 </div>
 
 <div id="caption"></div>
 
 <div id="zoomer">
-  <div id="hint">scroll · pinch · drag — or ride the slider</div>
+  <div id="hint">scroll · pinch · drag — or ride the timeline</div>
   <div id="track">
     <div id="rail"></div>
     <div id="fill"></div>
     <div id="thumb"></div>
+    <div id="ttip"></div>
   </div>
 </div>
 
@@ -139,6 +218,10 @@ const elHint  = document.getElementById('hint');
 const elTrack = document.getElementById('track');
 const elFill  = document.getElementById('fill');
 const elThumb = document.getElementById('thumb');
+const elTip   = document.getElementById('ttip');
+const elZC    = document.getElementById('zcount');
+const elZNum  = document.getElementById('zc-num');
+const elZNote = document.getElementById('zc-note');
 
 let W = 0, H = 0, DPR = 1;
 function resize() {
@@ -541,6 +624,67 @@ function checkMilestones(now) {
   }
 }
 
+/* ---------------------------------------------------------- zeros counter
+   The current view scale written out digit by digit, every zero shown.
+   Digits are kept as spans in RIGHT-to-LEFT DOM order inside a
+   row-reverse flex container, so group boundaries (thousands) and the
+   two mantissa spans stay stable while zeros are pushed/popped at the
+   right end as the decade changes. */
+const zUnit = document.createElement('span');
+zUnit.id = 'zc-unit';
+zUnit.textContent = 'm';
+function zDigit(cls) { const s = document.createElement('span'); s.className = cls; return s; }
+const zM2 = zDigit('zd zm'), zM1 = zDigit('zd zm'); // 2nd + leading mantissa digit
+let zN = -1;          // zero spans currently in the DOM
+let zShown = false;
+
+function zRebuild(n) {
+  elZNum.textContent = '';
+  elZNum.appendChild(zUnit);
+  for (let i = 0; i < n; i++) {
+    const z = zDigit('zd z');
+    z.textContent = '0';
+    elZNum.appendChild(z);
+  }
+  elZNum.appendChild(zM2);
+  elZNum.appendChild(zM1);
+}
+function zAdd() {
+  const z = zDigit('zd z pop');
+  z.textContent = '0';
+  elZNum.insertBefore(z, zUnit.nextSibling);
+  setTimeout(() => z.classList.remove('pop'), 550);
+}
+function zDrop() {
+  let c = zUnit.nextSibling;
+  while (c && c !== zM2 && c.classList.contains('out')) c = c.nextSibling;
+  if (!c || c === zM2) return;
+  c.classList.add('out');
+  setTimeout(() => c.remove(), 200);
+}
+function updateZeros() {
+  const s = Math.pow(10, logS);
+  let e = Math.floor(Math.log10(s));
+  let mm = Math.round((s / Math.pow(10, e)) * 10);   // mantissa, 2 digits: 10..99
+  if (mm >= 100) { mm = 10; e++; }
+  const show = e >= 6;                               // collapse below 10^6 m
+  if (show !== zShown) { zShown = show; elZC.classList.toggle('on', show); }
+  if (!show) return;
+  const n = e - 1;                                   // zeros after the 2 mantissa digits
+  if (n !== zN) {
+    if (zN < 0 || Math.abs(n - zN) > 4) zRebuild(n); // big jump: no animation
+    else if (n > zN) { for (let i = zN; i < n; i++) zAdd(); }
+    else { for (let i = zN; i > n; i--) zDrop(); }
+    zN = n;
+  }
+  const d = String(mm);
+  if (zM1.textContent !== d[0]) zM1.textContent = d[0];
+  if (zM2.textContent !== d[1]) zM2.textContent = d[1];
+  const zeros = n + (d[1] === '0' ? 1 : 0);
+  const note = `that’s ${zeros} zeros`;
+  if (elZNote.textContent !== note) elZNote.textContent = note;
+}
+
 /* ---------------------------------------------------------- input */
 let interacted = false;
 function poke() {
@@ -599,43 +743,103 @@ window.addEventListener('keydown', e => {
   if (e.key === 'ArrowDown' || e.key === '+' || e.key === '=' || e.key === 'ArrowLeft') { target = clampLog(target - step); poke(); }
 });
 
-/* slider */
+/* ---------------------------------------------------------- timeline strip
+   The whole journey 10⁻¹ → 10²⁷ m at a glance: decade ticks, unit
+   labels, milestone dots pulled straight from the OBJECTS data (so they
+   can never desync), a moving cursor, and the traversed portion filled. */
 const SLIDER_LABELS = [
   [0, '1 m'], [3, '1 km'], [6, '10⁶ m'], [15.976, '1 ly'], [22.489, '1 Mpc'],
 ];
-(function buildTicks() {
+const DOT_SPECS = [
+  { from: SIZE_OBJECTS, name: 'you',                              label: 'you' },
+  { from: SIZE_OBJECTS, name: 'Mount Everest',                    label: 'Everest' },
+  { from: SIZE_OBJECTS, name: 'Earth',                            label: 'Earth' },
+  { from: DIST_OBJECTS, name: 'Moon',                             label: 'Moon' },
+  { from: DIST_OBJECTS, name: 'Sun',                              label: 'Sun' },
+  { from: DIST_OBJECTS, name: 'Voyager 1',                        label: 'Voyager' },
+  { from: DIST_OBJECTS, name: 'Proxima Centauri',                 label: 'Proxima' },
+  { from: DIST_OBJECTS, name: 'Milky Way centre',                 label: 'Sgr A*' },
+  { from: DIST_OBJECTS, name: 'Andromeda',                        label: 'Andromeda' },
+  { from: DIST_OBJECTS, name: 'edge of the observable universe',  label: 'the edge' },
+];
+const DOTS = DOT_SPECS.map(sp => {
+  const o = sp.from.find(x => x.name === sp.name);
+  if (!o) return null;
+  const v = o.size !== undefined ? o.size : o.d;
+  return { log: Math.log10(v), label: sp.label, name: o.name, meters: v, color: o.color, el: null, lab: null };
+}).filter(Boolean);
+const fracOf = lg => (lg - LOG_MIN) / (LOG_MAX - LOG_MIN);
+
+function showTip(d) {
+  elTip.textContent = `${d.name} · ${fmtNice(d.meters)}`;
+  const w = elTrack.clientWidth;
+  const half = elTip.offsetWidth / 2;
+  const x = Math.max(half - 14, Math.min(w - half + 14, fracOf(d.log) * w));
+  elTip.style.left = `${x}px`;
+  elTip.style.opacity = '1';
+}
+function hideTip() { elTip.style.opacity = '0'; }
+
+(function buildTrack() {
   for (let k = LOG_MIN; k <= LOG_MAX; k++) {
     const t = document.createElement('div');
     t.className = 'tick' + (k % 3 === 0 ? ' major' : '');
-    t.style.left = `${((k - LOG_MIN) / (LOG_MAX - LOG_MIN)) * 100}%`;
+    t.style.left = `${fracOf(k) * 100}%`;
     elTrack.appendChild(t);
   }
   for (const [lg, txt] of SLIDER_LABELS) {
     const l = document.createElement('div');
     l.className = 'tlabel';
-    l.style.left = `${((lg - LOG_MIN) / (LOG_MAX - LOG_MIN)) * 100}%`;
+    l.style.left = `${fracOf(lg) * 100}%`;
     l.textContent = txt;
     elTrack.appendChild(l);
   }
+  for (const d of DOTS) {
+    const el = document.createElement('div');
+    el.className = 'dot';
+    el.style.left = `${fracOf(d.log) * 100}%`;
+    el.style.color = d.color;
+    el.addEventListener('pointerenter', () => showTip(d));
+    el.addEventListener('pointerleave', hideTip);
+    const lab = document.createElement('div');
+    lab.className = 'dlabel';
+    lab.style.left = el.style.left;
+    lab.textContent = d.label;
+    elTrack.appendChild(el);
+    elTrack.appendChild(lab);
+    d.el = el;
+    d.lab = lab;
+  }
 })();
 let sliding = false;
-function sliderSet(e) {
+const SNAP_R = (window.matchMedia && matchMedia('(pointer: coarse)').matches) ? 0.9 : 0.5;
+function sliderSet(e, snap) {
   const r = elTrack.getBoundingClientRect();
   const f = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
-  target = LOG_MIN + f * (LOG_MAX - LOG_MIN);
+  let lg = LOG_MIN + f * (LOG_MAX - LOG_MIN);
+  if (snap) {
+    let best = null, bd = SNAP_R;
+    for (const d of DOTS) {
+      const dd = Math.abs(d.log - lg);
+      if (dd < bd) { bd = dd; best = d; }
+    }
+    if (best) lg = best.log;
+  }
+  target = clampLog(lg);
 }
 elTrack.addEventListener('pointerdown', e => {
   sliding = true;
   elTrack.setPointerCapture(e.pointerId);
   poke();
-  sliderSet(e);
+  sliderSet(e, true);          // tap near a milestone → snap to it
 });
-elTrack.addEventListener('pointermove', e => { if (sliding) sliderSet(e); });
+elTrack.addEventListener('pointermove', e => { if (sliding) sliderSet(e, false); });
 elTrack.addEventListener('pointerup', () => { sliding = false; });
 elTrack.addEventListener('pointercancel', () => { sliding = false; });
 
 /* ---------------------------------------------------------- main loop */
 let lastT = performance.now();
+let lastDotQ = 1e9;
 function frame(nowMs) {
   const now = nowMs / 1000;
   let dt = Math.min((nowMs - lastT) / 1000, 0.1);
@@ -664,6 +868,7 @@ function frame(nowMs) {
   drawYouMarker(now, 1 - dm, dm);
 
   updateHUD();
+  updateZeros();
   checkMilestones(now);
 
   // caption fade: in .6s, hold 3.6s, out 1.2s
@@ -674,10 +879,19 @@ function frame(nowMs) {
   else if (capT < 5.4) ca = 1 - (capT - 4.2) / 1.2;
   elCap.style.opacity = ca.toFixed(3);
 
-  // slider thumb
-  const f = (logS - LOG_MIN) / (LOG_MAX - LOG_MIN);
+  // timeline cursor + traversed fill + milestone states
+  const f = fracOf(logS);
   elThumb.style.left = `${f * 100}%`;
   elFill.style.width = `${f * 100}%`;
+  const dq = (logS * 64) | 0;
+  if (dq !== lastDotQ) {
+    lastDotQ = dq;
+    for (const d of DOTS) {
+      const past = d.log <= logS + 1e-6;
+      d.el.classList.toggle('past', past);
+      d.lab.classList.toggle('past', past);
+    }
+  }
 
   requestAnimationFrame(frame);
 }
