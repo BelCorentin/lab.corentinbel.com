@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>foil designer · lab · Corentin Bel</title>
+<meta name="description" content="Shape a hydrofoil front wing — planform, section, tips — and get star ratings for takeoff, glide, speed, carving and stability. Heuristics, not CFD.">
+<style>
+  :root {
+    --bg:#07080c; --panel:#0a0e14; --fg:#e8e6df; --dim:#8a8fa3; --accent:#6ea8ff;
+    --purple:#b48ce8; --teal:#38a3a5; --teal2:#8ceedd;
+    --border:#232b3a; --glass:rgba(13,16,24,.72);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { background:var(--bg); }
+  body {
+    background:var(--bg); color:var(--fg); min-height:100vh;
+    font-family:ui-sans-serif,system-ui,sans-serif;
+  }
+
+  header {
+    position:sticky; top:0; z-index:8;
+    display:flex; justify-content:space-between; align-items:baseline; gap:1rem;
+    padding:1.1rem 1.6rem;
+    background:linear-gradient(to bottom, rgba(7,8,12,.92), rgba(7,8,12,.75));
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    border-bottom:1px solid rgba(35,43,58,.5);
+  }
+  header a { color:var(--dim); text-decoration:none; font-size:.9rem; }
+  header a:hover { color:var(--accent); }
+  h1 { font-weight:300; font-size:1.3rem; letter-spacing:.06em; }
+  h1 b { font-weight:600; }
+  h1 a { font-size:inherit; color:inherit; }
+  .tagline { display:block; font-size:.68rem; color:#4a4f61; letter-spacing:.08em; margin-top:.15rem; }
+
+  main {
+    max-width:860px; margin:0 auto; padding:1.2rem 1.4rem 4rem;
+    margin-right:calc(300px + 2.4rem);
+  }
+  @media (min-width:1460px) { main { margin-right:auto; } }
+
+  .card {
+    background:var(--glass); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    border:1px solid var(--border); border-radius:12px;
+    padding:.8rem .95rem .95rem; margin-bottom:1rem;
+  }
+  .card h3 {
+    font-size:.66rem; color:var(--dim); font-weight:600;
+    text-transform:uppercase; letter-spacing:.14em; margin-bottom:.55rem;
+    display:flex; justify-content:space-between; align-items:baseline;
+  }
+  .card h3 span { text-transform:none; letter-spacing:0; font-weight:400; color:#4a4f61; }
+
+  .view { position:relative; border:1px solid var(--border); border-radius:8px; background:rgba(7,8,12,.5); overflow:hidden; }
+  .view canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  #viewTop   { aspect-ratio:16/7; }
+  #viewFront { aspect-ratio:16/4.4; }
+  #viewSec   { aspect-ratio:16/5; }
+  .tworow { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+  @media (max-width:640px) { .tworow { grid-template-columns:1fr; } }
+
+  /* ---------- ratings ---------- */
+  #ratingGrid { display:grid; grid-template-columns:1fr 220px; gap:.4rem 1.1rem; align-items:center; }
+  @media (max-width:640px) { #ratingGrid { grid-template-columns:1fr; } }
+  #axes { display:flex; flex-direction:column; gap:.42rem; }
+  .axis { display:flex; align-items:baseline; gap:.6rem; font-size:.8rem; }
+  .axis .an { flex:1; color:var(--dim); }
+  .stars { position:relative; font-size:.95rem; letter-spacing:.1em; line-height:1; white-space:nowrap; }
+  .stars .off { color:#2a3245; }
+  .stars .on {
+    position:absolute; inset:0; overflow:hidden; color:var(--accent);
+    text-shadow:0 0 9px rgba(110,168,255,.55); transition:width .25s ease;
+  }
+  .axis .sv { width:2rem; text-align:right; font-size:.72rem; color:var(--dim); font-variant-numeric:tabular-nums; }
+  #radarWrap { position:relative; aspect-ratio:1/1; max-width:220px; width:100%; margin:0 auto; }
+  #radarWrap canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
+
+  #verdict {
+    margin-top:.75rem; padding-top:.6rem; border-top:1px solid var(--border);
+    font-size:.84rem; line-height:1.5; color:var(--fg);
+  }
+  #verdict b { color:var(--purple); font-weight:600; }
+
+  details.how { margin-top:.7rem; border-top:1px solid var(--border); padding-top:.15rem; }
+  details.how summary {
+    list-style:none; cursor:pointer; user-select:none; -webkit-user-select:none;
+    font-size:.66rem; color:var(--dim); font-weight:600; text-transform:uppercase; letter-spacing:.14em;
+    padding:.5rem 0 .3rem; display:flex; justify-content:space-between; align-items:center;
+  }
+  details.how summary::-webkit-details-marker { display:none; }
+  details.how summary::after { content:"▾"; color:#4a4f61; transition:transform .2s; }
+  details.how[open] summary::after { transform:rotate(180deg); }
+  details.how summary:hover { color:var(--fg); }
+  details.how ul { list-style:none; font-size:.7rem; color:var(--dim); line-height:1.55; margin:.2rem 0 .3rem; }
+  details.how li { margin:.22rem 0; }
+  details.how li b { color:var(--fg); font-weight:600; }
+  details.how li em { color:var(--teal2); font-style:normal; }
+  .fine { font-size:.62rem; color:#4a4f61; line-height:1.45; margin-top:.45rem; }
+
+  /* ---------- control panel ---------- */
+  #panel {
+    position:fixed; top:4.6rem; right:1rem; z-index:7; width:300px;
+    background:var(--glass); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    border:1px solid var(--border); border-radius:12px;
+    padding:.9rem 1rem 1rem; max-height:calc(100vh - 6rem); overflow-y:auto;
+  }
+  #sheetHandle { display:none; }
+  #panel h2 {
+    font-size:.66rem; color:var(--dim); font-weight:600;
+    text-transform:uppercase; letter-spacing:.14em; margin:.85rem 0 .4rem;
+  }
+  #panel h2:first-of-type { margin-top:0; }
+
+  .ctl { margin:.45rem 0; }
+  .ctl label { display:flex; justify-content:space-between; font-size:.76rem; color:var(--dim); margin-bottom:.15rem; }
+  .ctl label output { color:var(--fg); font-variant-numeric:tabular-nums; }
+  input[type=range] { width:100%; accent-color:var(--accent); height:1.1rem; }
+  select {
+    width:100%; background:rgba(35,43,58,.45); color:var(--fg); border:1px solid var(--border);
+    border-radius:8px; padding:.32rem .4rem; font-size:.76rem; font-family:inherit; cursor:pointer;
+  }
+  select:hover { border-color:var(--accent); }
+
+  #readouts { display:grid; grid-template-columns:1fr 1fr; gap:.3rem .8rem; font-size:.8rem; }
+  #readouts .ro { display:flex; justify-content:space-between; gap:.4rem; }
+  #readouts .k { color:var(--dim); }
+  #readouts .v { font-variant-numeric:tabular-nums; }
+  #roArea  .v { color:var(--teal2); }
+  #roAR    .v { color:var(--accent); }
+
+  .presets { display:grid; grid-template-columns:1fr 1fr; gap:.4rem; }
+  .presets button {
+    background:rgba(35,43,58,.45); color:var(--dim); border:1px solid var(--border);
+    border-radius:8px; padding:.4rem .45rem; font-size:.74rem; cursor:pointer;
+    transition:border-color .15s, color .15s;
+  }
+  .presets button:hover { border-color:var(--accent); color:var(--fg); }
+  .presets button[aria-pressed="true"] { border-color:var(--teal2); color:var(--fg); background:rgba(140,238,221,.08); }
+
+  /* ---------- mobile: bottom sheet ---------- */
+  @media (max-width:880px) {
+    header { padding:.9rem 1rem; }
+    h1 { font-size:1.05rem; }
+    .tagline { display:none; }
+    main { margin-right:auto; padding-bottom:8rem; }
+    #panel {
+      top:auto; right:0; left:0; bottom:0; width:auto; border-radius:16px 16px 0 0;
+      max-height:72vh; transform:translateY(calc(100% - 3.4rem));
+      transition:transform .28s ease; padding-top:0;
+    }
+    #panel.open { transform:none; }
+    #sheetHandle {
+      display:flex; align-items:center; justify-content:space-between; gap:.7rem;
+      width:100%; background:none; border:none; color:var(--fg); cursor:pointer;
+      padding:.9rem 0 .7rem; font:inherit; font-size:.8rem;
+      position:sticky; top:0;
+    }
+    #sheetHandle .grab { width:2.2rem; height:4px; border-radius:2px; background:var(--border); margin:0 auto; }
+    #sheetHandle .mini { color:var(--dim); font-variant-numeric:tabular-nums; white-space:nowrap; }
+    #sheetHandle .mini b { color:var(--fg); font-weight:600; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition:none !important; animation:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><b>foil designer</b> · <a href="https://lab.corentinbel.com">lab.corentinbel.com</a>
+      <span class="tagline">shape a hydrofoil front wing — star-rated by physics heuristics, not CFD</span>
+    </h1>
+  </div>
+  <a href="https://lab.corentinbel.com">← lab</a>
+</header>
+
+<main>
+  <div class="card">
+    <h3>Top view · planform <span id="capTop">–</span></h3>
+    <div class="view" id="viewTop"><canvas id="cvTop"></canvas></div>
+  </div>
+
+  <div class="tworow">
+    <div class="card">
+      <h3>Front view <span id="capFront">–</span></h3>
+      <div class="view" id="viewFront"><canvas id="cvFront"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Section <span id="capSec">–</span></h3>
+      <div class="view" id="viewSec"><canvas id="cvSec"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Performance <span>0–5 stars · relative to the slider ranges</span></h3>
+    <div id="ratingGrid">
+      <div id="axes"></div>
+      <div id="radarWrap"><canvas id="cvRadar"></canvas></div>
+    </div>
+    <div id="verdict">–</div>
+    <details class="how">
+      <summary>how the scores work</summary>
+      <ul>
+        <li><b>Low-speed lift</b> — area × a CL<sub>max</sub> proxy that rises with <em>camber</em>, <em>thickness</em> and a <em>blunter nose</em>: takeoff speed ∝ 1/√(S·CL<sub>max</sub>).</li>
+        <li><b>Glide &amp; pump</b> — aspect ratio (induced drag ∝ 1/AR), small bonus for clean tips, penalised when the mean chord gets tiny (low-Re friction).</li>
+        <li><b>Top-end speed</b> — mostly drag area: small planform, low camber, thin section, sharp nose; a little sweep helps.</li>
+        <li><b>Carving</b> — lower AR and shorter span roll faster, strong taper unloads the tips, downturned (gull) tips grip the turn, pointed/crescent tips release cleanly.</li>
+        <li><b>Stability</b> — area and thickness forgive, a blunt nose stalls gently, flat tips track straight; very high AR gets twitchy.</li>
+      </ul>
+      <div class="fine">Honest disclaimer: these are monotone heuristics fitted to wing-foil folklore and first-order aerodynamics (lift equation, lifting-line induced drag, Reynolds trends). They rank design trade-offs; they are not CFD, and no water was harmed.</div>
+    </details>
+  </div>
+</main>
+
+<aside id="panel">
+  <button id="sheetHandle" aria-expanded="false">
+    <span class="mini">area <b id="miniArea">–</b></span>
+    <span class="grab"></span>
+    <span class="mini">AR <b id="miniAR">–</b> · design ▾</span>
+  </button>
+
+  <h2>Presets</h2>
+  <div class="presets" id="presetRow">
+    <button data-preset="pump">dockstart / pump HA</button>
+    <button data-preset="allround">all-round mid-aspect</button>
+    <button data-preset="carver">surf carver</button>
+    <button data-preset="race">race HA</button>
+  </div>
+
+  <h2>Planform</h2>
+  <div class="ctl"><label for="span">span <output id="spanVal">–</output></label>
+    <input type="range" id="span" min="60" max="110" step="1" value="82"></div>
+  <div class="ctl"><label for="chord">max chord <output id="chordVal">–</output></label>
+    <input type="range" id="chord" min="10" max="25" step="0.5" value="17"></div>
+  <div class="ctl"><label for="sweep">leading-edge sweep <output id="sweepVal">–</output></label>
+    <input type="range" id="sweep" min="0" max="30" step="1" value="12"></div>
+  <div class="ctl"><label for="taper">taper ratio (tip/root) <output id="taperVal">–</output></label>
+    <input type="range" id="taper" min="0.15" max="1" step="0.05" value="0.55"></div>
+  <div class="ctl"><label for="tip">tip shape</label>
+    <select id="tip">
+      <option value="square">square</option>
+      <option value="rounded" selected>rounded</option>
+      <option value="pointed">pointed</option>
+      <option value="crescent">crescent, swept</option>
+    </select></div>
+  <div class="ctl"><label for="anh">tip downturn (anhedral) <output id="anhVal">–</output></label>
+    <input type="range" id="anh" min="0" max="25" step="1" value="8"></div>
+
+  <h2>Profile section</h2>
+  <div class="ctl"><label for="thick">thickness <output id="thickVal">–</output></label>
+    <input type="range" id="thick" min="7" max="16" step="0.5" value="11"></div>
+  <div class="ctl"><label for="camber">camber <output id="camberVal">–</output></label>
+    <input type="range" id="camber" min="0" max="5" step="0.1" value="2.4"></div>
+  <div class="ctl"><label for="nose">nose radius <output id="noseVal">–</output></label>
+    <input type="range" id="nose" min="0.4" max="1.6" step="0.05" value="1"></div>
+
+  <h2>Derived</h2>
+  <div id="readouts">
+    <div class="ro" id="roArea"><span class="k">area</span><span class="v">–</span></div>
+    <div class="ro" id="roAR"><span class="k">aspect ratio</span><span class="v">–</span></div>
+    <div class="ro" id="roMC"><span class="k">mean chord</span><span class="v">–</span></div>
+    <div class="ro" id="roTC"><span class="k">tip chord</span><span class="v">–</span></div>
+  </div>
+  <div class="fine">AR = span² / area. Everything updates live; pick a preset, then drag it somewhere it was never meant to go.</div>
+</aside>
+
+<script>
+'use strict';
+/* ================= pure model (no DOM) ================= */
+const RAD = Math.PI / 180;
+
+const TIP_SHAPES = {
+  square:   { a: 14,  b: 0.16 },
+  rounded:  { a: 5.5, b: 0.5  },
+  pointed:  { a: 1.9, b: 1.05 },
+  crescent: { a: 2.6, b: 0.75 },
+};
+
+const PRESETS = {
+  pump:     { label: 'dockstart / pump HA', span: 100, chord: 14,  sweep: 6,  taper: 0.50, tip: 'rounded',  anh: 4,  thick: 12,   camber: 3.5, nose: 1.15 },
+  allround: { label: 'all-round mid-aspect', span: 82, chord: 17,  sweep: 12, taper: 0.55, tip: 'rounded',  anh: 8,  thick: 11,   camber: 2.4, nose: 1.0  },
+  carver:   { label: 'surf carver',          span: 68, chord: 20,  sweep: 18, taper: 0.42, tip: 'pointed',  anh: 16, thick: 10.5, camber: 2.0, nose: 0.95 },
+  race:     { label: 'race HA',              span: 95, chord: 11,  sweep: 10, taper: 0.45, tip: 'crescent', anh: 6,  thick: 8,    camber: 1.4, nose: 0.7  },
+};
+
+/* chord (cm) at spanwise station eta ∈ [0,1] (0 = root, 1 = tip) */
+function chordAt(p, eta) {
+  const tip = TIP_SHAPES[p.tip] || TIP_SHAPES.rounded;
+  const base = 1 - (1 - p.taper) * eta;
+  const f = Math.pow(Math.max(0, 1 - Math.pow(eta, tip.a)), tip.b);
+  return p.chord * base * f;
+}
+
+/* leading-edge x offset (cm, aft-positive) at eta */
+function leAt(p, eta) {
+  const y = eta * p.span / 2;
+  let x = Math.tan(p.sweep * RAD) * y;
+  if (p.tip === 'crescent') x += p.chord * 0.85 * Math.pow(eta, 3);
+  return x;
+}
+
+/* vertical droop of the wing (cm, down-positive) at eta — anhedral / gull */
+function droopAt(p, eta) {
+  const tipDrop = (p.span / 2) * Math.tan(p.anh * RAD) * 0.6;
+  return tipDrop * Math.pow(eta, 2.2);
+}
+
+function planformStats(p) {
+  const N = 240;
+  let sum = 0;
+  for (let i = 0; i < N; i++) sum += chordAt(p, (i + 0.5) / N);
+  const meanChord = sum / N;                    // cm (mean over span)
+  const area = p.span * meanChord;              // cm²
+  const AR = (p.span * p.span) / area;          // dimensionless
+  return { area, AR, meanChord, tipChord: chordAt(p, 0.985) };
+}
+
+/* NACA-4-like section: returns arrays of [x, y] in chord units, y up.
+   Thickness renormalised so the envelope max equals exactly thick% of chord. */
+function sectionCoords(p, n) {
+  n = n || 90;
+  const t = p.thick / 100, m = p.camber / 100, pc = 0.4, k = p.nose;
+  // standard NACA-4 thickness, with the LE region scaled by the nose factor k
+  // (the weight decays over ~6% chord, so max thickness at x≈0.3 is untouched)
+  const halfRaw = x =>
+    5 * (0.2969 * Math.sqrt(x) - 0.1260 * x - 0.3516 * x * x + 0.2843 * x ** 3 - 0.1036 * x ** 4)
+    * (1 + (k - 1) * Math.exp(-x / 0.06));
+  let mx = 0;
+  for (let i = 1; i <= 400; i++) mx = Math.max(mx, halfRaw(i / 400));
+  const scale = 0.5 / mx;                       // max half-thickness → 0.5·t
+  const yt = x => Math.max(0, halfRaw(x)) * scale * t;
+  const yc = x => (x < pc)
+    ? (m / (pc * pc)) * (2 * pc * x - x * x)
+    : (m / ((1 - pc) * (1 - pc))) * ((1 - 2 * pc) + 2 * pc * x - x * x);
+  const upper = [], lower = [], camberline = [];
+  for (let i = 0; i <= n; i++) {
+    const x = 0.5 * (1 - Math.cos(Math.PI * i / n));  // cosine spacing
+    upper.push([x, yc(x) + yt(x)]);
+    lower.push([x, yc(x) - yt(x)]);
+    camberline.push([x, yc(x)]);
+  }
+  return { upper, lower, camberline };
+}
+
+const clamp01 = v => Math.max(0, Math.min(1, v));
+const norm5 = (x, lo, hi, gamma) => 5 * Math.pow(clamp01((x - lo) / (hi - lo)), gamma || 1);
+
+const AXES = [
+  { key: 'lift',  name: 'Low-speed lift' },
+  { key: 'glide', name: 'Glide & pump' },
+  { key: 'speed', name: 'Top-end speed' },
+  { key: 'carve', name: 'Carving' },
+  { key: 'stab',  name: 'Stability' },
+];
+
+function computeScores(p) {
+  const st = planformStats(p);
+  const { area, AR, meanChord } = st;
+
+  // Low-speed lift: takeoff speed ∝ 1/sqrt(S·CLmax)
+  const clmax = 1.0 + 0.10 * p.camber + 0.013 * (p.thick - 7) + 0.10 * (p.nose - 1);
+  const lift = norm5(area * clmax, 350, 2000, 1);
+
+  // Glide & pump: induced drag ∝ 1/AR; low-Re penalty for tiny mean chords
+  const e = 0.88 + (p.tip === 'crescent' ? 0.06 : p.tip === 'rounded' ? 0.03 : p.tip === 'pointed' ? 0.01 : 0);
+  const reFac = meanChord / (meanChord + 3.5);
+  const glide = norm5(AR * e * reFac, 1.5, 10, 0.75);
+
+  // Top-end speed: drag area dominates; camber & thickness & blunt nose cost, sweep helps a bit
+  const speedRaw = 2.2 - area / 520 - 0.50 * p.camber - 0.17 * (p.thick - 7) - 0.35 * (p.nose - 1) + 0.012 * p.sweep;
+  const speed = norm5(speedRaw, -5.5, 1.2, 1);
+
+  // Carving: low AR + short span roll fast, taper unloads tips, downturn grips
+  const tipCarve = { square: 0, rounded: 0.15, pointed: 0.45, crescent: 0.35 }[p.tip] || 0;
+  const carveRaw = 3.0 - 0.24 * (AR - 5) + 1.8 * (1 - p.taper) + 0.055 * p.anh + 2.6 * (0.9 - p.span / 100) + tipCarve;
+  const carve = norm5(carveRaw, 0.8, 7.0, 1);
+
+  // Stability: area + thickness + blunt nose forgive; downturn & very high AR cost
+  const tipStab = { square: 0.2, rounded: 0.2, pointed: 0, crescent: 0.05 }[p.tip] || 0;
+  const stabRaw = area / 650 + 0.10 * (p.thick - 7) + 0.7 * (p.nose - 1) - 0.045 * p.anh - 0.10 * Math.max(0, AR - 7) + tipStab + 0.3;
+  const stab = norm5(stabRaw, -0.9, 4.0, 1);
+
+  return { lift, glide, speed, carve, stab, stats: st };
+}
+
+const ARCHETYPE_LINES = {
+  pump:     s => `this is basically a <b>dockstart / pump wing</b> — floaty and efficient, happiest below full speed`,
+  allround: s => `this is basically an <b>all-round mid-aspect</b> — no superpowers, no red flags`,
+  carver:   s => `this is basically a <b>surf carver</b> — lives on rail, gives up top-end glide`,
+  race:     s => `this is basically a <b>race HA wing</b> — fast and slippery, but demanding`,
+};
+
+function verdictFor(p, scores) {
+  const vec = AXES.map(a => scores[a.key]);
+  let bestKey = 'allround', bestD = Infinity;
+  for (const key of Object.keys(PRESETS)) {
+    const ps = computeScores(PRESETS[key]);
+    const pv = AXES.map(a => ps[a.key]);
+    let d = 0;
+    for (let i = 0; i < vec.length; i++) d += (vec[i] - pv[i]) ** 2;
+    if (d < bestD) { bestD = d; bestKey = key; }
+  }
+  let line = ARCHETYPE_LINES[bestKey](scores) + '.';
+  const weakest = AXES.reduce((w, a) => scores[a.key] < scores[w.key] ? a : w, AXES[0]);
+  const strongest = AXES.reduce((w, a) => scores[a.key] > scores[w.key] ? a : w, AXES[0]);
+  if (scores[weakest.key] < 1.1) line += ` Watch the ${weakest.name.toLowerCase()}.`;
+  else if (scores[strongest.key] > 4.2) line += ` The ${strongest.name.toLowerCase()} is its party trick.`;
+  return { key: bestKey, html: line };
+}
+
+/* node test harness hook */
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { PRESETS, TIP_SHAPES, AXES, chordAt, leAt, droopAt, planformStats, sectionCoords, computeScores, verdictFor };
+}
+
+/* ================= UI ================= */
+if (typeof document !== 'undefined' && typeof window !== 'undefined') (function initUI() {
+  const $ = id => document.getElementById(id);
+  const sliders = ['span', 'chord', 'sweep', 'taper', 'anh', 'thick', 'camber', 'nose'];
+  const els = {};
+  for (const id of [...sliders, 'tip']) els[id] = $(id);
+
+  function params() {
+    return {
+      span: +els.span.value, chord: +els.chord.value, sweep: +els.sweep.value,
+      taper: +els.taper.value, tip: els.tip.value, anh: +els.anh.value,
+      thick: +els.thick.value, camber: +els.camber.value, nose: +els.nose.value,
+    };
+  }
+
+  /* ---- star rows ---- */
+  const axesEl = $('axes');
+  const starRows = {};
+  for (const a of AXES) {
+    const row = document.createElement('div');
+    row.className = 'axis';
+    row.innerHTML = `<span class="an">${a.name}</span>` +
+      `<span class="stars"><span class="off">★★★★★</span><span class="on" style="width:0%">★★★★★</span></span>` +
+      `<span class="sv">–</span>`;
+    axesEl.appendChild(row);
+    starRows[a.key] = { on: row.querySelector('.on'), sv: row.querySelector('.sv') };
+  }
+
+  /* ---- canvas helpers ---- */
+  function fit(cv) {
+    const r = cv.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    const W = Math.max(1, Math.round(r.width * dpr)), H = Math.max(1, Math.round(r.height * dpr));
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, r.width, r.height);
+    return { ctx, w: r.width, h: r.height };
+  }
+
+  function gridLines(ctx, w, h, cx, cy, scale) {   // one line per 10 cm of world space
+    ctx.save();
+    ctx.strokeStyle = 'rgba(35,43,58,.4)';
+    ctx.lineWidth = 1;
+    const step = 10 * scale;
+    if (step > 6) {
+      ctx.beginPath();
+      for (let x = cx % step; x < w; x += step) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
+      for (let y = cy % step; y < h; y += step) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function glowPath(ctx, trace, fillGrad, strokeCol, glowCol) {
+    ctx.save();
+    ctx.beginPath();
+    trace(ctx);
+    if (fillGrad) { ctx.fillStyle = fillGrad; ctx.fill(); }
+    ctx.shadowColor = glowCol; ctx.shadowBlur = 14;
+    ctx.strokeStyle = strokeCol; ctx.lineWidth = 1.4;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /* ---- top view ---- */
+  function drawTop(p, st) {
+    const { ctx, w, h } = fit($('cvTop'));
+    const N = 90;
+    // world bounds (cm): x spanwise, z chordwise (aft+)
+    let zMin = Infinity, zMax = -Infinity;
+    const le = [], te = [];
+    for (let i = 0; i <= N; i++) {
+      const eta = i / N, y = eta * p.span / 2;
+      const l = leAt(p, eta), c = chordAt(p, eta);
+      le.push([y, l]); te.push([y, l + c]);
+      zMin = Math.min(zMin, l); zMax = Math.max(zMax, l + c);
+    }
+    const scale = Math.min((w - 56) / p.span, (h - 40) / Math.max(zMax - zMin, 1));
+    const cx = w / 2, cy = (h - 14) / 2 - ((zMax + zMin) / 2) * scale;
+    gridLines(ctx, w, h, cx, cy, scale);
+    const X = y => cx + y * scale, Y = z => cy + z * scale;
+
+    const grad = ctx.createLinearGradient(cx - p.span / 2 * scale, 0, cx + p.span / 2 * scale, 0);
+    grad.addColorStop(0, 'rgba(56,163,165,.14)');
+    grad.addColorStop(0.5, 'rgba(110,168,255,.22)');
+    grad.addColorStop(1, 'rgba(56,163,165,.14)');
+
+    const trace = c2 => {
+      c2.moveTo(X(le[0][0]), Y(le[0][1]));
+      for (const [y, z] of le) c2.lineTo(X(y), Y(z));
+      for (let i = te.length - 1; i >= 0; i--) c2.lineTo(X(te[i][0]), Y(te[i][1]));
+      for (const [y, z] of te) c2.lineTo(X(-y), Y(z));
+      for (let i = le.length - 1; i >= 0; i--) c2.lineTo(X(-le[i][0]), Y(le[i][1]));
+      c2.closePath();
+    };
+    glowPath(ctx, trace, grad, 'rgba(110,168,255,.85)', 'rgba(110,168,255,.55)');
+
+    // centerline + quarter-chord
+    ctx.save();
+    ctx.strokeStyle = 'rgba(138,143,163,.25)'; ctx.setLineDash([3, 4]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cx, 6); ctx.lineTo(cx, h - 18); ctx.stroke();
+    ctx.strokeStyle = 'rgba(140,238,221,.35)';
+    ctx.beginPath();
+    for (let i = 0; i <= N; i++) {
+      const q = Y(le[i][1] + 0.25 * (te[i][1] - le[i][1])), x = X(le[i][0]);
+      i === 0 ? ctx.moveTo(x, q) : ctx.lineTo(x, q);
+    }
+    for (let i = N; i >= 0; i--) ctx.lineTo(X(-le[i][0]), Y(le[i][1] + 0.25 * (te[i][1] - le[i][1])));
+    ctx.stroke();
+    ctx.restore();
+
+    // span dimension line
+    const dy = h - 10;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(138,143,163,.5)'; ctx.fillStyle = '#8a8fa3';
+    ctx.lineWidth = 1; ctx.font = '10px ui-sans-serif,system-ui';
+    ctx.beginPath();
+    ctx.moveTo(X(-p.span / 2), dy - 4); ctx.lineTo(X(-p.span / 2), dy + 2);
+    ctx.moveTo(X(p.span / 2), dy - 4); ctx.lineTo(X(p.span / 2), dy + 2);
+    ctx.moveTo(X(-p.span / 2), dy - 1); ctx.lineTo(X(p.span / 2), dy - 1);
+    ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.fillText(`${p.span} cm`, cx + 34, dy - 5);
+    ctx.restore();
+  }
+
+  /* ---- front view ---- */
+  function drawFront(p) {
+    const { ctx, w, h } = fit($('cvFront'));
+    const N = 80;
+    const maxDrop = droopAt(p, 1), tMax = p.chord * p.thick / 100;
+    const scale = Math.min((w - 40) / p.span, (h - 26) / Math.max(maxDrop + tMax + 2, 6));
+    const cx = w / 2, cy = 0.32 * h;
+    gridLines(ctx, w, h, cx, cy, scale);
+    const pts = [];
+    for (let i = 0; i <= N; i++) {
+      const eta = i / N;
+      pts.push([eta * p.span / 2 * scale, droopAt(p, eta) * scale, Math.max(chordAt(p, eta) * p.thick / 100 * scale, 1.2)]);
+    }
+    const grad = ctx.createLinearGradient(cx - p.span / 2 * scale, 0, cx + p.span / 2 * scale, 0);
+    grad.addColorStop(0, 'rgba(180,140,232,.16)');
+    grad.addColorStop(0.5, 'rgba(110,168,255,.26)');
+    grad.addColorStop(1, 'rgba(180,140,232,.16)');
+    const trace = c2 => {
+      c2.moveTo(cx - pts[N][0], cy + pts[N][1] - pts[N][2] / 2);
+      for (let i = N; i >= 0; i--) c2.lineTo(cx - pts[i][0], cy + pts[i][1] - pts[i][2] / 2);
+      for (let i = 0; i <= N; i++) c2.lineTo(cx + pts[i][0], cy + pts[i][1] - pts[i][2] / 2);
+      for (let i = N; i >= 0; i--) c2.lineTo(cx + pts[i][0], cy + pts[i][1] + pts[i][2] / 2);
+      for (let i = 0; i <= N; i++) c2.lineTo(cx - pts[i][0], cy + pts[i][1] + pts[i][2] / 2);
+      c2.closePath();
+    };
+    glowPath(ctx, trace, grad, 'rgba(180,140,232,.8)', 'rgba(180,140,232,.5)');
+    // waterline hint
+    ctx.save();
+    ctx.strokeStyle = 'rgba(140,238,221,.18)'; ctx.setLineDash([5, 5]);
+    ctx.beginPath(); ctx.moveTo(6, cy - 10 * scale); ctx.lineTo(w - 6, cy - 10 * scale); ctx.stroke();
+    ctx.restore();
+  }
+
+  /* ---- section view ---- */
+  function drawSec(p) {
+    const { ctx, w, h } = fit($('cvSec'));
+    const { upper, lower, camberline } = sectionCoords(p, 110);
+    const pad = 22;
+    const scale = w - 2 * pad;              // 1 chord unit → this many px, SAME scale on y
+    let yMin = Infinity, yMax = -Infinity;
+    for (const [, y] of upper) yMax = Math.max(yMax, y);
+    for (const [, y] of lower) yMin = Math.min(yMin, y);
+    const cx = pad, cy = h / 2 + (yMax + yMin) / 2 * scale;
+    const X = x => cx + x * scale, Y = y => cy - y * scale;
+    // faint 10%-chord grid
+    ctx.save();
+    ctx.strokeStyle = 'rgba(35,43,58,.4)'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i <= 10; i++) { ctx.moveTo(X(i / 10), 4); ctx.lineTo(X(i / 10), h - 4); }
+    ctx.stroke();
+    ctx.restore();
+
+    const grad = ctx.createLinearGradient(0, Y(yMax), 0, Y(yMin));
+    grad.addColorStop(0, 'rgba(110,168,255,.30)');
+    grad.addColorStop(1, 'rgba(56,163,165,.12)');
+    const trace = c2 => {
+      c2.moveTo(X(upper[0][0]), Y(upper[0][1]));
+      for (const [x, y] of upper) c2.lineTo(X(x), Y(y));
+      for (let i = lower.length - 1; i >= 0; i--) c2.lineTo(X(lower[i][0]), Y(lower[i][1]));
+      c2.closePath();
+    };
+    glowPath(ctx, trace, grad, 'rgba(140,238,221,.9)', 'rgba(140,238,221,.45)');
+
+    // chord line + camber line
+    ctx.save();
+    ctx.strokeStyle = 'rgba(138,143,163,.3)'; ctx.setLineDash([3, 4]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(X(0), Y(0)); ctx.lineTo(X(1), Y(0)); ctx.stroke();
+    ctx.strokeStyle = 'rgba(180,140,232,.65)'; ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    camberline.forEach(([x, y], i) => i === 0 ? ctx.moveTo(X(x), Y(y)) : ctx.lineTo(X(x), Y(y)));
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /* ---- radar ---- */
+  function drawRadar(scores) {
+    const { ctx, w, h } = fit($('cvRadar'));
+    const cx = w / 2, cy = h / 2 + 3, R = Math.min(w, h) / 2 - 22;
+    const ang = i => -Math.PI / 2 + i * 2 * Math.PI / AXES.length;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(35,43,58,.85)'; ctx.lineWidth = 1;
+    for (let ring = 1; ring <= 5; ring++) {
+      ctx.beginPath();
+      for (let i = 0; i <= AXES.length; i++) {
+        const a = ang(i % AXES.length), r = R * ring / 5;
+        i === 0 ? ctx.moveTo(cx + r * Math.cos(a), cy + r * Math.sin(a))
+                : ctx.lineTo(cx + r * Math.cos(a), cy + r * Math.sin(a));
+      }
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    for (let i = 0; i < AXES.length; i++) {
+      const a = ang(i);
+      ctx.moveTo(cx, cy); ctx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a));
+    }
+    ctx.stroke();
+    // polygon
+    ctx.beginPath();
+    AXES.forEach((ax, i) => {
+      const a = ang(i), r = R * scores[ax.key] / 5;
+      i === 0 ? ctx.moveTo(cx + r * Math.cos(a), cy + r * Math.sin(a))
+              : ctx.lineTo(cx + r * Math.cos(a), cy + r * Math.sin(a));
+    });
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(110,168,255,.18)'; ctx.fill();
+    ctx.shadowColor = 'rgba(110,168,255,.6)'; ctx.shadowBlur = 10;
+    ctx.strokeStyle = 'rgba(110,168,255,.9)'; ctx.lineWidth = 1.6; ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#8ceedd';
+    AXES.forEach((ax, i) => {
+      const a = ang(i), r = R * scores[ax.key] / 5;
+      ctx.beginPath(); ctx.arc(cx + r * Math.cos(a), cy + r * Math.sin(a), 2.2, 0, 2 * Math.PI); ctx.fill();
+    });
+    // labels
+    ctx.fillStyle = '#8a8fa3'; ctx.font = '9.5px ui-sans-serif,system-ui'; ctx.textAlign = 'center';
+    const short = { lift: 'low-speed', glide: 'glide', speed: 'speed', carve: 'carve', stab: 'stability' };
+    AXES.forEach((ax, i) => {
+      const a = ang(i), r = R + 13;
+      ctx.fillText(short[ax.key], cx + r * Math.cos(a), cy + r * Math.sin(a) + 3.5);
+    });
+    ctx.restore();
+  }
+
+  /* ---- readouts, stars, verdict ---- */
+  const fmt = (v, d) => (+v).toFixed(d == null ? 0 : d);
+  function noseWord(k) { return k < 0.7 ? 'sharp' : k < 0.95 ? 'fine' : k < 1.15 ? 'standard' : k < 1.4 ? 'round' : 'blunt'; }
+  function anhWord(a) { return a < 3 ? 'flat' : a < 12 ? 'gull' : 'strong downturn'; }
+
+  function update() {
+    const p = params();
+    $('spanVal').textContent = `${fmt(p.span)} cm`;
+    $('chordVal').textContent = `${fmt(p.chord, 1)} cm`;
+    $('sweepVal').textContent = `${fmt(p.sweep)}°`;
+    $('taperVal').textContent = fmt(p.taper, 2);
+    $('anhVal').textContent = `${fmt(p.anh)}° · ${anhWord(p.anh)}`;
+    $('thickVal').textContent = `${fmt(p.thick, 1)}%`;
+    $('camberVal').textContent = `${fmt(p.camber, 1)}%`;
+    $('noseVal').textContent = `${fmt(p.nose, 2)}× · ${noseWord(p.nose)}`;
+
+    const scores = computeScores(p);
+    const st = scores.stats;
+    $('roArea').querySelector('.v').textContent = `${fmt(st.area)} cm²`;
+    $('roAR').querySelector('.v').textContent = fmt(st.AR, 1);
+    $('roMC').querySelector('.v').textContent = `${fmt(st.meanChord, 1)} cm`;
+    $('roTC').querySelector('.v').textContent = `${fmt(st.tipChord, 1)} cm`;
+    $('miniArea').textContent = `${fmt(st.area)} cm²`;
+    $('miniAR').textContent = fmt(st.AR, 1);
+    $('capTop').textContent = `${fmt(st.area)} cm² · AR ${fmt(st.AR, 1)}`;
+    $('capFront').textContent = anhWord(p.anh);
+    $('capSec').textContent = `t ${fmt(p.thick, 1)}% · camber ${fmt(p.camber, 1)}%`;
+
+    for (const a of AXES) {
+      const v = scores[a.key], half = Math.round(v * 2) / 2;
+      starRows[a.key].on.style.width = `${half / 5 * 100}%`;
+      starRows[a.key].sv.textContent = fmt(v, 1);
+    }
+    $('verdict').innerHTML = verdictFor(p, scores).html;
+
+    drawTop(p, st); drawFront(p); drawSec(p); drawRadar(scores);
+  }
+
+  /* ---- wiring ---- */
+  const presetBtns = [...document.querySelectorAll('#presetRow button')];
+  function clearPresetMark() { presetBtns.forEach(b => b.setAttribute('aria-pressed', 'false')); }
+  presetBtns.forEach(btn => btn.addEventListener('click', () => {
+    const p = PRESETS[btn.dataset.preset];
+    for (const id of sliders) els[id].value = p[id];
+    els.tip.value = p.tip;
+    clearPresetMark();
+    btn.setAttribute('aria-pressed', 'true');
+    update();
+  }));
+  for (const id of [...sliders, 'tip']) {
+    els[id].addEventListener('input', () => { clearPresetMark(); update(); });
+  }
+
+  const panel = $('panel'), handle = $('sheetHandle');
+  handle.addEventListener('click', () => {
+    const open = panel.classList.toggle('open');
+    handle.setAttribute('aria-expanded', String(open));
+  });
+
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(() => update());
+    for (const id of ['viewTop', 'viewFront', 'viewSec', 'radarWrap']) ro.observe($(id));
+  }
+  window.addEventListener('resize', update);
+
+  // start on the all-round preset
+  const start = presetBtns.find(b => b.dataset.preset === 'allround');
+  if (start) start.setAttribute('aria-pressed', 'true');
+  update();
+})();
+</script>
+</body>
+</html>
