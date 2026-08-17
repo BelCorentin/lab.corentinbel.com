@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>aero · lab · Corentin Bel</title>
+<meta name="description" content="How things fly — an interactive 2D potential-flow playground for wings and hydrofoils.">
+<style>
+  :root {
+    --bg:#07080c; --fg:#e8e6df; --dim:#8a8fa3; --accent:#6ea8ff; --teal:#8ceedd;
+    --border:#232b3a; --glass:rgba(13,16,24,.72); --warm:#ff8f6e;
+    --cp-upper:#5b93ef; --cp-lower:#21a487;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body { background:var(--bg); color:var(--fg); font-family:ui-sans-serif,system-ui,sans-serif; overflow:hidden; }
+  canvas#flow { position:fixed; inset:0; display:block; }
+
+  header {
+    position:fixed; top:0; left:0; right:0; z-index:6;
+    display:flex; justify-content:space-between; align-items:baseline; gap:1rem;
+    padding:1.2rem 1.6rem; pointer-events:none;
+  }
+  header a { pointer-events:auto; color:var(--dim); text-decoration:none; font-size:.9rem; }
+  header a:hover { color:var(--accent); }
+  h1 { font-weight:300; font-size:1.3rem; letter-spacing:.06em; }
+  h1 b { font-weight:600; }
+  h1 a { font-size:inherit; color:inherit; }
+  .tagline { display:block; font-size:.68rem; color:#4a4f61; letter-spacing:.08em; margin-top:.15rem; }
+
+  /* ---------- control panel ---------- */
+  #panel {
+    position:fixed; top:4.6rem; right:1rem; z-index:7; width:288px;
+    background:var(--glass); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    border:1px solid var(--border); border-radius:12px;
+    padding:.9rem 1rem 1rem; max-height:calc(100vh - 6rem); overflow-y:auto;
+  }
+  #sheetHandle { display:none; }
+  #panel h2 { font-size:.66rem; color:var(--dim); font-weight:600; text-transform:uppercase; letter-spacing:.14em; margin:.8rem 0 .4rem; }
+  #panel h2:first-child { margin-top:0; }
+
+  #readouts { display:grid; grid-template-columns:1fr 1fr; gap:.3rem .8rem; font-size:.8rem; }
+  #readouts .ro { display:flex; justify-content:space-between; gap:.4rem; }
+  #readouts .k { color:var(--dim); }
+  #readouts .v { font-variant-numeric:tabular-nums; }
+  #roArea-row { grid-column:1 / -1; border-top:1px solid var(--border); margin-top:.25rem; padding-top:.35rem; }
+  #roArea-row .v { color:var(--teal); }
+  #roLD .v { color:var(--accent); }
+
+  .ctl { margin:.45rem 0; }
+  .ctl label { display:flex; justify-content:space-between; font-size:.76rem; color:var(--dim); margin-bottom:.15rem; }
+  .ctl label output { color:var(--fg); font-variant-numeric:tabular-nums; }
+  input[type=range] { width:100%; accent-color:var(--accent); height:1.1rem; }
+
+  .seg { display:flex; gap:.4rem; }
+  .seg button, .presets button, #infoToggle {
+    flex:1; background:rgba(35,43,58,.45); color:var(--dim); border:1px solid var(--border);
+    border-radius:8px; padding:.38rem .5rem; font-size:.76rem; cursor:pointer;
+    transition:border-color .15s, color .15s;
+  }
+  .seg button:hover, .presets button:hover, #infoToggle:hover { border-color:var(--accent); color:var(--fg); }
+  .seg button[aria-pressed="true"] { border-color:var(--teal); color:var(--fg); background:rgba(140,238,221,.08); }
+  .fluid-note { font-size:.66rem; color:#4a4f61; margin-top:.3rem; }
+  .presets { display:grid; grid-template-columns:1fr 1fr; gap:.4rem; }
+  #infoToggle { width:100%; margin-top:.15rem; }
+  #infoToggle[aria-pressed="true"] { border-color:var(--accent); color:var(--fg); }
+
+  #cpwrap { position:relative; }
+  #cpplot { display:block; width:100%; height:108px; border:1px solid var(--border); border-radius:8px; background:rgba(7,8,12,.5); }
+  #cpTip {
+    position:absolute; top:4px; right:6px; font-size:.66rem; color:var(--dim);
+    font-variant-numeric:tabular-nums; pointer-events:none; text-align:right; line-height:1.3;
+  }
+  .fine { font-size:.62rem; color:#4a4f61; line-height:1.45; margin-top:.7rem; border-top:1px solid var(--border); padding-top:.5rem; }
+
+  /* ---------- overlays on the flow ---------- */
+  #probe {
+    position:fixed; z-index:5; pointer-events:none; display:none;
+    background:var(--glass); border:1px solid var(--border); border-radius:8px;
+    padding:.25rem .5rem; font-size:.7rem; color:var(--fg); font-variant-numeric:tabular-nums;
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); white-space:nowrap;
+  }
+  .callout {
+    position:fixed; z-index:4; max-width:230px; pointer-events:none;
+    background:var(--glass); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    border:1px solid var(--border); border-left:2px solid var(--accent); border-radius:10px;
+    padding:.45rem .6rem; font-size:.72rem; line-height:1.4; color:var(--fg);
+    opacity:0; transition:opacity .35s;
+  }
+  .callout em { color:var(--teal); font-style:normal; font-weight:600; }
+  .callout.myth { border-left-color:var(--teal); }
+  .callout.warn { border-left-color:var(--warm); }
+  body.info-on .callout.base { opacity:1; }
+  body.info-on.stalled .callout.on-stall { opacity:1; }
+  body.info-on.water .callout.on-water { opacity:1; }
+
+  #stallflash {
+    position:fixed; z-index:5; pointer-events:none; display:none;
+    font-size:1.6rem; font-weight:700; letter-spacing:.14em; color:var(--warm);
+    text-shadow:0 0 18px rgba(255,143,110,.5); transform:translate(-50%,-50%);
+    animation:stallpulse .7s ease-in-out infinite;
+  }
+  body.stalled #stallflash { display:block; }
+  @keyframes stallpulse { 0%,100%{opacity:.55} 50%{opacity:1} }
+
+  /* ---------- mobile: bottom sheet ---------- */
+  @media (max-width:760px) {
+    header { padding:.9rem 1rem; }
+    h1 { font-size:1.05rem; }
+    .tagline { display:none; }
+    #panel {
+      top:auto; right:0; left:0; bottom:0; width:auto; border-radius:16px 16px 0 0;
+      max-height:72vh; transform:translateY(calc(100% - 3.4rem));
+      transition:transform .28s ease; padding-top:0;
+    }
+    #panel.open { transform:none; }
+    #sheetHandle {
+      display:flex; align-items:center; justify-content:space-between; gap:.7rem;
+      width:100%; background:none; border:none; color:var(--fg); cursor:pointer;
+      padding:.9rem 0 .7rem; font:inherit; font-size:.8rem;
+      position:sticky; top:0; background:transparent;
+    }
+    #sheetHandle .grab { width:2.2rem; height:4px; border-radius:2px; background:var(--border); margin:0 auto; }
+    #sheetHandle .mini { color:var(--dim); font-variant-numeric:tabular-nums; white-space:nowrap; }
+    #sheetHandle .mini b { color:var(--fg); font-weight:600; }
+    .callout { max-width:180px; font-size:.66rem; }
+  }
+</style>
+</head>
+<body class="info-on">
+
+<header>
+  <div>
+    <h1><b>aero</b> · <a href="https://lab.corentinbel.com">lab.corentinbel.com</a>
+      <span class="tagline">how things fly — 2D potential-flow intuition, not CFD</span>
+    </h1>
+  </div>
+  <a href="https://corentinbel.com">← home</a>
+</header>
+
+<canvas id="flow"></canvas>
+<div id="probe"></div>
+<div id="stallflash">STALL!</div>
+
+<div class="callout base" id="coTop">
+  air over the top travels <em>faster</em> → lower pressure → the wing is <em>sucked upward</em>, not pushed from below
+</div>
+<div class="callout base myth" id="coMyth">
+  <em>myth check:</em> the two parcels do <em>not</em> reunite at the trailing edge — “equal transit time” is false; the top air arrives <em>earlier</em>
+</div>
+<div class="callout on-stall warn" id="coStall">
+  <em>stall</em> = the flow gives up following the curve — lift collapses, drag explodes
+</div>
+<div class="callout on-water" id="coWater">
+  water is <em>~840× denser</em> than air: the same lift needs a tiny foil at walking-pace speed — that’s why a wing-foil front wing is pocket-sized next to a glider wing
+</div>
+
+<aside id="panel">
+  <button id="sheetHandle" aria-expanded="false">
+    <span class="mini">Cl <b id="roClMini">–</b></span>
+    <span class="grab"></span>
+    <span class="mini">L/D <b id="roLDMini">–</b> · controls ▾</span>
+  </button>
+
+  <h2>Readouts <span style="text-transform:none;letter-spacing:0;">(chord 1 m, per m span)</span></h2>
+  <div id="readouts">
+    <div class="ro"><span class="k">Cl</span><span class="v" id="roCl">–</span></div>
+    <div class="ro" id="roLD"><span class="k">L/D</span><span class="v" id="roLDv">–</span></div>
+    <div class="ro"><span class="k">lift L′</span><span class="v" id="roLift">–</span></div>
+    <div class="ro"><span class="k">drag D′</span><span class="v" id="roDrag">–</span></div>
+    <div class="ro"><span class="k">ρ</span><span class="v" id="roRho">–</span></div>
+    <div class="ro"><span class="k">½ρv²</span><span class="v" id="roQ">–</span></div>
+    <div class="ro" id="roArea-row"><span class="k">wing area to hold 80 kg</span><span class="v" id="roArea">–</span></div>
+  </div>
+
+  <h2>Pressure along the chord</h2>
+  <div id="cpwrap">
+    <canvas id="cpplot"></canvas>
+    <div id="cpTip"></div>
+  </div>
+
+  <h2>Controls</h2>
+  <div class="ctl"><label for="aoa">angle of attack <output id="aoaVal">6°</output></label>
+    <input type="range" id="aoa" min="-5" max="20" step="0.5" value="6"></div>
+  <div class="ctl"><label for="camber">camber <output id="camberVal">4%</output></label>
+    <input type="range" id="camber" min="0" max="8" step="0.5" value="4"></div>
+  <div class="ctl"><label for="thick">thickness <output id="thickVal">12%</output></label>
+    <input type="range" id="thick" min="4" max="18" step="0.5" value="12"></div>
+  <div class="ctl"><label for="speed">flow speed <output id="speedVal">30 m/s</output></label>
+    <input type="range" id="speed" min="1" max="80" step="1" value="30"></div>
+
+  <h2>Fluid</h2>
+  <div class="seg" role="group" aria-label="fluid">
+    <button id="fluidAir" aria-pressed="true">✈️ air</button>
+    <button id="fluidWater" aria-pressed="false">🌊 water</button>
+  </div>
+  <div class="fluid-note">ρ<sub>water</sub> / ρ<sub>air</sub> ≈ 840 — same field shape, wildly different forces</div>
+
+  <h2>Presets</h2>
+  <div class="presets">
+    <button id="presetAirliner">airliner wing</button>
+    <button id="presetAero">aerobatic (sym.)</button>
+    <button id="presetFoil">wing-foil front wing</button>
+    <button id="presetPlate">flat plate</button>
+  </div>
+
+  <h2>Explain</h2>
+  <button id="infoToggle" aria-pressed="true">ℹ️ annotations: on</button>
+
+  <div class="fine">
+    2D potential-flow intuition, <b>not CFD</b>. Field = uniform flow + thin-airfoil bound
+    circulation (5 vortices on the camber line, Γ = π·U·c·(α + 2h/c)) + thickness sources.
+    Cl = 2π(α + 2h/c), faded smoothly past ~15° effective AoA (post-stall floor 0.3).
+    Drag = profile + induced (AR 8, e 0.85) + separation term. Lift/drag magnitudes come
+    from these formulas at chord 1 m, per metre of span. Particles colour by local speed:
+    fast = low pressure (Bernoulli).
+  </div>
+</aside>
+
+<script>
+"use strict";
+/* ================= parameters & state ================= */
+const CHORD = 1.0;                     // m — all readouts assume this
+const RHO = { air: 1.225, water: 1025 };
+const G80 = 80 * 9.81;                 // weight to hold, N
+
+const state = {
+  aoaDeg: 6, camber: 0.04, thick: 0.12, U: 30, fluid: "air", info: true,
+};
+
+/* ================= DOM ================= */
+const $ = (id) => document.getElementById(id);
+const flowCv = $("flow"), fx = flowCv.getContext("2d");
+const cpCv = $("cpplot"), cpx = cpCv.getContext("2d");
+const probe = $("probe");
+
+let W = 0, H = 0, DPR = 1;
+let cx = 0, cy = 0, chordPx = 240, pxPerM = 240;
+
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  flowCv.width = Math.round(W * DPR); flowCv.height = Math.round(H * DPR);
+  flowCv.style.width = W + "px"; flowCv.style.height = H + "px";
+  fx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const mobile = W <= 760;
+  cx = mobile ? W * 0.46 : W * 0.40;
+  cy = mobile ? H * 0.40 : H * 0.47;
+  chordPx = Math.max(140, Math.min(Math.min(W, H) * 0.42, 340));
+  pxPerM = chordPx / CHORD;
+  const r = cpCv.getBoundingClientRect();
+  cpCv.width = Math.round(r.width * DPR); cpCv.height = Math.round(r.height * DPR);
+  cpx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  fx.fillStyle = "#07080c"; fx.fillRect(0, 0, W, H);
+  placeCallouts();
+}
+window.addEventListener("resize", resize);
+
+/* ================= aero model ================= */
+// thin-airfoil: Cl = 2π(α + 2h/c) for a parabolic camber line; Γ = ½ U c Cl.
+// stall: smooth sigmoid fade of circulation past ~15° effective AoA, floor 0.3.
+const NV = 5;
+const vortT = [0.05, 0.20, 0.40, 0.60, 0.80];
+const vortW = [0.35, 0.25, 0.18, 0.13, 0.09];       // sums to 1 — front-loaded like thin-airfoil loading
+const NSRC = 10;
+const vx = new Float64Array(NV), vy = new Float64Array(NV), vg = new Float64Array(NV);
+const sx = new Float64Array(NSRC), sy = new Float64Array(NSRC), sq = new Float64Array(NSRC);
+const VCORE2 = Math.pow(0.06 * CHORD, 2), SCORE2 = Math.pow(0.045 * CHORD, 2);
+
+let cosA = 1, sinA = 0, aEff = 0, aEffDeg = 0, stallF = 1, clFac = 1;
+let Cl = 0, Cd = 0, Gamma = 0, q = 0, Lp = 0, Dp = 0;
+
+function ytM(t) { // NACA-4 half-thickness (closed TE), metres
+  if (t <= 0 || t >= 1) return 0;
+  return 5 * state.thick * (0.2969 * Math.sqrt(t) - 0.1260 * t - 0.3516 * t * t
+       + 0.2843 * t * t * t - 0.1036 * t * t * t * t) * CHORD;
+}
+function camY(t) { return 4 * state.camber * t * (1 - t) * CHORD; } // parabolic camber, metres (up)
+
+// foil point in world metres (y DOWN, foil-centred); nOff = extra offset along "up" normal
+function foilPt(t, nOff, out) {
+  const xl = (t - 0.45) * CHORD;
+  const off = camY(t) + nOff;
+  out[0] = xl * cosA + off * sinA;
+  out[1] = xl * sinA - off * cosA;
+}
+const _p = [0, 0];
+
+function rebuildModel() {
+  const A = state.aoaDeg * Math.PI / 180;
+  cosA = Math.cos(A); sinA = Math.sin(A);
+  aEff = A + 2 * state.camber;
+  aEffDeg = aEff * 180 / Math.PI;
+  stallF = 1 / (1 + Math.exp((Math.abs(aEffDeg) - 16.5) / 1.2));
+  clFac = 0.3 + 0.7 * stallF;
+  Cl = 2 * Math.PI * aEff * clFac;
+  Gamma = 0.5 * state.U * CHORD * Cl;      // = π U c (α+2h/c) · clFac
+  const rho = RHO[state.fluid];
+  q = 0.5 * rho * state.U * state.U;
+  Lp = q * CHORD * Cl;
+  const cd0 = 0.007 + 0.03 * state.thick;
+  const cdi = Cl * Cl / (Math.PI * 8 * 0.85);
+  const cdsep = (1 - stallF) * 1.9 * Math.sin(aEff) * Math.sin(aEff);
+  Cd = cd0 + cdi + cdsep;
+  Dp = q * CHORD * Cd;
+  for (let i = 0; i < NV; i++) {
+    foilPt(vortT[i], 0, _p); vx[i] = _p[0]; vy[i] = _p[1];
+    vg[i] = Gamma * vortW[i];
+  }
+  for (let j = 0; j < NSRC; j++) {
+    const t0 = j / NSRC, t1 = (j + 1) / NSRC, tm = (t0 + t1) / 2;
+    foilPt(tm, 0, _p); sx[j] = _p[0]; sy[j] = _p[1];
+    sq[j] = state.U * 2 * (ytM(t1) - ytM(t0));   // source strength = U · dT/dx per segment
+  }
+}
+
+/* shed vortices for the separated wake */
+const shed = [];
+let shedTimer = 0, shedSign = 1;
+
+// velocity at world point (metres, y down); returns [u, v] in m/s
+function fieldVel(xm, ym, out) {
+  let u = state.U, v = 0;
+  for (let i = 0; i < NV; i++) {
+    const dx = xm - vx[i], dy = ym - vy[i];
+    const k = vg[i] / (6.283185307 * (dx * dx + dy * dy + VCORE2));
+    u -= k * dy; v += k * dx;
+  }
+  for (let j = 0; j < NSRC; j++) {
+    const dx = xm - sx[j], dy = ym - sy[j];
+    const k = sq[j] / (6.283185307 * (dx * dx + dy * dy + SCORE2));
+    u += k * dx; v += k * dy;
+  }
+  for (let s = 0; s < shed.length; s++) {
+    const o = shed[s];
+    const dx = xm - o.x, dy = ym - o.y;
+    const k = o.g / (6.283185307 * (dx * dx + dy * dy + VCORE2 * 4));
+    u -= k * dy; v += k * dx;
+  }
+  out[0] = u; out[1] = v;
+}
+
+// local foil coords: returns [chordwise t, normal offset in metres]
+function toLocal(xm, ym, out) {
+  const xl = xm * cosA + ym * sinA;
+  const off = xm * sinA - ym * cosA;
+  out[0] = xl / CHORD + 0.45; out[1] = off;
+}
+function insideFoil(xm, ym) {
+  toLocal(xm, ym, _p);
+  const t = _p[0];
+  if (t <= 0 || t >= 1) return false;
+  return Math.abs(_p[1] - camY(t)) < ytM(t) + 0.008;
+}
+
+function updateShed(dt) {
+  const sep = 1 - stallF;
+  shedTimer += dt;
+  if (sep > 0.25 && shedTimer > 0.32 && shed.length < 10) {
+    shedTimer = 0; shedSign = -shedSign;
+    foilPt(0.35, ytM(0.35) + 0.06 * CHORD, _p);
+    shed.push({ x: _p[0], y: _p[1],
+      g: shedSign * 0.5 * Math.PI * state.U * CHORD * Math.abs(aEff) * sep, age: 0 });
+  }
+  const visM = (90 + 1.8 * state.U) / pxPerM;   // visual freestream speed in m/s — match the particles
+  for (let i = shed.length - 1; i >= 0; i--) {
+    const o = shed[i];
+    o.x += 0.78 * visM * dt * (0.9 + 0.2 * Math.random());
+    o.y += (Math.random() - 0.5) * 0.15 * visM * dt;
+    o.age += dt; o.g *= (1 - 0.6 * dt);
+    if (o.age > 2.4 || o.x > (W - cx) / pxPerM + 0.5) shed.splice(i, 1);
+  }
+}
+
+/* ================= particles ================= */
+let parts = [];
+function seedParticle(p, intoWake) {
+  if (intoWake) {                 // chaotic injection behind a stalled foil
+    foilPt(0.55, ytM(0.55) + (0.05 + Math.random() * 0.45) * CHORD, _p);
+    p.x = cx + _p[0] * pxPerM + Math.random() * 0.6 * chordPx;
+    p.y = cy + _p[1] * pxPerM + (Math.random() - 0.5) * 0.3 * chordPx;
+  } else {
+    p.x = -10 - Math.random() * 40;
+    p.y = Math.random() * H;
+  }
+  p.px = p.x; p.py = p.y;
+  p.age = 0; p.max = 4 + Math.random() * 8;
+}
+function initParticles() {
+  const n = Math.max(700, Math.min(2600, Math.round(W * H / 900)));
+  parts = [];
+  for (let i = 0; i < n; i++) {
+    const p = { x: Math.random() * W, y: Math.random() * H, px: 0, py: 0, age: Math.random() * 6, max: 4 + Math.random() * 8 };
+    p.px = p.x; p.py = p.y;
+    parts.push(p);
+  }
+}
+
+/* speed → colour: 14 buckets, slow dim blue → accent → teal → near-white */
+const STOPS = [[0.45, 42, 56, 92], [1.0, 91, 147, 239], [1.35, 140, 238, 221], [1.75, 240, 255, 250]];
+function speedColor(sr) {
+  let a = STOPS[0], b = STOPS[STOPS.length - 1];
+  for (let i = 0; i < STOPS.length - 1; i++)
+    if (sr >= STOPS[i][0] && sr <= STOPS[i + 1][0]) { a = STOPS[i]; b = STOPS[i + 1]; break; }
+  const f = Math.max(0, Math.min(1, (sr - a[0]) / (b[0] - a[0] || 1)));
+  const r = Math.round(a[1] + (b[1] - a[1]) * f), g = Math.round(a[2] + (b[2] - a[2]) * f),
+        bl = Math.round(a[3] + (b[3] - a[3]) * f);
+  return `rgba(${r},${g},${bl},0.75)`;
+}
+const NB = 14, bucketCols = [], bucketSegs = [];
+for (let i = 0; i < NB; i++) { bucketCols.push(speedColor(0.45 + (i + 0.5) / NB * 1.3)); bucketSegs.push([]); }
+
+const _v = [0, 0];
+function stepParticles(dt) {
+  const visPx = 90 + 1.8 * state.U;              // freestream visual speed, px/s
+  const sep = 1 - stallF;
+  for (let i = 0; i < NB; i++) bucketSegs[i].length = 0;
+  for (let n = 0; n < parts.length; n++) {
+    const p = parts[n];
+    const xm = (p.x - cx) / pxPerM, ym = (p.y - cy) / pxPerM;
+    fieldVel(xm, ym, _v);
+    const sr = Math.hypot(_v[0], _v[1]) / state.U;
+    p.px = p.x; p.py = p.y;
+    p.x += (_v[0] / state.U) * visPx * dt;
+    p.y += (_v[1] / state.U) * visPx * dt;
+    if (sep > 0.05) {                            // turbulent jitter in the separated wake
+      toLocal(xm, ym, _p);
+      if (_p[0] > 0.35 && _p[0] < 3.2 && Math.abs(_p[1]) < 0.65 * CHORD) {
+        p.x += (Math.random() - 0.5) * sep * visPx * 0.9 * dt;
+        p.y += (Math.random() - 0.5) * sep * visPx * 0.9 * dt;
+      }
+    }
+    p.age += dt;
+    if (p.x > W + 12 || p.x < -60 || p.y < -12 || p.y > H + 12 || p.age > p.max
+        || insideFoil((p.x - cx) / pxPerM, (p.y - cy) / pxPerM)) {
+      seedParticle(p, sep > 0.3 && Math.random() < 0.3);
+      continue;
+    }
+    const b = Math.max(0, Math.min(NB - 1, Math.round((sr - 0.45) / 1.3 * (NB - 1))));
+    bucketSegs[b].push(p.px, p.py, p.x, p.y);
+  }
+}
+
+/* ================= drawing ================= */
+function drawParticles() {
+  fx.fillStyle = "rgba(7,8,12,0.27)";
+  fx.fillRect(0, 0, W, H);
+  fx.lineWidth = 1.1; fx.lineCap = "round";
+  for (let b = 0; b < NB; b++) {
+    const seg = bucketSegs[b];
+    if (!seg.length) continue;
+    fx.strokeStyle = bucketCols[b];
+    fx.beginPath();
+    for (let i = 0; i < seg.length; i += 4) { fx.moveTo(seg[i], seg[i + 1]); fx.lineTo(seg[i + 2], seg[i + 3]); }
+    fx.stroke();
+  }
+}
+
+function drawFoil() {
+  fx.beginPath();
+  for (let i = 0; i <= 40; i++) {
+    const t = i / 40; foilPt(t, ytM(t), _p);
+    const X = cx + _p[0] * pxPerM, Y = cy + _p[1] * pxPerM;
+    if (i === 0) fx.moveTo(X, Y); else fx.lineTo(X, Y);
+  }
+  for (let i = 40; i >= 0; i--) {
+    const t = i / 40; foilPt(t, -ytM(t), _p);
+    fx.lineTo(cx + _p[0] * pxPerM, cy + _p[1] * pxPerM);
+  }
+  fx.closePath();
+  fx.fillStyle = "#10141f"; fx.fill();
+  fx.strokeStyle = "rgba(138,143,163,0.85)"; fx.lineWidth = 1.3; fx.stroke();
+}
+
+function arrow(x0, y0, x1, y1, color, label, value) {
+  const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy);
+  if (len < 6) return;
+  const ux = dx / len, uy = dy / len;
+  fx.strokeStyle = color; fx.fillStyle = color; fx.lineWidth = 2.4;
+  fx.beginPath(); fx.moveTo(x0, y0); fx.lineTo(x1 - ux * 8, y1 - uy * 8); fx.stroke();
+  fx.beginPath();
+  fx.moveTo(x1, y1);
+  fx.lineTo(x1 - ux * 9 - uy * 4.5, y1 - uy * 9 + ux * 4.5);
+  fx.lineTo(x1 - ux * 9 + uy * 4.5, y1 - uy * 9 - ux * 4.5);
+  fx.closePath(); fx.fill();
+  fx.font = "600 12px ui-sans-serif,system-ui,sans-serif";
+  fx.fillText(`${label} ${value}`, x1 + ux * 6 + 6, y1 + uy * 6 + 4);
+}
+
+function fmtForce(n) {
+  const a = Math.abs(n);
+  if (a >= 10000) return (n / 1000).toFixed(1) + " kN";
+  if (a >= 100) return Math.round(n) + " N";
+  return n.toFixed(1) + " N";
+}
+
+function drawArrows() {
+  const lLen = Math.min(60 * Math.log10(1 + Math.abs(Lp) / 10), H * 0.28);
+  const dLen = Math.min(60 * Math.log10(1 + Math.abs(Dp) / 10), W * 0.25);
+  const sgn = Lp >= 0 ? -1 : 1;                 // lift up = −y on screen
+  arrow(cx, cy, cx, cy + sgn * lLen, "#6ea8ff", "L′", fmtForce(Math.abs(Lp)) + "/m");
+  arrow(cx, cy, cx + dLen, cy, "#ff8f6e", "D′", fmtForce(Math.abs(Dp)) + "/m");
+}
+
+/* ---------- Cp mini-plot ---------- */
+const NCP = 36;
+const cpU = new Float64Array(NCP), cpL = new Float64Array(NCP), cpT = new Float64Array(NCP);
+let cpHover = -1;
+function sampleCp() {
+  for (let k = 0; k < NCP; k++) {
+    const t = 0.03 + 0.94 * k / (NCP - 1);
+    cpT[k] = t;
+    const off = ytM(t) + 0.05 * CHORD;
+    foilPt(t, off, _p); fieldVel(_p[0], _p[1], _v);
+    cpU[k] = 1 - (_v[0] * _v[0] + _v[1] * _v[1]) / (state.U * state.U);
+    foilPt(t, -off, _p); fieldVel(_p[0], _p[1], _v);
+    cpL[k] = 1 - (_v[0] * _v[0] + _v[1] * _v[1]) / (state.U * state.U);
+  }
+}
+function drawCp() {
+  const w = cpCv.width / DPR, h = cpCv.height / DPR;
+  cpx.clearRect(0, 0, w, h);
+  const CPMIN = -3.2, CPMAX = 1.15;             // −Cp plotted upward (suction up)
+  const yOf = (cp) => {
+    const c = Math.max(CPMIN, Math.min(CPMAX, cp));
+    return 6 + (h - 12) * (c - CPMIN) / (CPMAX - CPMIN);
+  };
+  const xOf = (t) => 8 + (w - 16) * t;
+  const y0 = yOf(0);
+  cpx.strokeStyle = "rgba(138,143,163,0.3)"; cpx.lineWidth = 1;
+  cpx.beginPath(); cpx.moveTo(6, y0); cpx.lineTo(w - 6, y0); cpx.stroke();
+  cpx.fillStyle = "#8a8fa3"; cpx.font = "9px ui-sans-serif,system-ui,sans-serif";
+  cpx.fillText("−Cp ↑ suction", 10, 10);
+  const line = (arr, col) => {
+    cpx.strokeStyle = col; cpx.lineWidth = 2;
+    cpx.beginPath();
+    for (let k = 0; k < NCP; k++) {
+      const X = xOf(cpT[k]), Y = yOf(arr[k]);
+      if (k === 0) cpx.moveTo(X, Y); else cpx.lineTo(X, Y);
+    }
+    cpx.stroke();
+  };
+  line(cpU, "#5b93ef"); line(cpL, "#21a487");
+  cpx.fillStyle = "#5b93ef"; cpx.fillRect(10, h - 12, 7, 3);
+  cpx.fillStyle = "#8a8fa3"; cpx.fillText("upper", 20, h - 8);
+  cpx.fillStyle = "#21a487"; cpx.fillRect(56, h - 12, 7, 3);
+  cpx.fillStyle = "#8a8fa3"; cpx.fillText("lower", 66, h - 8);
+  if (cpHover >= 0 && cpHover < NCP) {
+    const X = xOf(cpT[cpHover]);
+    cpx.strokeStyle = "rgba(232,230,223,0.35)";
+    cpx.beginPath(); cpx.moveTo(X, 4); cpx.lineTo(X, h - 4); cpx.stroke();
+    $("cpTip").textContent =
+      `x/c ${cpT[cpHover].toFixed(2)} · up ${cpU[cpHover].toFixed(2)} · low ${cpL[cpHover].toFixed(2)}`;
+  } else $("cpTip").textContent = "";
+}
+cpCv.addEventListener("pointermove", (e) => {
+  const r = cpCv.getBoundingClientRect();
+  const t = ((e.clientX - r.left) - 8) / (r.width - 16);
+  cpHover = Math.max(0, Math.min(NCP - 1, Math.round(t * (NCP - 1))));
+});
+cpCv.addEventListener("pointerleave", () => { cpHover = -1; });
+
+/* ---------- readouts / annotations ---------- */
+function fmtArea(s) {
+  if (!isFinite(s) || s <= 0) return "—";
+  if (s >= 10) return s.toFixed(0) + " m²";
+  if (s >= 1) return s.toFixed(1) + " m²";
+  return s.toFixed(3) + " m²";
+}
+function updateReadouts() {
+  $("roCl").textContent = Cl.toFixed(2);
+  $("roLDv").textContent = (Cl / Cd).toFixed(1);
+  $("roLift").textContent = fmtForce(Lp) + "/m";
+  $("roDrag").textContent = fmtForce(Dp) + "/m";
+  $("roRho").textContent = RHO[state.fluid] + " kg/m³";
+  $("roQ").textContent = fmtForce(q).replace(" N", " Pa").replace(" kN", " kPa");
+  $("roArea").textContent = Cl > 0.02 ? fmtArea(G80 / (q * Cl)) : "— (no upward lift)";
+  $("roClMini").textContent = Cl.toFixed(2);
+  $("roLDMini").textContent = (Cl / Cd).toFixed(0);
+  document.body.classList.toggle("stalled", aEffDeg > 15);
+  document.body.classList.toggle("water", state.fluid === "water");
+}
+function placeCallouts() {
+  const put = (id, x, y, tx, ty) => {
+    const el = $(id);
+    el.style.left = Math.max(8, Math.min(W - 190, x)) + "px";
+    el.style.top = Math.max(58, Math.min(H - 90, y)) + "px";
+    el.style.transform = `translate(${tx}, ${ty})`;
+  };
+  put("coTop", cx - chordPx * 0.05, cy - chordPx * 0.52, "-50%", "-100%");
+  put("coMyth", cx + chordPx * 0.72, cy + chordPx * 0.34, "0", "0");
+  put("coStall", cx + chordPx * 0.62, cy - chordPx * 0.55, "0", "-100%");
+  put("coWater", cx - chordPx * 0.95, cy + chordPx * 0.42, "-100%", "0");
+  const sf = $("stallflash");
+  sf.style.left = cx + "px"; sf.style.top = (cy - chordPx * 0.75) + "px";
+}
+
+/* ---------- probe (hover the flow) ---------- */
+flowCv.addEventListener("pointermove", (e) => {
+  const xm = (e.clientX - cx) / pxPerM, ym = (e.clientY - cy) / pxPerM;
+  fieldVel(xm, ym, _v);
+  const sr = Math.hypot(_v[0], _v[1]) / state.U;
+  const cp = 1 - sr * sr;
+  probe.style.display = "block";
+  probe.style.left = (e.clientX + 14) + "px";
+  probe.style.top = (e.clientY + 14) + "px";
+  probe.textContent = `${sr.toFixed(2)}× flow speed · Cp ${cp.toFixed(2)}`;
+});
+flowCv.addEventListener("pointerleave", () => { probe.style.display = "none"; });
+
+/* ================= controls ================= */
+function syncUI() {
+  $("aoa").value = state.aoaDeg; $("aoaVal").textContent = state.aoaDeg + "°";
+  $("camber").value = state.camber * 100; $("camberVal").textContent = (state.camber * 100).toFixed(1).replace(/\.0$/, "") + "%";
+  $("thick").value = state.thick * 100; $("thickVal").textContent = (state.thick * 100).toFixed(1).replace(/\.0$/, "") + "%";
+  $("speed").value = state.U; $("speedVal").textContent = state.U + " m/s";
+  $("fluidAir").setAttribute("aria-pressed", state.fluid === "air");
+  $("fluidWater").setAttribute("aria-pressed", state.fluid === "water");
+}
+$("aoa").addEventListener("input", (e) => { state.aoaDeg = +e.target.value; syncUI(); });
+$("camber").addEventListener("input", (e) => { state.camber = +e.target.value / 100; syncUI(); });
+$("thick").addEventListener("input", (e) => { state.thick = +e.target.value / 100; syncUI(); });
+$("speed").addEventListener("input", (e) => { state.U = +e.target.value; syncUI(); });
+$("fluidAir").addEventListener("click", () => { state.fluid = "air"; syncUI(); });
+$("fluidWater").addEventListener("click", () => { state.fluid = "water"; syncUI(); });
+
+const PRESETS = {
+  presetAirliner: { aoaDeg: 3, camber: 0.04, thick: 0.12, U: 68, fluid: "air" },
+  presetAero:     { aoaDeg: 6, camber: 0.00, thick: 0.12, U: 55, fluid: "air" },
+  presetFoil:     { aoaDeg: 5, camber: 0.06, thick: 0.10, U: 6,  fluid: "water" },
+  presetPlate:    { aoaDeg: 8, camber: 0.00, thick: 0.04, U: 25, fluid: "air" },
+};
+for (const id of Object.keys(PRESETS)) {
+  $(id).addEventListener("click", () => { Object.assign(state, PRESETS[id]); syncUI(); });
+}
+$("infoToggle").addEventListener("click", () => {
+  state.info = !state.info;
+  $("infoToggle").setAttribute("aria-pressed", state.info);
+  $("infoToggle").textContent = "ℹ️ annotations: " + (state.info ? "on" : "off");
+  document.body.classList.toggle("info-on", state.info);
+});
+$("sheetHandle").addEventListener("click", () => {
+  const open = $("panel").classList.toggle("open");
+  $("sheetHandle").setAttribute("aria-expanded", open);
+  resize();
+});
+
+/* ================= main loop ================= */
+let lastT = 0;
+function tick(ts) {
+  const dt = Math.min((ts - lastT) / 1000 || 0.016, 0.05);
+  lastT = ts;
+  rebuildModel();
+  updateShed(dt);
+  stepParticles(dt);
+  drawParticles();
+  drawFoil();
+  drawArrows();
+  sampleCp();
+  drawCp();
+  updateReadouts();
+  requestAnimationFrame(tick);
+}
+
+resize();
+initParticles();
+syncUI();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
