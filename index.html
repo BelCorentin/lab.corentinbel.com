@@ -4,312 +4,702 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>lab · Corentin Bel</title>
-<meta name="description" content="Experiments and brain visualisations.">
+<meta name="description" content="Experiments hub — one painted dreamscape where every corner is a door: foils, flight, space, brains, money.">
 <style>
-  :root { --bg:#07080c; --fg:#e8e6df; --dim:#8a8fa3; --accent:#6ea8ff; --teal:#8ceedd; --border:#232b3a; }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  html, body { height:100%; }
-  body { background:var(--bg); color:var(--fg); font-family:ui-sans-serif,system-ui,sans-serif; overflow:hidden; }
-  canvas#c { position:fixed; inset:0; display:block; }
-  header {
-    position:fixed; top:0; left:0; right:0; z-index:2;
-    display:flex; justify-content:space-between; align-items:baseline;
-    padding:1.4rem 2rem; pointer-events:none;
+  :root {
+    --bg:#07080c; --panel:#0a0e14; --fg:#e8e6df; --dim:#8a8fa3;
+    --accent:#6ea8ff; --purple:#b48ce8; --teal:#38a3a5; --teal2:#8ceedd;
+    --border:#232b3a; --radius:12px;
   }
-  header a { pointer-events:auto; color:var(--dim); text-decoration:none; font-size:.9rem; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:var(--bg); color:var(--fg);
+    font-family:ui-sans-serif,system-ui,sans-serif;
+  }
+  a { color:var(--accent); }
+  header {
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:1.4rem 2rem;
+  }
+  header a { color:var(--dim); text-decoration:none; font-size:.9rem; }
   header a:hover { color:var(--accent); }
   h1 { font-weight:300; font-size:1.4rem; letter-spacing:.06em; }
   h1 b { font-weight:600; }
-  #panel {
-    position:fixed; bottom:0; left:0; right:0; z-index:2;
-    padding:1.2rem 2rem 1.4rem; pointer-events:none;
+
+  /* ---------- painted scene ---------- */
+  #stage { max-width:1400px; margin:0 auto; padding:0 1rem; }
+  #scene { width:100%; height:auto; display:block; border-radius:var(--radius); }
+  #stage .hint {
+    color:#4a4f61; font-size:.8rem; text-align:center; margin:.6rem 0 0;
   }
-  #panel .hint { color:#4a4f61; font-size:.8rem; text-align:right; margin-bottom:.6rem; }
-  #experiments h2 { font-size:.8rem; color:var(--dim); font-weight:500; text-transform:uppercase; letter-spacing:.12em; margin-bottom:.6rem; }
-  #cards {
-    display:grid; gap:.7rem;
-    grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
-    max-width:980px;
+  .zone { cursor:pointer; outline:none; }
+  #wavef, #wavem, #waven, #bird, #shoot, #spray { pointer-events:none; }
+  .hit { fill:#fff; opacity:0; pointer-events:all; }
+  .zone:focus-visible .hit { opacity:.1; stroke:var(--accent); stroke-width:2; }
+  .zone:hover .hit { opacity:.04; }
+
+  /* streams (aero) — JS drives dashoffset; CSS handles intensity */
+  .stream { stroke:var(--accent); stroke-width:1.4; fill:none; opacity:.28;
+            stroke-dasharray:10 16; transition:opacity .4s; }
+  .zone-aero:hover .stream, .zone-aero:focus .stream { opacity:.85; }
+
+  /* observatory telescope swing */
+  #scope { transform-box:fill-box; transform-origin:30% 85%;
+           transition:transform .9s ease; }
+  .zone-space:hover #scope, .zone-space:focus #scope { transform:rotate(-26deg); }
+
+  /* city windows light up */
+  .win { fill:#39415c; opacity:.25; transition:opacity .6s, fill .6s; }
+  .zone-city:hover .win, .zone-city:focus .win { opacity:.95; fill:#ffd98a; }
+  .coin { fill:#ffd98a; opacity:0; }
+  .zone-city:hover .coin, .zone-city:focus .coin {
+    animation:glint 1.6s ease-in-out infinite alternate;
   }
-  .card {
-    pointer-events:auto; display:block; text-decoration:none; color:var(--fg);
-    background:rgba(13,16,24,.72); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
-    border:1px solid var(--border); border-radius:12px;
-    padding:.8rem .95rem; transition:border-color .18s ease, transform .18s ease;
+  @keyframes glint { from { opacity:.05; } to { opacity:.9; } }
+
+  /* lighthouse lantern */
+  #lanternGlow { opacity:.5; transition:opacity .5s; }
+  .zone-brain:hover #lanternGlow, .zone-brain:focus #lanternGlow { opacity:1; }
+  .neu { fill:var(--teal2); }
+  .axon { stroke:var(--teal); stroke-width:.8; opacity:.4; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .zone-city:hover .coin, .zone-city:focus .coin { animation:none; opacity:.8; }
+    #scope { transition:none; }
+    .win { transition:none; }
   }
-  a.card:hover { border-color:var(--teal); transform:translateY(-2px); }
-  .card .kicker { font-size:.62rem; text-transform:uppercase; letter-spacing:.14em; color:var(--dim); margin-bottom:.3rem; }
-  .card .title { font-size:.95rem; font-weight:600; margin-bottom:.15rem; }
-  .card .sub { font-size:.78rem; color:#5a5f73; }
-  .card.soon { opacity:.55; }
-  @media (max-height:600px) { #panel .hint { display:none; } }
+
+  /* ---------- floating label chip ---------- */
+  #chip {
+    position:fixed; z-index:10; max-width:280px;
+    background:rgba(13,16,24,.72); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    border:1px solid var(--border); border-radius:var(--radius);
+    padding:.7rem .85rem; pointer-events:none;
+  }
+  #chip.pinned { pointer-events:auto; }
+  #chip .ct { font-size:.95rem; font-weight:600; margin-bottom:.15rem; }
+  #chip .cd { font-size:.78rem; color:var(--dim); }
+  #chip .crow {
+    display:block; text-decoration:none; color:var(--fg);
+    border:1px solid var(--border); border-radius:8px;
+    padding:.5rem .6rem; margin-top:.5rem; transition:border-color .18s;
+  }
+  #chip .crow:hover, #chip .crow:focus { border-color:var(--teal2); }
+  #chip .crow b { display:block; font-size:.85rem; font-weight:600; }
+  #chip .crow span { display:block; font-size:.72rem; color:var(--dim); margin-top:.1rem; }
+
+  /* ---------- fallback list ---------- */
+  #fallback { max-width:1400px; margin:1.8rem auto 3rem; padding:0 1rem; }
+  #fallback h2 {
+    font-size:.8rem; color:var(--dim); font-weight:500;
+    text-transform:uppercase; letter-spacing:.12em; margin-bottom:.6rem;
+  }
+  #fallback ul {
+    list-style:none; display:grid; gap:.7rem;
+    grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
+  }
+  #fallback li a, #fallback li.soon > div {
+    display:block; text-decoration:none; color:var(--fg);
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:.8rem .95rem; transition:border-color .18s, transform .18s;
+  }
+  #fallback li a:hover { border-color:var(--teal2); transform:translateY(-2px); }
+  #fallback .t { font-size:.95rem; font-weight:600; margin-bottom:.15rem; }
+  #fallback .s { font-size:.78rem; color:#5a5f73; }
+  #fallback li.soon { opacity:.55; }
 </style>
 </head>
 <body>
 <header>
   <h1><b>lab</b>.corentinbel.com</h1>
-  <a href="https://corentinbel.com">← home</a>
+  <a href="https://corentinbel.com">&larr; home</a>
 </header>
-<canvas id="c"></canvas>
-<div id="panel">
-  <div class="hint">click the cortex to stimulate it · drag to rotate · scroll to zoom</div>
-  <div id="experiments">
-    <h2>Experiments</h2>
-    <div id="cards">
-      <a class="card" href="foil-rl/">
-        <div class="kicker">reinforcement learning</div>
-        <div class="title">🏄 foil pilot</div>
-        <div class="sub">a stickman learns to wing foil</div>
-      </a>
-      <div class="card">
-        <div class="kicker">you're looking at it</div>
-        <div class="title">🧠 glass brain</div>
-        <div class="sub">click to stimulate</div>
-      </div>
-      <a class="card" href="space/">
-        <div class="kicker">perspective</div>
-        <div class="title">🌌 space</div>
-        <div class="sub">zoom from your hand to the observable universe</div>
-      </a>
-      <a class="card" href="aero/">
-        <div class="kicker">fluid dynamics</div>
-        <div class="title">✈️ how things fly</div>
-        <div class="sub">planes, foils, stalls — potential-flow playground</div>
-      </a>
-      <a class="card" href="foil-designer/">
-        <div class="kicker">hydrofoil design</div>
-        <div class="title">🪽 foil designer</div>
-        <div class="sub">shape a front wing, get star ratings — speed, glide, carve</div>
-      </a>
-      <div class="card soon">
-        <div class="kicker">soon</div>
-        <div class="title">🎬 movie → brain</div>
-        <div class="sub">à la TRIBE</div>
-      </div>
-      <div class="card soon">
-        <div class="kicker">soon</div>
-        <div class="title">🐍 python in the browser</div>
-        <div class="sub">numpy without the install</div>
-      </div>
-    </div>
-  </div>
+
+<main>
+<div id="stage">
+<svg id="scene" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet"
+     aria-label="A dusk dreamscape: a wingfoiler rides a teal sea, a paraglider drifts in the sky, a glowing city sits on the horizon, an observatory watches the stars, and a glass lighthouse pulses like a brain. Each region links to an experiment.">
+  <defs>
+    <linearGradient id="skyg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#07080c"/>
+      <stop offset="55%" stop-color="#0b1220"/>
+      <stop offset="100%" stop-color="#17293c"/>
+    </linearGradient>
+    <linearGradient id="seag" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#17394a"/>
+      <stop offset="100%" stop-color="#0b1a26"/>
+    </linearGradient>
+    <radialGradient id="moong">
+      <stop offset="0%" stop-color="rgba(223,230,245,.5)"/>
+      <stop offset="100%" stop-color="rgba(223,230,245,0)"/>
+    </radialGradient>
+    <radialGradient id="hglow">
+      <stop offset="0%" stop-color="rgba(110,168,255,.16)"/>
+      <stop offset="100%" stop-color="rgba(110,168,255,0)"/>
+    </radialGradient>
+    <radialGradient id="lampg">
+      <stop offset="0%" stop-color="rgba(140,238,221,.85)"/>
+      <stop offset="100%" stop-color="rgba(140,238,221,0)"/>
+    </radialGradient>
+    <linearGradient id="shootg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="rgba(232,230,223,0)"/>
+      <stop offset="100%" stop-color="#e8e6df"/>
+    </linearGradient>
+  </defs>
+
+  <!-- sky + sea base -->
+  <rect x="0" y="0" width="1600" height="560" fill="url(#skyg)"/>
+  <rect x="0" y="520" width="1600" height="380" fill="url(#seag)"/>
+  <ellipse cx="800" cy="525" rx="950" ry="100" fill="url(#hglow)"/>
+
+  <!-- stars: static base (no-JS) + JS twinkle layer -->
+  <g id="starsStatic" fill="#cfd6ea">
+    <circle cx="120" cy="70" r="1.2" opacity=".7"/><circle cx="300" cy="140" r="1" opacity=".5"/>
+    <circle cx="470" cy="60" r="1.4" opacity=".8"/><circle cx="620" cy="120" r="1" opacity=".6"/>
+    <circle cx="760" cy="55" r="1.1" opacity=".7"/><circle cx="900" cy="150" r="1" opacity=".5"/>
+    <circle cx="1010" cy="80" r="1.3" opacity=".8"/><circle cx="1210" cy="200" r="1" opacity=".5"/>
+    <circle cx="1330" cy="90" r="1.2" opacity=".7"/><circle cx="1460" cy="160" r="1" opacity=".6"/>
+    <circle cx="220" cy="230" r="1" opacity=".5"/><circle cx="560" cy="250" r="1" opacity=".5"/>
+    <circle cx="1090" cy="260" r="1" opacity=".5"/><circle cx="1520" cy="60" r="1.3" opacity=".8"/>
+    <circle cx="60" cy="180" r="1" opacity=".5"/><circle cx="840" cy="240" r="1" opacity=".4"/>
+  </g>
+  <g id="stars" fill="#cfd6ea"></g>
+  <line id="shoot" x1="0" y1="0" x2="0" y2="0" stroke="url(#shootg)" stroke-width="2" opacity="0"/>
+
+  <!-- moon -->
+  <circle cx="1180" cy="105" r="52" fill="url(#moong)"/>
+  <circle cx="1180" cy="105" r="22" fill="#dfe6f5" opacity=".85"/>
+  <circle cx="1172" cy="99" r="5" fill="#c4cbe0" opacity=".5"/>
+  <circle cx="1188" cy="112" r="3.5" fill="#c4cbe0" opacity=".4"/>
+
+  <!-- drifting clouds -->
+  <g id="cloud1" opacity=".55" fill="#131a2a">
+    <ellipse cx="0" cy="0" rx="90" ry="18"/><ellipse cx="60" cy="-10" rx="60" ry="14"/><ellipse cx="-55" cy="-6" rx="50" ry="12"/>
+  </g>
+  <g id="cloud2" opacity=".45" fill="#111726">
+    <ellipse cx="0" cy="0" rx="110" ry="20"/><ellipse cx="70" cy="-12" rx="66" ry="15"/>
+  </g>
+  <g id="cloud3" opacity=".5" fill="#141b2c">
+    <ellipse cx="0" cy="0" rx="70" ry="14"/><ellipse cx="-45" cy="-8" rx="46" ry="11"/>
+  </g>
+
+  <!-- ===== city skyline / the money district → invest/ + economy/ ===== -->
+  <g class="zone zone-city" data-zone="city" tabindex="0" role="button"
+     aria-haspopup="true" aria-label="the money district: three sisters (invest) and orders of magnitude (economy)">
+    <g id="blds" fill="#0f1420" stroke="#1a2130" stroke-width="1">
+      <rect class="bld" x="100" y="430" width="40" height="90"/>
+      <rect class="bld" x="150" y="370" width="56" height="150"/>
+      <rect class="bld" x="216" y="410" width="44" height="110"/>
+      <rect class="bld" x="270" y="330" width="64" height="190"/>
+      <rect class="bld" x="344" y="390" width="48" height="130"/>
+      <rect class="bld" x="402" y="360" width="58" height="160"/>
+      <rect class="bld" x="470" y="425" width="40" height="95"/>
+      <rect class="bld" x="520" y="395" width="52" height="125"/>
+    </g>
+    <line x1="302" y1="330" x2="302" y2="302" stroke="#1a2130" stroke-width="2"/>
+    <circle cx="302" cy="300" r="2.5" fill="#6ea8ff" opacity=".8"/>
+    <g id="wins"></g>
+    <circle class="coin" cx="250" cy="345" r="4"/>
+    <circle class="coin" cx="330" cy="308" r="3.5"/>
+    <circle class="coin" cx="440" cy="335" r="4"/>
+    <rect class="hit" x="70" y="330" width="530" height="195"/>
+  </g>
+
+  <!-- ===== sky rider / paraglider → aero/ ===== -->
+  <a class="zone zone-aero" data-zone="aero" href="aero/"
+     aria-label="how things fly — planes, foils, stalls: a potential-flow playground">
+    <g id="streams">
+      <path class="stream" d="M470 150 Q700 128 1120 150"/>
+      <path class="stream" d="M500 202 Q760 178 1150 198"/>
+      <path class="stream" d="M470 252 Q740 234 1120 254"/>
+      <path class="stream" d="M520 302 Q780 288 1100 302"/>
+    </g>
+    <g id="pglider">
+      <path d="M-72 0 Q0 -38 72 0 Q0 -18 -72 0 Z" fill="#b48ce8" opacity=".9"/>
+      <path d="M-48 -14 L-40 -19 M-16 -25 L-10 -27 M18 -25 L24 -23 M46 -16 L52 -12"
+            stroke="#8f6cc2" stroke-width="1.2" fill="none" opacity=".8"/>
+      <line x1="-58" y1="-4" x2="-2" y2="42" stroke="#9aa3c0" stroke-width=".8" opacity=".7"/>
+      <line x1="-24" y1="-20" x2="-1" y2="42" stroke="#9aa3c0" stroke-width=".8" opacity=".7"/>
+      <line x1="24" y1="-20" x2="3" y2="42" stroke="#9aa3c0" stroke-width=".8" opacity=".7"/>
+      <line x1="58" y1="-4" x2="4" y2="42" stroke="#9aa3c0" stroke-width=".8" opacity=".7"/>
+      <circle cx="1" cy="46" r="4" fill="#e8e6df"/>
+      <rect x="-3" y="49" width="8" height="12" rx="3" fill="#232b3a" stroke="#8a8fa3" stroke-width=".6"/>
+    </g>
+    <rect class="hit" x="560" y="80" width="470" height="240"/>
+  </a>
+
+  <!-- ===== observatory hill → space/ ===== -->
+  <a class="zone zone-space" data-zone="space" href="space/"
+     aria-label="space — zoom from your hand to the observable universe">
+    <path d="M1080 900 Q1240 400 1600 430 L1600 900 Z" fill="#0b0f18"/>
+    <rect x="1362" y="428" width="56" height="26" fill="#10141f" stroke="#232b3a" stroke-width="1"/>
+    <path d="M1356 430 A34 34 0 0 1 1424 430 Z" fill="#171d2c" stroke="#232b3a" stroke-width="1"/>
+    <rect x="1386" y="398" width="9" height="34" fill="#0b0e16"/>
+    <line id="scope" x1="1391" y1="426" x2="1373" y2="388" stroke="#8ceedd" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="1391" cy="446" r="2" fill="#ffd98a" opacity=".7"/>
+    <path d="M1200 620 l0 -18 M1194 610 l6 -8 6 8" stroke="#151b28" stroke-width="3" fill="none"/>
+    <path d="M1520 560 l0 -16 M1515 552 l5 -7 5 7" stroke="#151b28" stroke-width="3" fill="none"/>
+    <rect class="hit" x="1230" y="300" width="370" height="270"/>
+  </a>
+
+  <!-- waves (JS animates; static gentle curves otherwise) -->
+  <path id="wavef" d="M0 900 L0 560 Q400 552 800 560 T1600 560 L1600 900 Z" fill="#1c4a58" opacity=".85"/>
+  <path id="wavem" d="M0 900 L0 640 Q400 630 800 640 T1600 640 L1600 900 Z" fill="#266b74" opacity=".8"/>
+
+  <!-- ===== the foil break → foil-designer/ + foil-rl/ ===== -->
+  <g class="zone zone-foil" data-zone="foil" tabindex="0" role="button"
+     aria-haspopup="true" aria-label="the foil break: foil designer and foil pilot">
+    <g id="foiler" transform="translate(820,650)">
+      <g id="mastfoil" opacity="0">
+        <line x1="0" y1="2" x2="0" y2="28" stroke="#8a8fa3" stroke-width="2"/>
+        <path d="M-18 28 Q0 35 18 28 Q0 30 -18 28 Z" fill="#6ea8ff"/>
+        <line x1="0" y1="28" x2="10" y2="28" stroke="#8a8fa3" stroke-width="1.5"/>
+        <path d="M8 26 Q13 29 18 26" stroke="#6ea8ff" stroke-width="1.5" fill="none"/>
+      </g>
+      <rect x="-30" y="-5" width="60" height="7" rx="3.5" fill="#1b2233" stroke="#6ea8ff" stroke-width=".8"/>
+      <path d="M-7 -5 L0 -19 M7 -5 L0 -19" stroke="#e8e6df" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <line x1="0" y1="-19" x2="2" y2="-32" stroke="#e8e6df" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="3.5" cy="-36" r="3.5" fill="#e8e6df"/>
+      <path d="M2 -30 L12 -40 M2 -27 L14 -33" stroke="#e8e6df" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M10 -62 Q30 -76 48 -54 Q32 -60 10 -44 Z" fill="#b48ce8" opacity=".92"/>
+      <line x1="13" y1="-41" x2="16" y2="-52" stroke="#9aa3c0" stroke-width="1"/>
+      <ellipse id="boardwash" cx="-2" cy="2" rx="36" ry="4" fill="#8ceedd" opacity=".25"/>
+    </g>
+    <g id="spray" fill="#bfeef0"></g>
+    <rect class="hit" x="650" y="555" width="330" height="210"/>
+  </g>
+
+  <path id="waven" d="M0 900 L0 730 Q400 720 800 730 T1600 730 L1600 900 Z" fill="#2f8b8d" opacity=".7"/>
+
+  <!-- beach -->
+  <path d="M0 900 L0 858 Q300 832 700 858 Q1000 874 1600 848 L1600 900 Z" fill="#131722"/>
+  <path d="M0 858 Q300 832 700 858 Q1000 874 1600 848" stroke="#232b3a" stroke-width="1" fill="none" opacity=".6"/>
+
+  <!-- ===== glass lighthouse → glass-brain/ ===== -->
+  <a class="zone zone-brain" data-zone="brain" href="glass-brain/"
+     aria-label="glass brain — a brain of light in a glass tower, click to stimulate">
+    <path d="M282 852 L298 640 L326 640 L342 852 Z"
+          fill="rgba(140,238,221,.08)" stroke="#38a3a5" stroke-width="1.5"/>
+    <line x1="292" y1="712" x2="332" y2="712" stroke="#38a3a5" stroke-width=".8" opacity=".5"/>
+    <line x1="288" y1="782" x2="337" y2="782" stroke="#38a3a5" stroke-width=".8" opacity=".5"/>
+    <rect x="294" y="618" width="36" height="22" rx="3" fill="#101722" stroke="#38a3a5" stroke-width="1"/>
+    <circle id="lanternGlow" cx="312" cy="629" r="26" fill="url(#lampg)"/>
+    <circle cx="312" cy="629" r="6" fill="#8ceedd"/>
+    <path d="M296 618 L312 604 L328 618 Z" fill="#101722" stroke="#38a3a5" stroke-width="1"/>
+    <g id="neurons">
+      <line class="axon" x1="300" y1="670" x2="318" y2="700"/>
+      <line class="axon" x1="318" y1="700" x2="304" y2="738"/>
+      <line class="axon" x1="304" y1="738" x2="322" y2="770"/>
+      <line class="axon" x1="322" y1="770" x2="306" y2="808"/>
+      <line class="axon" x1="318" y1="700" x2="326" y2="742"/>
+      <circle class="neu" cx="300" cy="670" r="2.6"/>
+      <circle class="neu" cx="318" cy="700" r="3"/>
+      <circle class="neu" cx="304" cy="738" r="2.4"/>
+      <circle class="neu" cx="326" cy="742" r="2.2"/>
+      <circle class="neu" cx="322" cy="770" r="2.8"/>
+      <circle class="neu" cx="306" cy="808" r="2.4"/>
+    </g>
+    <ellipse cx="312" cy="856" rx="46" ry="6" fill="#0e1119"/>
+    <rect class="hit" x="240" y="590" width="150" height="280"/>
+  </a>
+
+  <!-- occasional bird -->
+  <path id="bird" d="M0 0 q5 -6 10 0 q5 -6 10 0" stroke="#9aa3c0" stroke-width="1.6"
+        fill="none" opacity="0"/>
+</svg>
+<p class="hint">every corner of the painting is a door — hover to peek, click to enter</p>
 </div>
-<script type="importmap">
-{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.js" } }
-</script>
-<script type="module">
-import * as THREE from 'three';
 
-const canvas = document.getElementById('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-camera.position.set(0, 0.4, 3.4);
+<!-- plain fallback: also the no-JS and reduced-motion path -->
+<section id="fallback">
+  <h2>all the doors</h2>
+  <ul>
+    <li><a href="foil-designer/">
+      <div class="t">🪽 foil designer</div>
+      <div class="s">shape a front wing, get star ratings — speed, glide, carve</div>
+    </a></li>
+    <li><a href="foil-rl/">
+      <div class="t">🏄 foil pilot</div>
+      <div class="s">a stickman learns to wing foil</div>
+    </a></li>
+    <li><a href="aero/">
+      <div class="t">✈️ how things fly</div>
+      <div class="s">planes, foils, stalls — potential-flow playground</div>
+    </a></li>
+    <li><a href="space/">
+      <div class="t">🌌 space</div>
+      <div class="s">zoom from your hand to the observable universe</div>
+    </a></li>
+    <li><a href="glass-brain/">
+      <div class="t">🧠 glass brain</div>
+      <div class="s">a brain of light — click to stimulate</div>
+    </a></li>
+    <li><a href="invest/">
+      <div class="t">📈 three sisters</div>
+      <div class="s">how investing grows — three sisters, three paths</div>
+    </a></li>
+    <li><a href="economy/">
+      <div class="t">💶 orders of magnitude</div>
+      <div class="s">french public money, to scale</div>
+    </a></li>
+    <li class="soon"><div>
+      <div class="t">🎬 movie → brain</div>
+      <div class="s">à la TRIBE — soon</div>
+    </div></li>
+    <li class="soon"><div>
+      <div class="t">🐍 python in the browser</div>
+      <div class="s">numpy without the install — soon</div>
+    </div></li>
+  </ul>
+</section>
+</main>
 
-// --- pseudo-noise: layered sines, cheap and dependency-free
-function wrinkle(x, y, z) {
-  return (
-    Math.sin(x * 9.1 + Math.sin(y * 7.3)) * 0.5 +
-    Math.sin(y * 11.7 + Math.sin(z * 8.2)) * 0.3 +
-    Math.sin(z * 13.3 + Math.sin(x * 6.1)) * 0.2
-  );
+<div id="chip" hidden></div>
+
+<script>
+(function () {
+'use strict';
+
+var ZONES = {
+  aero:  { title: '✈️ how things fly',
+           desc: 'planes, foils, stalls — potential-flow playground' },
+  space: { title: '🌌 space',
+           desc: 'zoom from your hand to the observable universe' },
+  brain: { title: '🧠 glass brain',
+           desc: 'a brain of light — click to stimulate' },
+  foil:  { title: '🌊 the foil break',
+           desc: 'two doors — click to choose',
+           links: [
+             { href: 'foil-designer/', title: '🪽 foil designer',
+               desc: 'shape a front wing, get star ratings — speed, glide, carve' },
+             { href: 'foil-rl/', title: '🏄 foil pilot',
+               desc: 'a stickman learns to wing foil' }
+           ] },
+  city:  { title: '🏙️ the money district',
+           desc: 'two doors — click to choose',
+           links: [
+             { href: 'invest/', title: '📈 three sisters',
+               desc: 'how investing grows — three sisters, three paths' },
+             { href: 'economy/', title: '💶 orders of magnitude',
+               desc: 'french public money, to scale' }
+           ] }
+};
+
+var svg = document.getElementById('scene');
+var chip = document.getElementById('chip');
+var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var hover = { aero: false, space: false, brain: false, foil: false, city: false };
+
+/* ---------- chip (hover label + dual-link popover) ---------- */
+var pinned = false;
+
+function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+
+function placeChip(el) {
+  var r = el.getBoundingClientRect();
+  chip.hidden = false;
+  var cw = chip.offsetWidth, ch = chip.offsetHeight;
+  var left = r.left + r.width / 2 - cw / 2;
+  left = Math.max(8, Math.min(left, window.innerWidth - cw - 8));
+  var top = r.top - ch - 10;
+  if (top < 8) top = Math.min(r.bottom + 10, window.innerHeight - ch - 8);
+  chip.style.left = left + 'px';
+  chip.style.top = top + 'px';
 }
 
-// --- procedural brain-ish point cloud: two hemispheres, folded surface
-const N = 40000;
-const pos = new Float32Array(N * 3);
-const col = new Float32Array(N * 3);
-const glow = new Float32Array(N);
-const cA = new THREE.Color('#6ea8ff'); // gyri
-const cB = new THREE.Color('#b48ce8'); // sulci
-const tmp = new THREE.Color();
-
-for (let i = 0; i < N; i++) {
-  const hemi = i % 2 === 0 ? 1 : -1;
-  // random direction on unit sphere
-  const u = Math.random() * 2 - 1;
-  const phi = Math.random() * Math.PI * 2;
-  const s = Math.sqrt(1 - u * u);
-  let dx = s * Math.cos(phi), dy = u, dz = s * Math.sin(phi);
-  // flatten the medial wall (inner face of each hemisphere)
-  if (dz * hemi < 0.12) dz = 0.12 * hemi + (dz * hemi - 0.12) * 0.15 * hemi;
-
-  const w = wrinkle(dx * 2 + hemi, dy * 2, dz * 2);
-  const r = 1 + w * 0.055;
-  // ellipsoid axes: long front-back, squashed sides
-  let x = dx * 1.25 * r;
-  let y = dy * 0.92 * r;
-  let z = (dz * 0.72 * r) + hemi * 0.045;
-  // frontal taper + temporal-lobe droop, crude but reads as a brain
-  y -= Math.max(0, (Math.abs(x) - 0.55)) * 0.22;
-  if (x < -0.35 && y < -0.1) y -= 0.12 * Math.min(1, (-0.35 - x));
-
-  pos[i * 3] = x; pos[i * 3 + 1] = y; pos[i * 3 + 2] = z;
-  const t = THREE.MathUtils.clamp(w * 0.5 + 0.5, 0, 1);
-  tmp.lerpColors(cB, cA, t);
-  col[i * 3] = tmp.r; col[i * 3 + 1] = tmp.g; col[i * 3 + 2] = tmp.b;
+function showHover(el, z) {
+  chip.classList.remove('pinned');
+  chip.innerHTML = '<div class="ct">' + esc(z.title) + '</div>' +
+                   '<div class="cd">' + esc(z.desc) + '</div>';
+  placeChip(el);
 }
 
-const geo = new THREE.BufferGeometry();
-geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-geo.setAttribute('aGlow', new THREE.BufferAttribute(glow, 1));
-
-// custom point shader: per-point glow drives warm colour shift + size boost
-const mat = new THREE.ShaderMaterial({
-  uniforms: { uScale: { value: 1000 } },
-  vertexColors: true,
-  transparent: true,
-  blending: THREE.AdditiveBlending,
-  depthWrite: false,
-  vertexShader: `
-    attribute float aGlow;
-    varying vec3 vColor;
-    varying float vGlow;
-    uniform float uScale;
-    void main() {
-      vGlow = aGlow;
-      vColor = mix(color, vec3(1.0, 0.92, 0.62), aGlow);
-      vec4 mv = modelViewMatrix * vec4(position, 1.0);
-      gl_PointSize = uScale * 0.011 * (1.0 + 1.6 * aGlow) / -mv.z;
-      gl_Position = projectionMatrix * mv;
-    }`,
-  fragmentShader: `
-    varying vec3 vColor;
-    varying float vGlow;
-    void main() {
-      vec2 uv = gl_PointCoord - 0.5;
-      float r = length(uv);
-      if (r > 0.5) discard;
-      float a = smoothstep(0.5, 0.1, r) * (0.55 + 0.45 * vGlow);
-      gl_FragColor = vec4(vColor * (1.0 + 1.2 * vGlow), a);
-    }`
-});
-const brain = new THREE.Points(geo, mat);
-scene.add(brain);
-
-// --- faint starfield / dust backdrop, counter-rotating
-const SN = 500;
-const spos = new Float32Array(SN * 3);
-for (let i = 0; i < SN; i++) {
-  const u = Math.random() * 2 - 1;
-  const phi = Math.random() * Math.PI * 2;
-  const s = Math.sqrt(1 - u * u);
-  const rad = 5 + Math.random() * 7;
-  spos[i * 3] = s * Math.cos(phi) * rad;
-  spos[i * 3 + 1] = u * rad;
-  spos[i * 3 + 2] = s * Math.sin(phi) * rad;
+function openPopover(el, z) {
+  pinned = true;
+  chip.classList.add('pinned');
+  var html = '<div class="ct">' + esc(z.title) + '</div>';
+  z.links.forEach(function (l) {
+    html += '<a class="crow" href="' + l.href + '"><b>' + esc(l.title) +
+            '</b><span>' + esc(l.desc) + '</span></a>';
+  });
+  chip.innerHTML = html;
+  placeChip(el);
+  var first = chip.querySelector('a');
+  if (first) first.focus();
 }
-const sgeo = new THREE.BufferGeometry();
-sgeo.setAttribute('position', new THREE.BufferAttribute(spos, 3));
-const smat = new THREE.PointsMaterial({
-  size: 0.035, color: 0x50597a, transparent: true, opacity: 0.4,
-  sizeAttenuation: true, depthWrite: false
-});
-const stars = new THREE.Points(sgeo, smat);
-scene.add(stars);
 
-function resize() {
-  renderer.setSize(innerWidth, innerHeight);
-  camera.aspect = innerWidth / innerHeight;
-  camera.updateProjectionMatrix();
-  mat.uniforms.uScale.value =
-    renderer.domElement.height / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+function closeChip() {
+  pinned = false;
+  chip.hidden = true;
+  chip.classList.remove('pinned');
 }
-addEventListener('resize', resize); resize();
 
-// --- activation waves: spherical front expanding from a stimulated point
-let waves = []; // {x,y,z,age} in brain-local coords
-const WAVE_LIFE = 1.6, WAVE_SPEED = 1.9, BAND = 0.3;
-function spawnWaveAt(i) {
-  waves.push({ x: pos[i * 3], y: pos[i * 3 + 1], z: pos[i * 3 + 2], age: 0 });
-  if (waves.length > 4) waves.shift();
-}
-let glowWasActive = false;
-function updateWaves(dt) {
-  for (const wv of waves) wv.age += dt;
-  waves = waves.filter(w => w.age < WAVE_LIFE);
-  if (waves.length === 0) {
-    if (glowWasActive) { glow.fill(0); geo.attributes.aGlow.needsUpdate = true; glowWasActive = false; }
-    return;
-  }
-  glow.fill(0);
-  for (const wv of waves) {
-    const front = wv.age * WAVE_SPEED;
-    const env = 1 - wv.age / WAVE_LIFE;
-    for (let i = 0; i < N; i++) {
-      const dx = pos[i * 3] - wv.x, dy = pos[i * 3 + 1] - wv.y, dz = pos[i * 3 + 2] - wv.z;
-      const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
-      const bd = d - front;
-      let g = 0;
-      if (bd > -0.0001 && bd < BAND) {          // leading edge
-        const q = 1 - bd / BAND; g = q * q * env;
-      } else if (bd <= 0) {                      // afterglow behind the front
-        g = Math.max(0, 1 + bd / 0.9) * 0.35 * env;
+Array.prototype.forEach.call(document.querySelectorAll('[data-zone]'), function (el) {
+  var key = el.getAttribute('data-zone');
+  var z = ZONES[key];
+  el.addEventListener('mouseenter', function () {
+    hover[key] = true;
+    if (!pinned) showHover(el, z);
+  });
+  el.addEventListener('mouseleave', function () {
+    hover[key] = false;
+    if (!pinned) closeChip();
+  });
+  el.addEventListener('focus', function () { hover[key] = true; if (!pinned) showHover(el, z); });
+  el.addEventListener('blur', function () { hover[key] = false; if (!pinned) closeChip(); });
+  if (z.links) {
+    el.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      openPopover(el, z);
+    });
+    el.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' || ev.key === ' ') {
+        ev.preventDefault();
+        openPopover(el, z);
       }
-      if (g > glow[i]) glow[i] = g;
+    });
+  }
+});
+
+document.addEventListener('pointerdown', function (ev) {
+  if (pinned && !chip.contains(ev.target)) closeChip();
+});
+document.addEventListener('keydown', function (ev) {
+  if (ev.key === 'Escape' && pinned) closeChip();
+});
+window.addEventListener('scroll', function () { if (!pinned) closeChip(); }, { passive: true });
+
+/* ---------- decorate: city windows ---------- */
+var NS = 'http://www.w3.org/2000/svg';
+var winsG = document.getElementById('wins');
+Array.prototype.forEach.call(document.querySelectorAll('.bld'), function (b) {
+  var x = +b.getAttribute('x'), y = +b.getAttribute('y');
+  var w = +b.getAttribute('width'), h = +b.getAttribute('height');
+  for (var wx = x + 6; wx < x + w - 8; wx += 10) {
+    for (var wy = y + 8; wy < y + h - 10; wy += 14) {
+      if (Math.random() < 0.62) {
+        var r = document.createElementNS(NS, 'rect');
+        r.setAttribute('x', wx); r.setAttribute('y', wy);
+        r.setAttribute('width', 4); r.setAttribute('height', 6);
+        r.setAttribute('class', 'win');
+        r.style.transitionDelay = (Math.random() * 0.45).toFixed(2) + 's';
+        winsG.appendChild(r);
+      }
     }
   }
-  geo.attributes.aGlow.needsUpdate = true;
-  glowWasActive = true;
+});
+
+/* ---------- decorate: star field ---------- */
+var starsG = document.getElementById('stars');
+var stars = [];
+for (var i = 0; i < 70; i++) {
+  var c = document.createElementNS(NS, 'circle');
+  c.setAttribute('cx', (Math.random() * 1600).toFixed(1));
+  c.setAttribute('cy', (Math.random() * 470).toFixed(1));
+  c.setAttribute('r', (0.6 + Math.random()).toFixed(2));
+  var base = 0.25 + Math.random() * 0.4;
+  c.setAttribute('opacity', base.toFixed(2));
+  starsG.appendChild(c);
+  stars.push({ el: c, base: base, amp: 0.15 + Math.random() * 0.25,
+               sp: 0.6 + Math.random() * 1.8, ph: Math.random() * 6.28 });
 }
 
-// --- raycast click-to-stimulate
-const raycaster = new THREE.Raycaster();
-raycaster.params.Points.threshold = 0.04;
-const ndc = new THREE.Vector2();
-function tryStimulate(cx, cy) {
-  ndc.set((cx / innerWidth) * 2 - 1, -(cy / innerHeight) * 2 + 1);
-  raycaster.setFromCamera(ndc, camera);
-  const hits = raycaster.intersectObject(brain);
-  if (hits.length) spawnWaveAt(hits[0].index);
+/* ---------- spray particle pool ---------- */
+var sprayG = document.getElementById('spray');
+var sprayPool = [];
+for (var s = 0; s < 22; s++) {
+  var p = document.createElementNS(NS, 'circle');
+  p.setAttribute('r', (1 + Math.random() * 1.6).toFixed(2));
+  p.setAttribute('opacity', 0);
+  sprayG.appendChild(p);
+  sprayPool.push({ el: p, life: 0, x: 0, y: 0, vx: 0, vy: 0 });
 }
 
-// --- interaction: inertia drag + zoom + click detection
-let rx = 0.1, ry = 0.6, vrx = 0, vry = 0.003, dragging = false, px = 0, py = 0;
-let downX = 0, downY = 0, moved = false;
-canvas.addEventListener('pointerdown', e => {
-  dragging = true; moved = false;
-  px = downX = e.clientX; py = downY = e.clientY;
-});
-addEventListener('pointerup', e => {
-  if (dragging && !moved) tryStimulate(e.clientX, e.clientY);
-  dragging = false;
-});
-addEventListener('pointermove', e => {
-  if (!dragging) return;
-  if (Math.abs(e.clientX - downX) + Math.abs(e.clientY - downY) > 6) moved = true;
-  vry = (e.clientX - px) * 0.005; vrx = (e.clientY - py) * 0.005;
-  px = e.clientX; py = e.clientY;
-});
-addEventListener('wheel', e => {
-  camera.position.z = THREE.MathUtils.clamp(camera.position.z + e.deltaY * 0.002, 1.8, 6);
-}, { passive: true });
+if (reduced) {
+  document.documentElement.className += ' reduced';
+  return; // static painted frame: no animation loop
+}
 
-// --- automatic ambient stimulation every ~6 s
-let autoTimer = 2.5;
+/* ---------- animation loop ---------- */
+var wavef = document.getElementById('wavef');
+var wavem = document.getElementById('wavem');
+var waven = document.getElementById('waven');
+var clouds = [
+  { el: document.getElementById('cloud1'), x: 260, y: 120, sp: 5 },
+  { el: document.getElementById('cloud2'), x: 900, y: 175, sp: 3.4 },
+  { el: document.getElementById('cloud3'), x: 1350, y: 85, sp: 4.2 }
+];
+var pglider = document.getElementById('pglider');
+var foiler = document.getElementById('foiler');
+var mastfoil = document.getElementById('mastfoil');
+var boardwash = document.getElementById('boardwash');
+var lanternGlow = document.getElementById('lanternGlow');
+var neus = document.querySelectorAll('#neurons .neu');
+var axons = document.querySelectorAll('#neurons .axon');
+var streams = document.querySelectorAll('.stream');
+var shoot = document.getElementById('shoot');
+var bird = document.getElementById('bird');
 
-const clock = new THREE.Clock();
-function animate() {
-  const dt = Math.min(clock.getDelta(), 0.05);
+var t = 0, lift = 0, streamSpeed = 40, dashOff = 0;
+var shootTimer = 5, shootLife = -1, shootX = 0, shootY = 0;
+var birdTimer = 9, birdLife = -1, birdY = 0;
+var sprayTimer = 0;
 
-  autoTimer -= dt;
-  if (autoTimer <= 0) {
-    spawnWaveAt(Math.floor(Math.random() * N));
-    autoTimer = 5 + Math.random() * 2.5;
+function waveD(base, amp, k, speed, phase) {
+  var d = 'M0 900 L0 ' + (base + amp * Math.sin(t * speed + phase)).toFixed(1);
+  for (var x = 25; x <= 1600; x += 25) {
+    d += ' L' + x + ' ' + (base + amp * Math.sin(x * k + t * speed + phase)).toFixed(1);
   }
-  updateWaves(dt);
-
-  ry += vry; rx += vrx;
-  if (!dragging) { vry += (0.003 - vry) * 0.02; vrx *= 0.95; }
-  rx = THREE.MathUtils.clamp(rx, -1.2, 1.2);
-  brain.rotation.set(rx, ry, 0);
-  stars.rotation.y -= 0.0004;   // slow counter-rotation vs brain drift
-  renderer.render(scene, camera);
-  requestAnimationFrame(animate);
+  return d + ' L1600 900 Z';
 }
-animate();
+
+function update(dt) {
+  t += dt;
+
+  // waves
+  wavef.setAttribute('d', waveD(560, 5, 0.011, 0.9, 0));
+  wavem.setAttribute('d', waveD(640, 9, 0.014, 1.15, 2.1));
+  waven.setAttribute('d', waveD(730, 13, 0.017, 1.4, 4.2));
+
+  // clouds drift
+  clouds.forEach(function (cl) {
+    cl.x += cl.sp * dt;
+    if (cl.x > 1780) cl.x = -180;
+    cl.el.setAttribute('transform', 'translate(' + cl.x.toFixed(1) + ',' + cl.y + ')');
+  });
+
+  // stars twinkle (harder while observatory hovered)
+  var boost = hover.space ? 2.1 : 1;
+  for (var i = 0; i < stars.length; i++) {
+    var st = stars[i];
+    var o = st.base + st.amp * boost * Math.sin(t * st.sp * boost + st.ph);
+    st.el.setAttribute('opacity', Math.max(0.05, Math.min(1, o)).toFixed(2));
+  }
+
+  // shooting star
+  if (shootLife < 0) {
+    shootTimer -= dt;
+    if (shootTimer <= 0) {
+      shootLife = 0;
+      shootX = 200 + Math.random() * 1000;
+      shootY = 40 + Math.random() * 180;
+      shootTimer = 8 + Math.random() * 9;
+    }
+  } else {
+    shootLife += dt;
+    var sl = shootLife / 0.8;
+    if (sl >= 1) { shoot.setAttribute('opacity', 0); shootLife = -1; }
+    else {
+      var hx = shootX + sl * 260, hy = shootY + sl * 90;
+      shoot.setAttribute('x1', hx - 70); shoot.setAttribute('y1', hy - 24);
+      shoot.setAttribute('x2', hx); shoot.setAttribute('y2', hy);
+      shoot.setAttribute('opacity', (sl < 0.5 ? sl * 2 : 2 - sl * 2).toFixed(2));
+    }
+  }
+
+  // occasional bird
+  if (birdLife < 0) {
+    birdTimer -= dt;
+    if (birdTimer <= 0) {
+      birdLife = 0;
+      birdY = 200 + Math.random() * 140;
+      birdTimer = 14 + Math.random() * 12;
+    }
+  } else {
+    birdLife += dt;
+    var bl = birdLife / 14;
+    if (bl >= 1) { bird.setAttribute('opacity', 0); birdLife = -1; }
+    else {
+      var bx = -30 + bl * 1680;
+      var by = birdY + Math.sin(t * 3) * 8;
+      bird.setAttribute('transform', 'translate(' + bx.toFixed(1) + ',' + by.toFixed(1) + ')');
+      bird.setAttribute('opacity', 0.6);
+    }
+  }
+
+  // paraglider bob + streamlines
+  pglider.setAttribute('transform',
+    'translate(' + (790 + Math.sin(t * 0.5) * 14).toFixed(1) + ',' +
+    (195 + Math.sin(t * 1.1) * 7).toFixed(1) + ')');
+  streamSpeed += ((hover.aero ? 170 : 40) - streamSpeed) * Math.min(1, dt * 4);
+  dashOff -= streamSpeed * dt;
+  for (var j = 0; j < streams.length; j++) {
+    streams[j].setAttribute('stroke-dashoffset', dashOff.toFixed(1));
+  }
+
+  // foiler: hover lifts onto the foil
+  lift += ((hover.foil ? 1 : 0) - lift) * Math.min(1, dt * 5);
+  var fy = 650 - lift * 18 + Math.sin(t * (1.4 + lift)) * (3 - lift * 1.2);
+  foiler.setAttribute('transform', 'translate(820,' + fy.toFixed(1) + ') rotate(' +
+    (Math.sin(t * 1.2) * 2 * (1 - lift * 0.5)).toFixed(2) + ')');
+  mastfoil.setAttribute('opacity', lift.toFixed(2));
+  boardwash.setAttribute('opacity', (0.25 * (1 - lift)).toFixed(2));
+
+  // spray while foiling
+  if (lift > 0.5) {
+    sprayTimer -= dt;
+    if (sprayTimer <= 0) {
+      sprayTimer = 0.05;
+      for (var q = 0; q < sprayPool.length; q++) {
+        var pp = sprayPool[q];
+        if (pp.life <= 0) {
+          pp.life = 0.7;
+          pp.x = 820 - 28 - Math.random() * 8;
+          pp.y = 650 - lift * 18 + 4;
+          pp.vx = -30 - Math.random() * 50;
+          pp.vy = -60 - Math.random() * 60;
+          break;
+        }
+      }
+    }
+  }
+  for (var q2 = 0; q2 < sprayPool.length; q2++) {
+    var sp2 = sprayPool[q2];
+    if (sp2.life > 0) {
+      sp2.life -= dt;
+      sp2.vy += 260 * dt;
+      sp2.x += sp2.vx * dt;
+      sp2.y += sp2.vy * dt;
+      sp2.el.setAttribute('cx', sp2.x.toFixed(1));
+      sp2.el.setAttribute('cy', sp2.y.toFixed(1));
+      sp2.el.setAttribute('opacity', Math.max(0, sp2.life / 0.7 * 0.8).toFixed(2));
+    } else if (sp2.el.getAttribute('opacity') !== '0') {
+      sp2.el.setAttribute('opacity', 0);
+    }
+  }
+
+  // lighthouse neurons pulse (harder on hover)
+  var nb = hover.brain ? 1.9 : 1;
+  for (var n = 0; n < neus.length; n++) {
+    neus[n].setAttribute('opacity',
+      (0.35 + 0.3 * nb * (0.5 + 0.5 * Math.sin(t * 2.2 * nb + n * 1.7))).toFixed(2));
+  }
+  for (var a = 0; a < axons.length; a++) {
+    axons[a].setAttribute('opacity',
+      (0.2 + 0.25 * nb * (0.5 + 0.5 * Math.sin(t * 2.2 * nb + a * 1.3 + 0.8))).toFixed(2));
+  }
+  lanternGlow.setAttribute('opacity',
+    (hover.brain ? 1 : 0.45 + 0.15 * Math.sin(t * 1.3)).toFixed(2));
+}
+
+var raf = null, last = performance.now();
+function frame(now) {
+  var dt = Math.min((now - last) / 1000, 0.05);
+  last = now;
+  update(dt);
+  raf = requestAnimationFrame(frame);
+}
+document.addEventListener('visibilitychange', function () {
+  if (document.hidden) {
+    if (raf !== null) { cancelAnimationFrame(raf); raf = null; }
+  } else if (raf === null) {
+    last = performance.now();
+    raf = requestAnimationFrame(frame);
+  }
+});
+raf = requestAnimationFrame(frame);
+})();
 </script>
 </body>
 </html>
