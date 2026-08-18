@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>three sisters · lab.corentinbel.com</title>
+<meta name="description" content="The three sisters investing experiment: perfect timing vs worst timing vs just showing up every month. Pure JS, no libraries.">
+<style>
+  :root {
+    --bg:#07080c; --panel:#0a0e14; --fg:#e8e6df; --dim:#8a8fa3;
+    --accent:#6ea8ff; --purple:#b48ce8; --teal:#38a3a5; --border:#232b3a;
+    --glass:rgba(13,16,24,.72);
+    --lucky:#3ecfb2; --unlucky:#b48ce8; --dca:#6ea8ff; --cash:#8a8fa3;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--fg); font-family:ui-sans-serif,system-ui,sans-serif; }
+  header {
+    display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:.4rem;
+    padding:1.2rem 2rem .4rem; max-width:1100px; margin:0 auto;
+  }
+  header a { color:var(--dim); text-decoration:none; font-size:.9rem; }
+  header a:hover { color:var(--accent); }
+  h1 { font-weight:300; font-size:1.25rem; letter-spacing:.04em; }
+  h1 b { font-weight:600; }
+  main { max-width:1100px; margin:0 auto; padding:0 2rem 3rem; }
+  #intro { color:var(--dim); font-size:.88rem; line-height:1.6; max-width:62rem; margin:.4rem 0 1.1rem; }
+  #intro b { color:var(--fg); font-weight:600; }
+  .glass {
+    background:var(--glass); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    border:1px solid var(--border); border-radius:12px;
+  }
+  /* controls */
+  #controls { display:flex; flex-wrap:wrap; gap:.9rem 1.6rem; align-items:flex-end; padding:.9rem 1.1rem; margin-bottom:.8rem; }
+  .ctl { display:flex; flex-direction:column; gap:.35rem; min-width:150px; flex:1 1 150px; }
+  .ctl label { font-size:.68rem; text-transform:uppercase; letter-spacing:.12em; color:var(--dim); }
+  .ctl label b { color:var(--fg); font-weight:600; text-transform:none; letter-spacing:0; font-size:.8rem; }
+  .ctl input[type=range] { width:100%; accent-color:var(--accent); }
+  .ctl select {
+    background:var(--panel); color:var(--fg); border:1px solid var(--border); border-radius:8px;
+    padding:.35rem .5rem; font:inherit; font-size:.85rem;
+  }
+  .ctl .meta { font-size:.7rem; color:#5a5f73; }
+  .btns { flex-direction:row; align-items:center; gap:.6rem; flex-wrap:wrap; flex:2 1 260px; }
+  button {
+    background:var(--panel); color:var(--fg); border:1px solid var(--border); border-radius:8px;
+    padding:.42rem .8rem; font:inherit; font-size:.85rem; cursor:pointer;
+    transition:border-color .18s ease, transform .18s ease;
+  }
+  button:hover { border-color:var(--teal); transform:translateY(-1px); }
+  #seedLbl { font-size:.72rem; color:#5a5f73; }
+  .hidden { display:none !important; }
+  /* stage */
+  #legend { display:flex; flex-wrap:wrap; gap:.4rem .9rem; font-size:.76rem; color:var(--dim); padding:.2rem .2rem .5rem; }
+  #legend .chip::before { content:''; display:inline-block; width:10px; height:3px; border-radius:2px; margin:0 .35rem 3px 0; vertical-align:middle; background:var(--c); }
+  #legend .chip.dash::before { background:repeating-linear-gradient(90deg, var(--c) 0 3px, transparent 3px 5px); }
+  #stage { position:relative; border:1px solid var(--border); border-radius:12px; overflow:hidden; background:var(--panel); height:clamp(320px, 55vh, 520px); }
+  #cv { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  /* playbar */
+  #playbar { display:flex; align-items:center; gap:.8rem; padding:.7rem .2rem 1rem; flex-wrap:wrap; }
+  #scrub { flex:1 1 200px; accent-color:var(--accent); }
+  #tLbl { font-size:.78rem; color:var(--dim); min-width:5.5rem; }
+  .tog { font-size:.78rem; color:var(--dim); display:flex; align-items:center; gap:.35rem; cursor:pointer; }
+  .tog input { accent-color:var(--accent); }
+  /* cards */
+  #cards { display:grid; gap:.7rem; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); margin:.2rem 0 1rem; }
+  .card { padding:.85rem 1rem; }
+  .card .who { font-size:.8rem; color:var(--dim); margin-bottom:.3rem; }
+  .card .who b { color:var(--fg); font-weight:600; }
+  .card .big { font-size:1.45rem; font-weight:600; letter-spacing:.01em; }
+  .card .sub { font-size:.74rem; color:#5a5f73; line-height:1.5; margin-top:.35rem; }
+  .card .mult { font-size:.78rem; margin-top:.15rem; }
+  .card.rank1 { border-color:rgba(255,215,110,.35); }
+  /* monte carlo */
+  #mc { padding:1rem 1.2rem; margin-bottom:1rem; }
+  #mc h2 { font-size:.8rem; color:var(--dim); font-weight:500; text-transform:uppercase; letter-spacing:.12em; margin-bottom:.7rem; }
+  #mc.stale { opacity:.45; }
+  .mcrow { display:grid; grid-template-columns:9.5rem 1fr 8.5rem; gap:.7rem; align-items:center; margin-bottom:.55rem; font-size:.8rem; }
+  .mctrack { position:relative; height:14px; background:rgba(255,255,255,.04); border-radius:7px; }
+  .mcband { position:absolute; top:2px; bottom:2px; border-radius:5px; opacity:.45; background:var(--c); }
+  .mcmed { position:absolute; top:-1px; bottom:-1px; width:3px; border-radius:2px; background:var(--c); }
+  .mcval { color:var(--dim); text-align:right; }
+  #mcHead { font-size:.86rem; line-height:1.6; color:var(--dim); margin-top:.6rem; }
+  #mcHead b { color:var(--fg); }
+  #mcNote { font-size:.7rem; color:#5a5f73; margin-top:.4rem; }
+  footer { max-width:1100px; margin:0 auto; padding:0 2rem 2rem; }
+  footer a { color:var(--dim); text-decoration:none; font-size:.85rem; }
+  footer a:hover { color:var(--accent); }
+  @media (max-width:640px) {
+    header, main, footer { padding-left:1rem; padding-right:1rem; }
+    .mcrow { grid-template-columns:7.5rem 1fr; }
+    .mcrow .mcval { grid-column:2; text-align:left; margin-top:-2px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1><b>👩‍👩‍👧 three sisters</b> — timing vs showing up</h1>
+  <nav>
+    <a href="../">← lab</a> &nbsp;·&nbsp;
+    <a href="https://corentinbel.com">home</a>
+  </nav>
+</header>
+<main>
+  <p id="intro">
+    three sisters put the same money, every month, into the same product, for the same years —
+    only their <b>timing</b> differs. <b>tiphaine the lucky</b> hoards cash and somehow buys the exact
+    bottom of every crash. <b>margaux the unlucky</b> hoards too, and buys the exact peak right before
+    each one. <b>constance the consistent</b> auto-invests every month and never opens a chart.
+    re-roll history a few times: constance lands shockingly close to perfect tiphaine, far above poor
+    margaux — and everyone beats the mattress. <b>time in the market beats timing the market</b>,
+    even when the timing is literally perfect.
+  </p>
+
+  <div id="controls" class="glass">
+    <div class="ctl">
+      <label>monthly amount · <b id="vMonthly">€50</b></label>
+      <input type="range" id="inMonthly" min="10" max="2000" step="10" value="50">
+    </div>
+    <div class="ctl">
+      <label>horizon · <b id="vYears">30 years</b></label>
+      <input type="range" id="inYears" min="5" max="50" step="1" value="30">
+    </div>
+    <div class="ctl">
+      <label>product</label>
+      <select id="inProduct"></select>
+      <span class="meta" id="prodMeta"></span>
+    </div>
+    <div class="ctl custom hidden">
+      <label>expected return · <b id="vRet">7%/yr</b></label>
+      <input type="range" id="inRet" min="0" max="20" step="0.5" value="7">
+    </div>
+    <div class="ctl custom hidden">
+      <label>volatility · <b id="vVol">15%</b></label>
+      <input type="range" id="inVol" min="0" max="80" step="1" value="15">
+    </div>
+    <div class="ctl btns">
+      <button id="btnReroll">🎲 re-roll history</button>
+      <button id="btnMC">🌍 run 200 worlds</button>
+      <span id="seedLbl"></span>
+    </div>
+  </div>
+
+  <div id="legend">
+    <span class="chip" style="--c:var(--lucky)">🍀 tiphaine, the lucky — buys every bottom</span>
+    <span class="chip" style="--c:var(--unlucky)">⛈️ margaux, the unlucky — buys every peak</span>
+    <span class="chip" style="--c:var(--dca)">🐢 constance, the consistent — buys every month</span>
+    <span class="chip dash" style="--c:var(--cash)">💶 cash under the mattress (= total contributed)</span>
+  </div>
+
+  <div id="stage"><canvas id="cv"></canvas></div>
+
+  <div id="playbar">
+    <button id="btnPlay">▶ play</button>
+    <input type="range" id="scrub" min="0" max="360" step="1" value="360">
+    <span id="tLbl"></span>
+    <label class="tog"><input type="checkbox" id="inLog"> log scale</label>
+  </div>
+
+  <div id="cards"></div>
+
+  <section id="mc" class="glass hidden">
+    <h2>200 alternate histories</h2>
+    <div id="mcRows"></div>
+    <p id="mcHead"></p>
+    <p id="mcNote"></p>
+  </section>
+</main>
+<footer>
+  <a href="../">← back to the lab</a>
+</footer>
+
+<script>
+'use strict';
+/* ===SIM_BEGIN=== pure simulation logic — extracted & tested by a node harness */
+
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function gauss(rng) {
+  let u = rng(); if (u <= 1e-12) u = 1e-12;
+  const v = rng();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+// cfg: { years, ret (annual, fraction), vol (annual, fraction) }
+// Monthly geometric walk with drift matching the expected return, plus scheduled
+// crash regimes (fall + partial recovery) every ~7-10 years. The crash program is
+// made net-zero in log terms so the product's expected return stays `ret`.
+function genMarket(cfg, seed) {
+  const n = Math.round(cfg.years * 12);
+  const rng = mulberry32(seed);
+  const muM = Math.log(1 + cfg.ret) / 12;
+  const sigM = cfg.vol / Math.sqrt(12);
+  const adj = new Float64Array(n);
+  if (cfg.vol >= 0.05) {
+    const depthScale = Math.min(1.3, Math.max(0.5, cfg.vol / 0.15));
+    let t = Math.round(36 + rng() * 72);            // first crash: year 3-9
+    while (t < n - 8) {
+      const depth = Math.min(0.80, (0.30 + rng() * 0.20) * depthScale);
+      const fall = Math.round(6 + rng() * 8);        // 6-14 months down
+      const rec = Math.round(fall * (1.8 + rng() * 1.4));
+      const rho = 0.7 + rng() * 0.3;                 // fraction recovered
+      const L = Math.log(1 - depth);
+      for (let k = 0; k < fall && t + k < n; k++) adj[t + k] += L / fall;
+      for (let k = 0; k < rec && t + fall + k < n; k++) adj[t + fall + k] += (-L * rho) / rec;
+      t += Math.round(84 + rng() * 36);              // next crash 7-10y later
+    }
+    let S = 0; for (let i = 0; i < n; i++) S += adj[i];
+    const comp = -S / n;
+    for (let i = 0; i < n; i++) adj[i] += comp;
+  }
+  const prices = new Float64Array(n + 1);
+  prices[0] = 100;
+  let lp = Math.log(100);
+  for (let i = 0; i < n; i++) {
+    lp += muM - 0.5 * sigM * sigM + sigM * gauss(rng) + adj[i];
+    prices[i + 1] = Math.exp(lp);
+  }
+  return { prices, n };
+}
+
+// Major drawdowns (>= 18% below the running peak). Returns [{peak, bottom, depth}].
+function detectCrashes(prices) {
+  const out = [];
+  let peak = 0, inDD = false, trough = -1;
+  for (let i = 1; i < prices.length; i++) {
+    if (!inDD) {
+      if (prices[i] >= prices[peak]) peak = i;
+      else if (prices[i] < prices[peak] * 0.82) { inDD = true; trough = i; }
+    } else {
+      if (prices[i] < prices[trough]) trough = i;
+      if (prices[i] >= prices[peak]) {
+        out.push({ peak, bottom: trough, depth: 1 - prices[trough] / prices[peak] });
+        inDD = false; peak = i;
+      }
+    }
+  }
+  if (inDD) out.push({ peak, bottom: trough, depth: 1 - prices[trough] / prices[peak] });
+  return out;
+}
+
+// The three sisters + mattress. Contributions at months 0..n-1; valuation 0..n.
+// lucky buys her cash pile at every crash bottom, unlucky at every crash peak,
+// dca buys monthly. If the world contains no crash at all there is nothing to
+// time, so lucky and unlucky degrade to monthly buying (all three converge).
+function simSisters(prices, crashes, monthly) {
+  const n = prices.length - 1;
+  const bottoms = new Set(crashes.map(c => c.bottom));
+  const peaks = new Set(crashes.map(c => c.peak));
+  const noTiming = crashes.length === 0;
+  let shL = 0, cashL = 0, shU = 0, cashU = 0, shD = 0, contrib = 0;
+  const wL = new Float64Array(n + 1), wU = new Float64Array(n + 1);
+  const wD = new Float64Array(n + 1), wC = new Float64Array(n + 1);
+  const buysL = [], buysU = [];
+  let minCash = 0, minShares = 0;
+  for (let m = 0; m <= n; m++) {
+    if (m < n) {
+      contrib += monthly;
+      shD += monthly / prices[m];
+      if (noTiming) {
+        shL += monthly / prices[m];
+        shU += monthly / prices[m];
+      } else {
+        cashL += monthly;
+        cashU += monthly;
+      }
+    }
+    if (!noTiming) {
+      if (bottoms.has(m) && cashL > 0) { buysL.push({ m, amt: cashL }); shL += cashL / prices[m]; cashL = 0; }
+      if (peaks.has(m) && cashU > 0) { buysU.push({ m, amt: cashU }); shU += cashU / prices[m]; cashU = 0; }
+    }
+    wL[m] = shL * prices[m] + cashL;
+    wU[m] = shU * prices[m] + cashU;
+    wD[m] = shD * prices[m];
+    wC[m] = contrib;
+    minCash = Math.min(minCash, cashL, cashU);
+    minShares = Math.min(minShares, shL, shU, shD);
+  }
+  return {
+    n, wL, wU, wD, wC, buysL, buysU, noTiming,
+    contributed: contrib,
+    final: { lucky: wL[n], unlucky: wU[n], dca: wD[n], cash: wC[n] },
+    diag: { minCash, minShares, endCashL: cashL, endCashU: cashU }
+  };
+}
+
+function runWorld(cfg, seed, monthly) {
+  const market = genMarket(cfg, seed);
+  const crashes = detectCrashes(market.prices);
+  const sisters = simSisters(market.prices, crashes, monthly);
+  return { market, crashes, sisters };
+}
+
+function seedFor(base, i) {
+  return (base ^ Math.imul(i + 1, 0x9E3779B9)) >>> 0;
+}
+
+function quantile(sorted, q) {
+  const p = (sorted.length - 1) * q, lo = Math.floor(p), hi = Math.ceil(p);
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (p - lo);
+}
+
+function monteCarlo(cfg, baseSeed, monthly, nWorlds) {
+  const fin = { lucky: [], unlucky: [], dca: [], cash: [] };
+  let dcaBeatsUnlucky = 0, allBeatCash = 0;
+  for (let i = 0; i < nWorlds; i++) {
+    const f = runWorld(cfg, seedFor(baseSeed, i), monthly).sisters.final;
+    fin.lucky.push(f.lucky); fin.unlucky.push(f.unlucky);
+    fin.dca.push(f.dca); fin.cash.push(f.cash);
+    if (f.dca >= f.unlucky) dcaBeatsUnlucky++;
+    if (f.lucky >= f.cash && f.unlucky >= f.cash && f.dca >= f.cash) allBeatCash++;
+  }
+  const stats = {};
+  for (const k of ['lucky', 'unlucky', 'dca', 'cash']) {
+    const s = fin[k].slice().sort((a, b) => a - b);
+    stats[k] = { med: quantile(s, .5), q1: quantile(s, .25), q3: quantile(s, .75) };
+  }
+  return {
+    stats,
+    pctDcaBeatsUnlucky: 100 * dcaBeatsUnlucky / nWorlds,
+    pctAllBeatCash: 100 * allBeatCash / nWorlds,
+    dcaVsLuckyMedian: 100 * stats.dca.med / stats.lucky.med
+  };
+}
+/* ===SIM_END=== */
+
+/* ================= UI ================= */
+const PRODUCTS = [
+  { id: 'livretA', name: 'livret A', ret: 0.024, vol: 0.00 },
+  { id: 'fondsEuro', name: 'fonds euro', ret: 0.028, vol: 0.015 },
+  { id: 'oblig', name: 'obligations', ret: 0.035, vol: 0.06 },
+  { id: 'world', name: 'world ETF', ret: 0.07, vol: 0.15 },
+  { id: 'sp500', name: 'S&P 500', ret: 0.08, vol: 0.16 },
+  { id: 'nasdaq', name: 'nasdaq', ret: 0.10, vol: 0.22 },
+  { id: 'crypto', name: 'crypto-ish', ret: 0.15, vol: 0.60 },
+  { id: 'custom', name: 'custom…', ret: 0.07, vol: 0.15 },
+];
+const COL = { lucky: '#3ecfb2', unlucky: '#b48ce8', dca: '#6ea8ff', cash: '#8a8fa3' };
+const AVA = { lucky: '🍀', unlucky: '⛈️', dca: '🐢', cash: '💶' };
+const NAME = { lucky: 'tiphaine', unlucky: 'margaux', dca: 'constance', cash: 'the mattress' };
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const $ = id => document.getElementById(id);
+const stage = $('stage'), cv = $('cv'), ctx = cv.getContext('2d');
+const scrub = $('scrub');
+
+let seed = 20260818;
+let world = null, mountains = null;
+let playT = 0, playing = false, lastTick = 0;
+let cw = 0, ch = 0;
+
+function cfgNow() {
+  const p = PRODUCTS[$('inProduct').selectedIndex];
+  const years = +$('inYears').value;
+  if (p.id === 'custom') return { years, ret: +$('inRet').value / 100, vol: +$('inVol').value / 100 };
+  return { years, ret: p.ret, vol: p.vol };
+}
+function monthlyNow() { return +$('inMonthly').value; }
+
+function fmtEur(v) {
+  if (v >= 1e6) return (v / 1e6).toFixed(2) + ' M€';
+  if (v >= 1e5) return Math.round(v / 1e3) + ' k€';
+  if (v >= 1e4) return (v / 1e3).toFixed(1) + ' k€';
+  return Math.round(v).toLocaleString('fr-FR') + ' €';
+}
+
+function makeMountains(s) {
+  const rng = mulberry32(s ^ 0xA5A5);
+  const layers = [];
+  for (let l = 0; l < 2; l++) {
+    const ph = [rng() * 7, rng() * 7, rng() * 7];
+    const pts = [];
+    for (let i = 0; i <= 64; i++) {
+      const x = i / 64;
+      pts.push(0.55 + l * 0.2
+        + 0.16 * Math.sin(x * 5.1 + ph[0])
+        + 0.08 * Math.sin(x * 11.7 + ph[1])
+        + 0.04 * Math.sin(x * 23.3 + ph[2]));
+    }
+    layers.push(pts);
+  }
+  return layers;
+}
+
+function rebuild(keepPlayhead) {
+  const cfg = cfgNow();
+  world = runWorld(cfg, seed, monthlyNow());
+  mountains = makeMountains(seed);
+  scrub.max = world.sisters.n;
+  if (!keepPlayhead || playT > world.sisters.n) playT = world.sisters.n;
+  scrub.value = Math.round(playT);
+  $('seedLbl').textContent = 'seed ' + seed;
+  updateCards();
+  staleMC();
+  draw();
+}
+
+/* ---------- canvas ---------- */
+function resizeCanvas() {
+  const r = stage.getBoundingClientRect();
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  cw = Math.max(1, Math.round(r.width));
+  ch = Math.max(1, Math.round(r.height));
+  cv.width = cw * dpr; cv.height = ch * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  draw();
+}
+
+function yMapper(logScale, monthly) {
+  const S = world.sisters;
+  let hi = 0;
+  for (const a of [S.wL, S.wU, S.wD, S.wC]) for (let i = 0; i < a.length; i++) if (a[i] > hi) hi = a[i];
+  hi *= 1.06;
+  const padL = 58, padR = 16, padT = 18, padB = 26;
+  if (logScale) {
+    const lo = Math.max(1, monthly * 0.5);
+    const l0 = Math.log(lo), l1 = Math.log(Math.max(hi, lo * 2));
+    return { padL, padR, padT, padB, hi, lo, log: true,
+      y: v => padT + (1 - (Math.log(Math.max(v, lo)) - l0) / (l1 - l0)) * (ch - padT - padB) };
+  }
+  return { padL, padR, padT, padB, hi, lo: 0, log: false,
+    y: v => padT + (1 - v / hi) * (ch - padT - padB) };
+}
+
+function draw() {
+  if (!world || !cw) return;
+  const S = world.sisters, n = S.n;
+  const M = yMapper($('inLog').checked, monthlyNow());
+  const x = m => M.padL + (m / n) * (cw - M.padL - M.padR);
+  const t = Math.min(playT, n);
+  const mi = Math.floor(t);
+
+  ctx.clearRect(0, 0, cw, ch);
+
+  // wealth mountains (decor)
+  const mcols = ['rgba(110,168,255,.045)', 'rgba(180,140,232,.035)'];
+  mountains.forEach((pts, li) => {
+    ctx.beginPath();
+    ctx.moveTo(0, ch);
+    pts.forEach((p, i) => ctx.lineTo((i / 64) * cw, p * ch));
+    ctx.lineTo(cw, ch); ctx.closePath();
+    ctx.fillStyle = mcols[li]; ctx.fill();
+  });
+
+  // crash bands + active crash flash
+  let activeCrash = null;
+  for (const c of world.crashes) {
+    ctx.fillStyle = 'rgba(255,90,90,.05)';
+    ctx.fillRect(x(c.peak), M.padT, Math.max(2, x(c.bottom) - x(c.peak)), ch - M.padT - M.padB);
+    if (t >= c.peak && t <= c.bottom + 2) activeCrash = c;
+  }
+  if (activeCrash) {
+    ctx.fillStyle = `rgba(255,70,70,${0.04 + 0.10 * activeCrash.depth})`;
+    ctx.fillRect(0, 0, cw, ch);
+  }
+
+  // grid + labels
+  ctx.font = '11px ui-sans-serif, system-ui, sans-serif';
+  ctx.fillStyle = '#5a5f73';
+  ctx.strokeStyle = 'rgba(255,255,255,.05)';
+  ctx.lineWidth = 1;
+  const ticks = [];
+  if (M.log) {
+    for (let d = Math.floor(Math.log10(M.lo)); d <= Math.ceil(Math.log10(M.hi)); d++)
+      for (const m2 of [1, 2, 5]) { const v = m2 * 10 ** d; if (v >= M.lo && v <= M.hi) ticks.push(v); }
+    while (ticks.length > 7) ticks.splice(1, 1);
+  } else {
+    const step = niceStep(M.hi / 5);
+    for (let v = step; v < M.hi; v += step) ticks.push(v);
+  }
+  for (const v of ticks) {
+    const yy = M.y(v);
+    ctx.beginPath(); ctx.moveTo(M.padL, yy); ctx.lineTo(cw - M.padR, yy); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.fillText(fmtEur(v), M.padL - 6, yy + 3);
+  }
+  const yrStep = n / 12 <= 12 ? 2 : n / 12 <= 30 ? 5 : 10;
+  ctx.textAlign = 'center';
+  for (let yr = 0; yr <= n / 12; yr += yrStep) {
+    const xx = x(yr * 12);
+    ctx.fillText(yr + 'y', xx, ch - 8);
+  }
+
+  // curves (progressive up to playhead)
+  const series = [
+    { w: S.wC, c: COL.cash, dash: [5, 4], lw: 1.2 },
+    { w: S.wU, c: COL.unlucky, dash: [], lw: 2 },
+    { w: S.wL, c: COL.lucky, dash: [], lw: 2 },
+    { w: S.wD, c: COL.dca, dash: [], lw: 2.2 },
+  ];
+  for (const s of series) {
+    ctx.beginPath();
+    for (let m = 0; m <= mi; m++) {
+      const yy = M.y(s.w[m]);
+      m === 0 ? ctx.moveTo(x(m), yy) : ctx.lineTo(x(m), yy);
+    }
+    if (t > mi && mi < n) {
+      const f = t - mi, v = s.w[mi] + (s.w[mi + 1] - s.w[mi]) * f;
+      ctx.lineTo(x(t), M.y(v));
+    }
+    ctx.strokeStyle = s.c; ctx.lineWidth = s.lw; ctx.setLineDash(s.dash);
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  // buy markers + pings
+  drawBuys(S.buysL, S.wL, COL.lucky, '#4ade80', -1, x, M, t);
+  drawBuys(S.buysU, S.wU, COL.unlucky, '#ff6b6b', 1, x, M, t);
+
+  // playhead
+  if (t < n) {
+    ctx.strokeStyle = 'rgba(232,230,223,.18)';
+    ctx.beginPath(); ctx.moveTo(x(t), M.padT); ctx.lineTo(x(t), ch - M.padB); ctx.stroke();
+  }
+
+  // avatars at curve tips
+  const tipV = w => { const m = Math.min(mi, n); return t > m && m < n ? w[m] + (w[m + 1] - w[m]) * (t - m) : w[m]; };
+  ctx.font = '15px ui-sans-serif, system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  const tips = [
+    { k: 'cash', v: tipV(S.wC) }, { k: 'unlucky', v: tipV(S.wU) },
+    { k: 'lucky', v: tipV(S.wL) }, { k: 'dca', v: tipV(S.wD) },
+  ];
+  tips.sort((a, b) => M.y(a.v) - M.y(b.v));
+  let lastY = -99;
+  for (const tp of tips) {
+    let yy = M.y(tp.v);
+    if (yy - lastY < 16) yy = lastY + 16;  // avoid emoji pileup
+    lastY = yy;
+    ctx.fillStyle = COL[tp.k];
+    ctx.beginPath(); ctx.arc(x(t), M.y(tp.v), 3, 0, 7); ctx.fill();
+    ctx.fillText(AVA[tp.k], Math.min(x(t) + 7, cw - 22), yy + 5);
+  }
+
+  // crash label
+  if (activeCrash) {
+    ctx.font = '600 13px ui-sans-serif, system-ui, sans-serif';
+    ctx.fillStyle = '#ff8080';
+    ctx.textAlign = 'center';
+    ctx.fillText('📉 crash −' + Math.round(activeCrash.depth * 100) + '%',
+      Math.min(Math.max(x(activeCrash.peak) + 40, 80), cw - 80), M.padT + 14);
+  }
+  // no-crash worlds
+  if (world.crashes.length === 0) {
+    ctx.font = '12px ui-sans-serif, system-ui, sans-serif';
+    ctx.fillStyle = '#5a5f73'; ctx.textAlign = 'center';
+    ctx.fillText('no crash in this world — nothing to time, the sisters all invest monthly', cw / 2, M.padT + 14);
+  }
+}
+
+function drawBuys(buys, w, col, pingCol, dir, x, M, t) {
+  for (const b of buys) {
+    if (b.m > t) continue;
+    const yy = M.y(w[b.m]);
+    // static marker
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.moveTo(x(b.m), yy + dir * 6);
+    ctx.lineTo(x(b.m) - 4, yy + dir * 12);
+    ctx.lineTo(x(b.m) + 4, yy + dir * 12);
+    ctx.closePath(); ctx.fill();
+    // expanding ping shortly after the buy (works while playing or scrubbing)
+    const age = t - b.m;
+    if (age < 9) {
+      const a = 1 - age / 9;
+      ctx.strokeStyle = pingCol;
+      ctx.globalAlpha = a * 0.8;
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x(b.m), yy, 4 + (1 - a) * 22, 0, 7); ctx.stroke();
+      ctx.globalAlpha = 1; ctx.lineWidth = 1;
+    }
+  }
+}
+
+function niceStep(raw) {
+  const p = 10 ** Math.floor(Math.log10(raw));
+  const r = raw / p;
+  return (r <= 1 ? 1 : r <= 2 ? 2 : r <= 5 ? 5 : 10) * p;
+}
+
+/* ---------- playback ---------- */
+function tick(ts) {
+  if (!playing) return;
+  const dt = Math.min((ts - lastTick) / 1000, 0.1);
+  lastTick = ts;
+  playT += dt * world.sisters.n / 8;   // full horizon in ~8 s
+  if (playT >= world.sisters.n) { playT = world.sisters.n; playing = false; $('btnPlay').textContent = '▶ replay'; }
+  scrub.value = Math.round(playT);
+  updateTLbl();
+  draw();
+  if (playing) requestAnimationFrame(tick);
+}
+function startPlay() {
+  if (REDUCED) { playT = world.sisters.n; scrub.value = playT; updateTLbl(); draw(); return; }
+  if (playT >= world.sisters.n) playT = 0;
+  playing = !playing;
+  $('btnPlay').textContent = playing ? '⏸ pause' : '▶ play';
+  if (playing) { lastTick = performance.now(); requestAnimationFrame(tick); }
+}
+function updateTLbl() {
+  $('tLbl').textContent = 'year ' + (playT / 12).toFixed(1) + ' / ' + (world.sisters.n / 12);
+}
+
+/* ---------- cards ---------- */
+function updateCards() {
+  const S = world.sisters, f = S.final, contrib = S.contributed;
+  const blurb = {
+    lucky: S.noTiming ? 'no crash to time this world — she just invested monthly.'
+      : `waited in cash, bought ${S.buysL.length} bottom${S.buysL.length > 1 ? 's' : ''} perfectly. nobody can actually do this.`
+      + (S.diag.endCashL > 0 ? ` ${fmtEur(S.diag.endCashL)} never got invested.` : ''),
+    unlucky: S.noTiming ? 'no crash to mistime either — monthly it is.'
+      : `saved diligently, bought ${S.buysU.length} peak${S.buysU.length > 1 ? 's' : ''} right before the drop. ouch.`
+      + (S.diag.endCashU > 0 ? ` ${fmtEur(S.diag.endCashU)} left in cash.` : ''),
+    dca: 'auto-invested every single month. never opened a chart.',
+    cash: 'zero risk, zero growth. inflation nibbles quietly (not shown).',
+  };
+  const ranked = ['lucky', 'unlucky', 'dca'].sort((a, b) => f[b] - f[a]);
+  const medal = {}; ['🥇', '🥈', '🥉'].forEach((m, i) => medal[ranked[i]] = m);
+  $('cards').innerHTML = ['lucky', 'dca', 'unlucky', 'cash'].map(k => `
+    <div class="card glass ${ranked[0] === k ? 'rank1' : ''}">
+      <div class="who">${AVA[k]} <b>${NAME[k]}</b> ${medal[k] || ''}</div>
+      <div class="big" style="color:${COL[k]}">${fmtEur(f[k])}</div>
+      <div class="mult" style="color:${COL[k]}">×${(f[k] / contrib).toFixed(2)} of ${fmtEur(contrib)} put in</div>
+      <div class="sub">${blurb[k]}</div>
+    </div>`).join('');
+}
+
+/* ---------- monte carlo ---------- */
+function staleMC() {
+  const mc = $('mc');
+  if (!mc.classList.contains('hidden')) {
+    mc.classList.add('stale');
+    $('mcNote').textContent = 'params changed — hit "run 200 worlds" again for fresh numbers.';
+  }
+}
+function runMC() {
+  const r = monteCarlo(cfgNow(), seed, monthlyNow(), 200);
+  const mc = $('mc');
+  mc.classList.remove('hidden', 'stale');
+  const hi = Math.max(r.stats.lucky.q3, r.stats.unlucky.q3, r.stats.dca.q3, r.stats.cash.q3) * 1.15;
+  $('mcRows').innerHTML = ['lucky', 'dca', 'unlucky', 'cash'].map(k => {
+    const s = r.stats[k];
+    return `<div class="mcrow" style="--c:${COL[k]}">
+      <span>${AVA[k]} ${NAME[k]}</span>
+      <div class="mctrack">
+        <div class="mcband" style="left:${100 * s.q1 / hi}%; width:${Math.max(0.5, 100 * (s.q3 - s.q1) / hi)}%"></div>
+        <div class="mcmed" style="left:${100 * s.med / hi}%"></div>
+      </div>
+      <span class="mcval">${fmtEur(s.med)} <span style="opacity:.6">median</span></span>
+    </div>`;
+  }).join('');
+  $('mcHead').innerHTML =
+    `constance beats margaux in <b>${r.pctDcaBeatsUnlucky.toFixed(0)}%</b> of worlds, and reaches ` +
+    `<b>${r.dcaVsLuckyMedian.toFixed(0)}%</b> of perfect tiphaine's median wealth — without ever timing anything. ` +
+    `all three sisters beat the mattress in <b>${r.pctAllBeatCash.toFixed(0)}%</b> of worlds.`;
+  $('mcNote').textContent = 'bands = interquartile range of final wealth across 200 seeded histories, tick = median.';
+}
+
+/* ---------- wiring ---------- */
+function buildProductSelect() {
+  const sel = $('inProduct');
+  PRODUCTS.forEach(p => {
+    const o = document.createElement('option');
+    o.value = p.id; o.textContent = p.name;
+    sel.appendChild(o);
+  });
+  sel.selectedIndex = PRODUCTS.findIndex(p => p.id === 'world');
+}
+function syncLabels() {
+  $('vMonthly').textContent = '€' + monthlyNow();
+  $('vYears').textContent = $('inYears').value + ' years';
+  $('vRet').textContent = $('inRet').value + '%/yr';
+  $('vVol').textContent = $('inVol').value + '%';
+  const p = PRODUCTS[$('inProduct').selectedIndex];
+  const custom = p.id === 'custom';
+  document.querySelectorAll('.ctl.custom').forEach(el => el.classList.toggle('hidden', !custom));
+  const c = cfgNow();
+  $('prodMeta').textContent = `~${(c.ret * 100).toFixed(1)}%/yr expected · ${(c.vol * 100).toFixed(0)}% volatility`;
+}
+
+buildProductSelect();
+for (const id of ['inMonthly', 'inYears', 'inProduct', 'inRet', 'inVol']) {
+  $(id).addEventListener('input', () => { syncLabels(); rebuild(false); updateTLbl(); });
+}
+$('inLog').addEventListener('input', draw);
+$('btnReroll').addEventListener('click', () => {
+  seed = (Math.random() * 4294967296) >>> 0;
+  rebuild(false); updateTLbl();
+  if (!REDUCED) { playing = false; playT = 0; startPlay(); }
+});
+$('btnPlay').addEventListener('click', startPlay);
+$('btnMC').addEventListener('click', runMC);
+scrub.addEventListener('input', () => {
+  playing = false; $('btnPlay').textContent = '▶ play';
+  playT = +scrub.value; updateTLbl(); draw();
+});
+addEventListener('resize', resizeCanvas);
+
+syncLabels();
+rebuild(false);
+updateTLbl();
+resizeCanvas();
+if (!REDUCED) { playT = 0; startPlay(); }
+</script>
+</body>
+</html>
