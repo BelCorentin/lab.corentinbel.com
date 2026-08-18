@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>how big is a billion? · lab</title>
+<meta name="description" content="economic orders of magnitude and french public finances, drawn to scale.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💶</text></svg>">
+<style>
+  :root {
+    --bg:#07080c; --panel:#0a0e14; --fg:#e8e6df; --dim:#8a8fa3;
+    --accent:#6ea8ff; --purple:#b48ce8; --teal:#38a3a5;
+    --border:#232b3a; --glass:rgba(13,16,24,.72); --radius:12px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    background:var(--bg); color:var(--fg);
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    line-height:1.55; overflow-x:hidden;
+  }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  header.top {
+    position:fixed; top:0; left:0; right:0; z-index:20;
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:1rem 1.4rem; pointer-events:none;
+  }
+  header.top a, header.top .t { pointer-events:auto; font-size:.85rem; color:var(--dim); }
+  header.top a:hover { color:var(--accent); text-decoration:none; }
+  .wrap { max-width:860px; margin:0 auto; padding:0 1.2rem; }
+
+  /* ---------- hero ---------- */
+  #hero { min-height:92vh; display:flex; align-items:center; }
+  #hero h1 { font-size:clamp(1.9rem,5.5vw,3.4rem); font-weight:300; letter-spacing:.01em; }
+  #hero h1 b { font-weight:700; color:var(--accent); }
+  #hero p.sub { color:var(--dim); margin-top:1rem; max-width:34em; }
+  #hero .scrollhint { margin-top:2.4rem; color:#4a4f61; font-size:.8rem; }
+
+  h2.chapter {
+    font-size:clamp(1.3rem,3.4vw,2rem); font-weight:600; margin-bottom:.8rem;
+  }
+  h2.chapter .no { color:#4a4f61; font-weight:300; margin-right:.5rem; }
+  p.lead { color:var(--dim); max-width:38em; }
+  .kicker { font-size:.68rem; text-transform:uppercase; letter-spacing:.16em; color:var(--dim); margin-bottom:.5rem; }
+  .src { color:#5a5f73; font-size:.72rem; }
+  em.hl { font-style:normal; color:var(--accent); }
+  em.hp { font-style:normal; color:var(--purple); }
+
+  /* ---------- chapter 1 scrolly ---------- */
+  #scrolly { position:relative; height:560vh; }
+  body.rm #scrolly { height:auto; }
+  #stick {
+    position:sticky; top:0; height:100vh; overflow:hidden;
+  }
+  body.rm #stick { position:relative; height:70vh; }
+  #dots {
+    position:absolute; inset:0; width:100%; height:100%; display:block;
+  }
+  #counter {
+    position:absolute; top:9vh; left:0; right:0; text-align:center; pointer-events:none;
+  }
+  #counter .amt {
+    font-size:clamp(1.5rem,4.6vw,2.8rem); font-weight:700;
+    font-variant-numeric:tabular-nums; letter-spacing:.02em;
+    text-shadow:0 0 18px rgba(7,8,12,.9);
+  }
+  #counter .unit { color:var(--dim); font-size:.82rem; margin-top:.2rem; }
+  .step {
+    position:absolute; left:50%; transform:translateX(-50%);
+    width:min(88vw,30rem); z-index:5;
+    background:var(--glass); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    border:1px solid var(--border); border-radius:var(--radius);
+    padding:.9rem 1.1rem; font-size:.95rem;
+  }
+  body.rm .step { position:static; transform:none; margin:1rem auto; }
+  .step b { color:var(--accent); }
+  .step .bb { color:var(--purple); }
+
+  /* widgets */
+  .widgets { display:grid; gap:1rem; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); margin:2.2rem 0; }
+  .widget {
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:1.1rem 1.2rem;
+  }
+  .widget h3 { font-size:.95rem; margin-bottom:.6rem; }
+  .widget input {
+    background:var(--bg); color:var(--fg); border:1px solid var(--border);
+    border-radius:8px; padding:.45rem .6rem; font-size:1rem; width:8.5em;
+    font-variant-numeric:tabular-nums;
+  }
+  .widget input:focus { outline:none; border-color:var(--accent); }
+  .widget .out { margin-top:.8rem; font-size:.9rem; color:var(--dim); }
+  .widget .out b { color:var(--fg); }
+  .widget .out .big { color:var(--purple); font-weight:700; }
+
+  section.chapter { padding:16vh 0 8vh; }
+
+  /* ---------- chapter 2 coins ---------- */
+  #piles { display:flex; flex-wrap:wrap; gap:1.1rem 1.3rem; align-items:flex-end; margin-top:2rem; }
+  .pile { position:relative; cursor:default; outline:none; }
+  .pile .coins {
+    display:grid; grid-template-columns:repeat(3, 22px); gap:4px;
+    direction:ltr; align-content:end; justify-content:center; min-height:22px;
+  }
+  .coin {
+    width:22px; height:22px; border-radius:50%;
+    border:1px solid rgba(7,8,12,.6);
+    box-shadow:inset 0 -3px 0 rgba(0,0,0,.28);
+    transition:transform 1s cubic-bezier(.2,.7,.2,1), opacity .8s ease;
+    transform:translate(var(--rx,0), var(--ry,0)) rotate(var(--rr,0deg));
+    opacity:0;
+  }
+  .on .coin, body.rm .coin { transform:none; opacity:1; }
+  .pile .plabel { text-align:center; margin-top:.5rem; max-width:110px; }
+  .pile .plabel .n { font-size:.72rem; color:var(--fg); }
+  .pile .plabel .v { font-size:.72rem; color:var(--dim); font-variant-numeric:tabular-nums; }
+  .pile .tip {
+    position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%);
+    width:15rem; max-width:82vw; z-index:8;
+    background:var(--glass); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    border:1px solid var(--border); border-radius:var(--radius);
+    padding:.6rem .8rem; font-size:.78rem; color:var(--fg);
+    opacity:0; pointer-events:none; transition:opacity .15s ease;
+  }
+  .pile:hover .tip, .pile:focus .tip { opacity:1; }
+  .pile .tip .src { display:block; margin-top:.3rem; }
+  .bigbrace { margin-top:1.6rem; padding-top:1rem; border-top:1px dashed var(--border); font-size:.92rem; color:var(--dim); max-width:40em; }
+  .bigbrace b { color:var(--purple); }
+
+  /* ---------- chapter 3 fraud ---------- */
+  .toggle { display:inline-flex; border:1px solid var(--border); border-radius:999px; overflow:hidden; margin:1.4rem 0 .6rem; }
+  .toggle button {
+    background:none; border:0; color:var(--dim); font:inherit; font-size:.85rem;
+    padding:.45rem 1.1rem; cursor:pointer;
+  }
+  .toggle button.sel { background:var(--accent); color:#07080c; font-weight:600; }
+  #towers {
+    position:relative; margin-top:9rem; height:360px;
+    display:flex; gap:clamp(1.5rem,7vw,4.5rem); align-items:flex-end; justify-content:center;
+    border-bottom:1px solid var(--border);
+  }
+  .tower { position:relative; width:clamp(58px,13vw,96px); height:100%; }
+  .tower .bar {
+    position:absolute; bottom:0; left:0; right:0; height:0;
+    border-radius:6px 6px 0 0;
+    transition:height 1.1s cubic-bezier(.2,.7,.2,1), opacity .5s ease;
+  }
+  body.rm .tower .bar { transition:none; }
+  .tower .bar.core { z-index:2; }
+  .tower .bar.fuzz {
+    z-index:1; opacity:.45;
+    background-image:repeating-linear-gradient(-45deg, transparent 0 5px, rgba(7,8,12,.55) 5px 10px);
+    border:1px dashed rgba(232,230,223,.35); border-bottom:none;
+  }
+  .tower .tval {
+    position:absolute; bottom:100%; left:50%; transform:translateX(-50%);
+    white-space:nowrap; font-size:.8rem; font-variant-numeric:tabular-nums;
+    padding-bottom:4px; text-shadow:0 0 12px rgba(7,8,12,.95); z-index:3;
+  }
+  .tower .tname { position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%); width:11rem; text-align:center; font-size:.74rem; color:var(--dim); }
+  #fraudnote {
+    margin-top:6rem; background:var(--glass); border:1px solid var(--border); border-radius:var(--radius);
+    padding:1rem 1.2rem; font-size:.92rem; max-width:40em;
+  }
+  #fraudnote b { color:var(--accent); }
+  .scalechip { font-size:.72rem; color:#5a5f73; margin-top:.6rem; }
+
+  /* ---------- chapter 4 strip ---------- */
+  #stripbox {
+    margin-top:2rem; border:1px solid var(--border); border-radius:var(--radius);
+    overflow-x:auto; background:var(--panel);
+  }
+  #strip {
+    position:relative; padding:1.2rem 0 1.6rem;
+    background-image:repeating-linear-gradient(90deg, #12161f 0 1px, transparent 1px 400px);
+  }
+  .srow { position:relative; height:48px; }
+  .srow .slabel {
+    position:sticky; left:0; z-index:2; display:inline-block; max-width:92vw;
+    background:var(--glass); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    border:1px solid var(--border); border-left:none; border-radius:0 8px 8px 0;
+    font-size:.72rem; padding:.15rem .6rem; white-space:nowrap;
+    color:var(--fg); overflow:hidden; text-overflow:ellipsis;
+  }
+  .srow .slabel .v { color:var(--dim); }
+  .srow .sbar { position:absolute; left:0; bottom:6px; height:14px;
+    border-radius:0 7px 7px 0; min-width:2px;
+    transform-origin:left center; transform:scaleX(0); transition:transform 1.2s cubic-bezier(.2,.7,.2,1); }
+  .on .sbar, body.rm .sbar { transform:scaleX(1); }
+  .striphint { font-size:.78rem; color:var(--dim); margin-top:.8rem; }
+
+  /* ---------- footer ---------- */
+  footer { border-top:1px solid var(--border); margin-top:8vh; padding:3rem 0 4rem; }
+  footer h3 { font-size:.8rem; text-transform:uppercase; letter-spacing:.14em; color:var(--dim); margin-bottom:.8rem; }
+  footer ul { list-style:none; }
+  footer li { font-size:.78rem; color:#5a5f73; margin-bottom:.35rem; }
+  footer .caveat { font-size:.78rem; color:#5a5f73; margin-top:1.2rem; max-width:44em; }
+  footer .back { margin-top:2rem; font-size:.9rem; }
+
+  @media (max-width:640px) {
+    #towers { height:300px; margin-top:12rem; }
+    .tower .tname { width:7.5rem; }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    html { scroll-behavior:auto; }
+    * { transition-duration:.01ms !important; animation:none !important; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <span class="t">lab · economy</span>
+  <a href="../">← back to the lab</a>
+</header>
+
+<!-- ====================== hero ====================== -->
+<section id="hero">
+  <div class="wrap">
+    <div class="kicker">a visual essay on money</div>
+    <h1>a million, a billion,<br>and <b>where it actually goes</b></h1>
+    <p class="sub">i got tired of numbers that all sound the same. "million", "billion" — same music, wildly different animals. so i drew them, at scale, along with french public spending and the fraud everyone loves to argue about.</p>
+    <p class="scrollhint">scroll ↓ (every pixel below is to scale)</p>
+  </div>
+</section>
+
+<!-- ====================== chapter 1 ====================== -->
+<section id="scrolly">
+  <div id="stick">
+    <canvas id="dots"></canvas>
+    <div id="counter"><div class="amt">€0</div><div class="unit">each dot = €1,000</div></div>
+  </div>
+  <div class="step" style="top:58vh"><span class="no">01 · </span>this is <b>€1,000,000</b>. each dot is €1,000 — a decent net monthly salary. a thousand salaries, one million. seems like a lot already, right?</div>
+  <div class="step" style="top:100vh">now let's draw <span class="bb">€1,000,000,000</span>. keep scrolling. i'll wait.</div>
+  <div class="step" style="top:200vh">still going. a billion is not "a big million". it's a <b>thousand entire millions</b>.</div>
+  <div class="step" style="top:300vh">yes. still going.</div>
+  <div class="step" style="top:395vh">there it is: <span class="bb">one billion</span>. the bright square in the corner? that was your million. the whole wall is one thousand of them.</div>
+  <div class="step" style="top:480vh">one more zoom: <b>€1,000,000,000,000</b> — a trillion. each tiny square is now the <i>entire wall</i> you just watched fill up. you'd need about <b>1,000 screens</b> of billion-walls.</div>
+</section>
+
+<section class="chapter">
+  <div class="wrap">
+    <div class="kicker">same trick, with time</div>
+    <p class="lead">if euros don't do it for you: <em class="hl">1 million seconds ≈ <span data-calc="msec">11.6 days</span></em>. <em class="hp">1 billion seconds ≈ <span data-calc="bsec">31.7 years</span></em>. 1 trillion seconds ≈ <span data-calc="tsec">31,700 years</span> — the lascaux cave paintings were fresher than that.</p>
+    <div class="widgets">
+      <div class="widget">
+        <h3>💼 your salary vs a billion</h3>
+        <label for="salary" style="font-size:.85rem;color:var(--dim)">your net salary, €/month:</label><br>
+        <input id="salary" type="number" min="1" step="100" value="2600" inputmode="numeric">
+        <div class="out" id="salaryOut"></div>
+      </div>
+      <div class="widget">
+        <h3>🔥 the €1,000-a-day game</h3>
+        <div class="out" id="spendOut" style="margin-top:.2rem"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== chapter 2 ====================== -->
+<section class="chapter" id="ch2">
+  <div class="wrap">
+    <div class="kicker">chapter 2</div>
+    <h2 class="chapter"><span class="no">02</span>where french public money goes</h2>
+    <p class="lead">france spent about <em class="hl">€1,607bn</em> of public money in 2023 <span class="src">(INSEE, comptes nationaux)</span>. here it is as <b>100 coins — each coin ≈ €16bn</b>. hover a pile for what it actually covers.</p>
+    <div id="piles"></div>
+    <p class="bigbrace">the punchline: <b>social protection is 53 of the 100 coins</b> — more than half of everything. and it's not a mysterious black hole of "assistanat": it's mostly <b>pensions (27 coins)</b> and <b>health (15 coins)</b>. your grandma and your hospital, basically. unemployment benefits — the thing the debate obsesses over — are about 3 coins.</p>
+  </div>
+</section>
+
+<!-- ====================== chapter 3 ====================== -->
+<section class="chapter" id="ch3">
+  <div class="wrap">
+    <div class="kicker">chapter 3</div>
+    <h2 class="chapter"><span class="no">03</span>fraud: imagined sizes vs measured sizes</h2>
+    <p class="lead">ask around: which is bigger, benefit fraud (<i>fraude sociale</i>) or tax fraud (<i>fraude fiscale</i>)? people have <i>strong feelings</i>. let's measure instead of vibing — everything below is on <b>one shared scale</b>.</p>
+    <div class="toggle" role="tablist">
+      <button id="btnDet" class="sel">detected / recovered (2023)</button>
+      <button id="btnEst">estimated total (contested)</button>
+    </div>
+    <div class="scalechip" id="fraudScale"></div>
+    <div id="towers"></div>
+    <div id="fraudnote"></div>
+  </div>
+</section>
+
+<!-- ====================== chapter 4 ====================== -->
+<section class="chapter" id="ch4">
+  <div class="wrap">
+    <div class="kicker">chapter 4 · bonus</div>
+    <h2 class="chapter"><span class="no">04</span>other numbers, same ruler</h2>
+    <p class="lead">a little calibration gallery. exact same scale as the fraud towers — <span id="rulerchip"></span>. <b>scroll right inside the strip</b>; french GDP is at the end. keep scrolling. no really, keep scrolling.</p>
+  </div>
+  <div class="wrap" style="max-width:1100px">
+    <div id="stripbox"><div id="strip"></div></div>
+    <p class="striphint wrap" style="padding:0">gridline every €100bn. yes, the €300M blockbuster is that sliver at the top — a rounding error on a rounding error.</p>
+  </div>
+</section>
+
+<!-- ====================== footer ====================== -->
+<footer>
+  <div class="wrap">
+    <h3>sources & honesty notes</h3>
+    <ul>
+      <li>· INSEE, comptes nationaux — dépenses des administrations publiques 2023 (total €1,607bn) & PIB 2023 (~€2,822bn); déficit public 2024 ~€169bn (5.8% of GDP).</li>
+      <li>· DREES, comptes de la protection sociale 2023 — prestations ~€849bn, dont vieillesse-survie ~€427bn, santé ~€245bn.</li>
+      <li>· DGFiP, bilan fraude fiscale 2023 — €15.2bn mis en recouvrement (record).</li>
+      <li>· Cour des comptes / HCFiPS (2023–2024) — fraude sociale détectée ~€2.1bn (dont CAF ~€0.4bn); estimations fraude sociale ~€6–13bn; travail dissimulé (cotisations éludées) ~€6–8bn.</li>
+      <li>· Solidaires Finances Publiques — fraude et évasion fiscales estimées ~€80–120bn/an. contested: academic and Conseil des prélèvements obligatoires estimates are lower, but still several times any benefit-fraud figure.</li>
+      <li>· Vernimmen — dividendes CAC40 2023 ~€68bn (hors ~€30bn de rachats d'actions).</li>
+      <li>· AFT / INSEE — charge d'intérêts de la dette ~€51bn (2023, rising since).</li>
+      <li>· COR / gouvernement — réforme des retraites 2023: ~€18bn/an d'économies à l'horizon 2030 (projection).</li>
+    </ul>
+    <p class="caveat">honesty notes: "detected" fraud is what got caught, never the total; every "estimated" figure is shown as a range because the methods are genuinely contested; coins are rounded to the nearest €16bn so piles are ±1 coin; sector split mixes INSEE/COFOG and DREES groupings (health counted inside social protection, not twice). i'm a scientist, not an economist — check the sources, they're all public.</p>
+    <p class="back"><a href="../">← back to the lab</a></p>
+  </div>
+</footer>
+
+<script>
+'use strict';
+/* ================================================================
+   __PURE_MATH_START__
+   pure data + arithmetic (no DOM) — extracted and asserted by the
+   node harness. keep this block self-contained.
+   ================================================================ */
+const EUR_PER_DOT = 1000;            // chapter 1: one dot = €1,000
+const PX_PER_BN   = 4;               // chapters 3 & 4 SHARED scale: 4px = €1bn (1px = €250M)
+const SEC_PER_DAY = 86400;
+const SEC_PER_YEAR = 31557600;       // julian year
+
+function secondsToDays(s){ return s / SEC_PER_DAY; }
+function secondsToYears(s){ return s / SEC_PER_YEAR; }
+function yearsToEarn(amount, netPerMonth){ return amount / (netPerMonth * 12); }
+function barPx(bn){ return bn * PX_PER_BN; }
+
+// days elapsed since "year 0" (i.e. 1 jan 1 AD, plus one proleptic year for the
+// colloquial "year 0"); nowMs = Date.now()
+function daysSinceYearZero(nowMs){
+  const d1 = new Date(Date.UTC(2000, 0, 1));
+  d1.setUTCFullYear(1);
+  return (nowMs - d1.getTime()) / (SEC_PER_DAY * 1000) + 365.25;
+}
+function spentSinceYearZero(nowMs, perDay){ return daysSinceYearZero(nowMs) * perDay; }
+function yearReachBillion(perDay){ return Math.round(1e9 / perDay / 365.25); } // ≈ year N (counting from year 0)
+
+// ---- chapter 2: 100 coins, each ≈ €16.07bn, total €1,607bn (INSEE 2023)
+const TOTAL_SPEND_BN = 1607;
+const SECTORS = [
+  { n:'pensions',                coins:27, bn:427, social:true,  c:'#b48ce8', tip:'retraites & survivants — the single biggest thing the french state does.', src:'DREES 2023' },
+  { n:'health',                  coins:15, bn:245, social:true,  c:'#38a3a5', tip:'hospitals, doctors, medicines, sick leave — the "carte vitale" machine.', src:'DREES 2023' },
+  { n:'other social protection', coins:11, bn:177, social:true,  c:'#e8909c', tip:'family & child benefits (~€57bn), unemployment (~€45bn), housing aid, poverty & disability support.', src:'DREES 2023' },
+  { n:'economic affairs & transport', coins:10, bn:160, c:'#e8c07a', tip:'roads, rail, energy subsidies, support to firms & farming.', src:'INSEE 2023' },
+  { n:'general public services', coins:7,  bn:110, c:'#8a8fa3', tip:'running the state itself: administration, diplomacy, transfers between administrations.', src:'INSEE 2023' },
+  { n:'security & justice',      coins:4,  bn:70,  c:'#5f7ea8', tip:'police, gendarmerie, courts, prisons, firefighters.', src:'INSEE 2023' },
+  { n:'education',               coins:6,  bn:96,  c:'#6ea8ff', tip:'schools, teachers, universities — state & local budgets.', src:'INSEE 2023' },
+  { n:'defense',                 coins:4,  bn:57,  c:'#9aa86e', tip:'the armies. yes, all of them, for 4 coins.', src:'INSEE 2023' },
+  { n:'environment',             coins:3,  bn:55,  c:'#6ec49a', tip:'waste, water, biodiversity, climate spending.', src:'INSEE 2023' },
+  { n:'debt interest',           coins:3,  bn:51,  c:'#e86e6e', tip:'interest on public debt — money that buys nothing, and it’s growing.', src:'AFT/INSEE 2023' },
+  { n:'housing & amenities',     coins:3,  bn:45,  c:'#c49a6e', tip:'urban development, water supply, street lighting, housing programs.', src:'INSEE 2023' },
+  { n:'research',                coins:2,  bn:30,  c:'#58c4d8', tip:'public R&D — including, ahem, people decoding brains.', src:'INSEE 2023' },
+  { n:'culture & sport',         coins:2,  bn:25,  c:'#d87ec4', tip:'museums, media support, sports, that festival that got a subsidy.', src:'INSEE 2023' },
+  { n:'everything else',         coins:3,  bn:59,  c:'#5a5f73', tip:'rounding + smaller functions so the account balances to €1,607bn.', src:'INSEE 2023' },
+];
+
+// ---- chapter 3: fraud, one shared scale (bn €)
+const FRAUD = {
+  ratioNote: 15.2 / 2.1, // ≈ 7.2
+  detected: [
+    { key:'benefit', name:'social benefit fraud detected', bn:2.1,  c:'#e8909c', src:'organismes sociaux 2023 · dont CAF ~€0.4bn' },
+    { key:'work',    name:'—', bn:0, c:'#c49a6e', src:'', hidden:true },
+    { key:'tax',     name:'tax fraud recovered',           bn:15.2, c:'#6ea8ff', src:'DGFiP 2023 (record year)' },
+  ],
+  estimated: [
+    { key:'benefit', name:'benefit fraud, estimated total',        lo:6,  hi:13,  c:'#e8909c', src:'HCFiPS / Cour des comptes' },
+    { key:'work',    name:'undeclared work (dodged contributions)', lo:6,  hi:8,   c:'#c49a6e', src:'HCFiPS / Urssaf' },
+    { key:'tax',     name:'tax fraud & evasion, estimated',        lo:80, hi:120, c:'#6ea8ff', src:'Solidaires Fin. Publiques (contested)' },
+  ],
+};
+
+// ---- chapter 4: calibration strip (bn €), same PX_PER_BN
+const CALIB = [
+  { n:'a €300M blockbuster movie',            bn:0.3,   c:'#d87ec4', src:'hollywood, any year' },
+  { n:'benefit fraud detected 2023',          bn:2.1,   c:'#e8909c', src:'organismes sociaux' },
+  { n:'tax fraud recovered 2023',             bn:15.2,  c:'#6ea8ff', src:'DGFiP' },
+  { n:'pension reform savings /yr (2030 horizon)', bn:18, c:'#9aa86e', src:'COR / gouvernement, projection' },
+  { n:'debt interest /yr',                    bn:51,    c:'#e86e6e', src:'AFT/INSEE 2023' },
+  { n:'CAC40 dividends 2023',                 bn:68,    c:'#e8c07a', src:'Vernimmen (excl. ~€30bn buybacks)' },
+  { n:'french budget deficit 2024',           bn:169,   c:'#b48ce8', src:'INSEE' },
+  { n:'french public spending 2023',          bn:1607,  c:'#38a3a5', src:'INSEE' },
+  { n:'french GDP 2023',                      bn:2822,  c:'#8a8fa3', src:'INSEE' },
+];
+/* __PURE_MATH_END__ */
+
+const fmtInt = n => Math.round(n).toLocaleString('en-US').replace(/,/g, ' ');
+const fmtEUR = n => '€' + fmtInt(n);
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (RM) document.body.classList.add('rm');
+const $ = s => document.querySelector(s);
+
+/* ================= chapter 1: the dot wall ================= */
+(() => {
+  const cvs = $('#dots'), ctx = cvs.getContext('2d');
+  const stick = $('#stick'), scrolly = $('#scrolly');
+  const amtEl = $('#counter .amt'), unitEl = $('#counter .unit');
+  let W = 0, H = 0, dpr = 1;
+
+  function resize(){
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    W = stick.clientWidth; H = stick.clientHeight;
+    cvs.width = Math.round(W * dpr); cvs.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw(lastP);
+  }
+
+  const clamp01 = t => Math.max(0, Math.min(1, t));
+  const ease = t => t * t * (3 - 2 * t);
+  const P1 = 0.10, P2 = 0.64, P3 = 0.80; // phase boundaries
+
+  function amountAt(p){
+    if (p < P1) return 1e6 * ease(p / P1);
+    if (p < P2) return 1e6 * Math.pow(1000, ease((p - P1) / (P2 - P1)));
+    if (p < P3) return 1e9;
+    return 1e9 * Math.pow(1000, ease((p - P3) / (1 - P3)));
+  }
+
+  function gridFor(n, w, h){
+    const cols = Math.max(1, Math.ceil(Math.sqrt(n * (w / h))));
+    const rows = Math.max(1, Math.ceil(n / cols));
+    const s = Math.min((w * 0.86) / cols, (h * 0.66) / rows);
+    return { cols, rows, s,
+      x0: (w - cols * s) / 2,
+      y0: h * 0.24 + (h * 0.66 - rows * s) / 2 };
+  }
+
+  function drawUnits(nF, unitEUR, w, h, colorFirst, colorRest){
+    // draws ceil(nF) squares, first highlighted, last partially filled
+    const nFull = Math.floor(nF), frac = nF - nFull;
+    const n = Math.max(1, Math.ceil(nF));
+    const g = gridFor(n, w, h);
+    const gap = Math.max(0.5, g.s * 0.10);
+    for (let i = 0; i < n; i++){
+      const cx = g.x0 + (i % g.cols) * g.s, cy = g.y0 + Math.floor(i / g.cols) * g.s;
+      const full = i < nFull;
+      ctx.fillStyle = i === 0 ? colorFirst : colorRest;
+      if (full || i === 0){
+        ctx.fillRect(cx, cy, g.s - gap, g.s - gap);
+      } else {
+        const fh = (g.s - gap) * frac;
+        ctx.fillRect(cx, cy + (g.s - gap) - fh, g.s - gap, fh);
+      }
+    }
+    // echo texture inside the first square when big enough
+    if (g.s > 46){
+      ctx.fillStyle = 'rgba(7,8,12,.35)';
+      const m = g.s > 120 ? 32 : 10, cell = (g.s - gap) / m;
+      for (let yy = 0; yy < m; yy++) for (let xx = 0; xx < m; xx++)
+        if ((xx + yy) % 2) ctx.fillRect(g.x0 + xx * cell, g.y0 + yy * cell, cell * .9, cell * .9);
+    }
+    return g;
+  }
+
+  function drawDots(count, w, h){
+    // opening scene: up to 1,000 individual €1k dots
+    const cols = 40, rows = 25;
+    const s = Math.min((w * 0.8) / cols, (h * 0.6) / rows);
+    const x0 = (w - cols * s) / 2, y0 = h * 0.26 + (h * 0.6 - rows * s) / 2;
+    const r = Math.max(1, s * 0.32);
+    ctx.fillStyle = '#6ea8ff';
+    for (let i = 0; i < count; i++){
+      const cx = x0 + (i % cols) * s + s / 2, cy = y0 + Math.floor(i / cols) * s + s / 2;
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, 6.2832); ctx.fill();
+    }
+  }
+
+  let lastP = 0;
+  function draw(p){
+    lastP = p;
+    if (!W) return;
+    ctx.clearRect(0, 0, W, H);
+    const amt = amountAt(p);
+    if (p < P1){
+      drawDots(Math.round(amt / EUR_PER_DOT), W, H);
+      unitEl.textContent = 'each dot = €1,000';
+    } else if (p < P3){
+      drawUnits(amt / 1e6, 1e6, W, H, '#6ea8ff', '#2e3d5c');
+      unitEl.textContent = 'each square = €1,000,000 (your whole opening screen)';
+    } else {
+      drawUnits(amt / 1e9, 1e9, W, H, '#6ea8ff', '#5b4585');
+      unitEl.textContent = 'each square = €1,000,000,000 (the entire wall)';
+    }
+    amtEl.textContent = fmtEUR(amt);
+    amtEl.style.color = amt >= 1e9 ? '#b48ce8' : '#e8e6df';
+  }
+
+  let ticking = false;
+  function onScroll(){
+    if (ticking) return; ticking = true;
+    requestAnimationFrame(() => {
+      ticking = false;
+      const r = scrolly.getBoundingClientRect();
+      const p = clamp01(-r.top / (r.height - innerHeight));
+      draw(p);
+    });
+  }
+
+  addEventListener('resize', resize);
+  if (RM){ resize(); draw(0.72); amtEl.textContent = fmtEUR(1e9); }
+  else { addEventListener('scroll', onScroll, { passive:true }); resize(); onScroll(); }
+})();
+
+/* ================= chapter 1 widgets ================= */
+(() => {
+  const set = (k, v) => document.querySelectorAll(`[data-calc="${k}"]`).forEach(e => e.textContent = v);
+  set('msec', secondsToDays(1e6).toFixed(1) + ' days');
+  set('bsec', secondsToYears(1e9).toFixed(1) + ' years');
+  set('tsec', fmtInt(secondsToYears(1e12)) + ' years');
+
+  const inp = $('#salary'), out = $('#salaryOut');
+  function upd(){
+    const m = Math.max(1, +inp.value || 2600);
+    const yM = yearsToEarn(1e6, m), yB = yearsToEarn(1e9, m);
+    const startB = Math.round(2026 - yB);
+    out.innerHTML =
+      `at <b>${fmtEUR(m)}/month</b> (spending nothing, ever):<br>` +
+      `· €1M in <b>${yM < 1 ? (yM*12).toFixed(1) + ' months' : yM.toFixed(1) + ' years'}</b> — ambitious but human.<br>` +
+      `· €1B in <span class="big">${fmtInt(yB)} years</span> — you'd have needed to start in <b>${startB < 0 ? fmtInt(-startB) + ' BC' : 'year ' + fmtInt(startB)}</b>` +
+      (yB > 20000 ? ', before the last ice age ended.' : '.') + '<br>' +
+      `· €1T: <b>${fmtInt(yearsToEarn(1e12, m))} years</b>. homo sapiens is ~300,000 years old. good luck.`;
+  }
+  inp.addEventListener('input', upd); upd();
+
+  const spent = spentSinceYearZero(Date.now(), 1000);
+  $('#spendOut').innerHTML =
+    `say you spent <b>€1,000 every single day since year 0</b>. ` +
+    `that's ${fmtInt(daysSinceYearZero(Date.now()))} days of relentless shopping. total burned by today: ` +
+    `<span class="big">${fmtEUR(spent)}</span> ≈ €${(spent/1e9).toFixed(2)}bn — <b>still not one billion</b>. ` +
+    `you'll get there around the year <b>${fmtInt(yearReachBillion(1000))}</b>. see you then.`;
+})();
+
+/* ================= chapter 2: coins ================= */
+(() => {
+  const root = $('#piles');
+  SECTORS.forEach(s => {
+    const pile = document.createElement('div');
+    pile.className = 'pile'; pile.tabIndex = 0;
+    const coins = document.createElement('div'); coins.className = 'coins';
+    for (let i = 0; i < s.coins; i++){
+      const c = document.createElement('div'); c.className = 'coin';
+      c.style.background = `radial-gradient(circle at 34% 30%, ${s.c}, ${s.c} 55%, rgba(0,0,0,.35))`;
+      c.style.setProperty('--rx', (Math.random()*160-80).toFixed(0) + 'px');
+      c.style.setProperty('--ry', (-120 - Math.random()*260).toFixed(0) + 'px');
+      c.style.setProperty('--rr', (Math.random()*300-150).toFixed(0) + 'deg');
+      c.style.transitionDelay = (Math.random() * .7).toFixed(2) + 's';
+      coins.appendChild(c);
+    }
+    coins.style.gridTemplateColumns = `repeat(${Math.min(3, s.coins)}, 22px)`;
+    const label = document.createElement('div');
+    label.className = 'plabel';
+    label.innerHTML = `<div class="n">${s.n}</div><div class="v">${s.coins} 🪙 · ~€${s.bn}bn</div>`;
+    const tip = document.createElement('div');
+    tip.className = 'tip';
+    tip.innerHTML = `<b style="color:${s.c}">${s.n} — ~€${s.bn}bn</b><br>${s.tip}<span class="src">source: ${s.src}${s.social ? ' · part of social protection (€849bn total)' : ''}</span>`;
+    pile.append(tip, coins, label);
+    root.appendChild(pile);
+  });
+})();
+
+/* ================= chapter 3: fraud towers ================= */
+(() => {
+  const towers = $('#towers'), note = $('#fraudnote');
+  $('#fraudScale').textContent = `one shared scale: ${PX_PER_BN}px = €1bn (1px = €250M) — same ruler as chapter 4`;
+  const keys = ['benefit', 'work', 'tax'];
+  const els = {};
+  keys.forEach(k => {
+    const t = document.createElement('div'); t.className = 'tower';
+    t.innerHTML = `<div class="bar fuzz"></div><div class="bar core"></div>` +
+      `<div class="tval"></div><div class="tname"></div>`;
+    towers.appendChild(t);
+    els[k] = { root:t, fuzz:t.querySelector('.fuzz'), core:t.querySelector('.core'),
+               val:t.querySelector('.tval'), name:t.querySelector('.tname') };
+  });
+
+  function show(view){
+    const data = FRAUD[view];
+    data.forEach(d => {
+      const e = els[d.key];
+      if (d.hidden || (!d.bn && !d.hi)){ e.root.style.display = 'none'; return; }
+      e.root.style.display = '';
+      const grad = c => `linear-gradient(180deg, ${c}, ${c}66)`;
+      if (view === 'detected'){
+        e.core.style.height = barPx(d.bn) + 'px';
+        e.core.style.background = grad(d.c);
+        e.fuzz.style.height = '0px';
+        e.val.innerHTML = `<b style="color:${d.c}">€${d.bn}bn</b>`;
+        e.val.style.bottom = 'calc(0px + ' + barPx(d.bn) + 'px)';
+        e.name.innerHTML = `${d.name}<br><span class="src">${d.src}</span>`;
+      } else {
+        e.core.style.height = barPx(d.lo) + 'px';
+        e.core.style.background = grad(d.c);
+        e.fuzz.style.height = barPx(d.hi) + 'px';
+        e.fuzz.style.background = d.c;
+        e.val.innerHTML = `<b style="color:${d.c}">€${d.lo}–${d.hi}bn</b>`;
+        e.val.style.bottom = barPx(d.hi) + 'px';
+        e.name.innerHTML = `${d.name}<br><span class="src">${d.src}</span>`;
+      }
+    });
+    note.innerHTML = view === 'detected'
+      ? `in 2023, for every <b>€1</b> of detected benefit fraud, roughly <b>€${FRAUD.ratioNote.toFixed(0)}</b> of tax fraud was actually recovered (€2.1bn vs €15.2bn). and "detected/recovered" is just the part that got caught — flip the toggle for the iceberg.`
+      : `the iceberg, honestly: fuzzy zones are <b>uncertainty ranges</b>, because nobody audits the whole country. even the <i>most conservative</i> tax-fraud estimates are several times the <i>highest</i> benefit-fraud estimates. also note the quiet middle bar: undeclared work — employers dodging contributions — is likely <b>as big as or bigger than benefit fraud itself</b>. the €80–120bn figure (Solidaires) is contested; academic & CPO estimates land lower, but never anywhere near €13bn.`;
+  }
+
+  const bD = $('#btnDet'), bE = $('#btnEst');
+  bD.onclick = () => { bD.classList.add('sel'); bE.classList.remove('sel'); show('detected'); };
+  bE.onclick = () => { bE.classList.add('sel'); bD.classList.remove('sel'); show('estimated'); };
+  show('detected');
+})();
+
+/* ================= chapter 4: calibration strip ================= */
+(() => {
+  const strip = $('#strip');
+  $('#rulerchip').textContent = `${PX_PER_BN}px = €1bn`;
+  CALIB.forEach((d, i) => {
+    const row = document.createElement('div'); row.className = 'srow';
+    const lab = document.createElement('div'); lab.className = 'slabel';
+    lab.innerHTML = `${d.n} <span class="v">· €${d.bn < 1 ? Math.round(d.bn*1000) + 'M' : fmtInt(d.bn) + 'bn'} · ${d.src}</span>`;
+    const bar = document.createElement('div'); bar.className = 'sbar';
+    bar.style.width = Math.max(2, barPx(d.bn)) + 'px';
+    bar.style.background = `linear-gradient(90deg, ${d.c}, ${d.c}88)`;
+    bar.style.transitionDelay = (i * .12) + 's';
+    row.append(lab, bar);
+    strip.appendChild(row);
+  });
+  strip.style.width = (barPx(2822) + 340) + 'px';
+})();
+
+/* ================= scroll reveal ================= */
+(() => {
+  const targets = document.querySelectorAll('#ch2, #ch3, #ch4');
+  if (RM || !('IntersectionObserver' in window)){
+    targets.forEach(t => t.classList.add('on')); return;
+  }
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting){ e.target.classList.add('on'); io.unobserve(e.target); }
+  }), { threshold: 0.18 });
+  targets.forEach(t => io.observe(t));
+})();
+</script>
+</body>
+</html>
