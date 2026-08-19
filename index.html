@@ -63,10 +63,18 @@
   .neu { fill:var(--teal2); }
   .axon { stroke:var(--teal); stroke-width:.8; opacity:.4; }
 
+  /* floating oracle orb → mindblown/ */
+  @keyframes orbPulse { 0%, 100% { opacity:.45; } 50% { opacity:.85; } }
+  #quizGlow { animation:orbPulse 3.4s ease-in-out infinite; transform-box:fill-box; transform-origin:center; }
+  .zone-quiz:hover #quizGlow, .zone-quiz:focus #quizGlow { animation-duration:1.4s; }
+  .zone-quiz #quizSpark { opacity:.5; transition:opacity .4s; }
+  .zone-quiz:hover #quizSpark, .zone-quiz:focus #quizSpark { opacity:1; }
+
   @media (prefers-reduced-motion: reduce) {
     .zone-city:hover .coin, .zone-city:focus .coin { animation:none; opacity:.8; }
     #scope { transition:none; }
     .win { transition:none; }
+    #quizGlow { animation:none; opacity:.6; }
   }
 
   /* ---------- floating label chip ---------- */
@@ -145,6 +153,10 @@
       <stop offset="0%" stop-color="rgba(232,230,223,0)"/>
       <stop offset="100%" stop-color="#e8e6df"/>
     </linearGradient>
+    <radialGradient id="orbg">
+      <stop offset="0%" stop-color="rgba(180,140,232,.55)"/>
+      <stop offset="100%" stop-color="rgba(180,140,232,0)"/>
+    </radialGradient>
   </defs>
 
   <!-- sky + sea base -->
@@ -182,6 +194,22 @@
   <g id="cloud3" opacity=".5" fill="#141b2c">
     <ellipse cx="0" cy="0" rx="70" ry="14"/><ellipse cx="-45" cy="-8" rx="46" ry="11"/>
   </g>
+
+  <!-- ===== oracle orb / a quiz that reconsiders you → mindblown/ ===== -->
+  <a class="zone zone-quiz" data-zone="quiz" href="mindblown/"
+     aria-label="a floating oracle orb — a quiz about things you probably believe that aren't quite true">
+    <circle id="quizGlow" cx="280" cy="190" r="60" fill="url(#orbg)"/>
+    <circle cx="280" cy="190" r="26" fill="rgba(180,140,232,.16)" stroke="#b48ce8" stroke-width="1.4"/>
+    <ellipse cx="280" cy="190" rx="15" ry="9" fill="#0e0f16" opacity=".8"/>
+    <circle cx="280" cy="190" r="4.2" fill="#e0c3fc"/>
+    <g id="quizSpark" fill="#e0c3fc">
+      <circle cx="248" cy="164" r="1.6"/>
+      <circle cx="312" cy="168" r="1.3"/>
+      <circle cx="300" cy="222" r="1.4"/>
+      <circle cx="254" cy="216" r="1.2"/>
+    </g>
+    <rect class="hit" x="205" y="115" width="150" height="150"/>
+  </a>
 
   <!-- ===== city skyline / the money district → invest/ + economy/ ===== -->
   <g class="zone zone-city" data-zone="city" tabindex="0" role="button"
@@ -342,6 +370,10 @@
       <div class="t">💶 orders of magnitude</div>
       <div class="s">french public money, to scale</div>
     </a></li>
+    <li><a href="mindblown/">
+      <div class="t">🧠 mind, blown</div>
+      <div class="s">a quiz of things you probably believe that aren't quite true</div>
+    </a></li>
     <li class="soon"><div>
       <div class="t">🎬 movie → brain</div>
       <div class="s">à la TRIBE — soon</div>
@@ -361,6 +393,8 @@
 'use strict';
 
 var ZONES = {
+  quiz:  { title: '🧠 mind, blown',
+           desc: 'a quiz of things you probably believe that aren\'t quite true' },
   aero:  { title: '✈️ how things fly',
            desc: 'planes, foils, stalls — potential-flow playground' },
   space: { title: '🌌 space',

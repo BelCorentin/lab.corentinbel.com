@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mind, blown · Corentin Bel</title>
+<meta name="description" content="A quiz of things you probably believe that aren't quite true — pulled from my own curiosity log, plus a pile of others.">
+<style>
+  :root {
+    --bg:#07080c; --panel:#0e1119; --fg:#e8e6df; --dim:#8a8fa3;
+    --accent:#6ea8ff; --purple:#b48ce8; --teal:#8ceedd; --amber:#ffd27a; --rose:#ff8ca3;
+    --border:#232b3a; --radius:16px; --good:#8ceedd; --bad:#ff8ca3;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    background:radial-gradient(ellipse at 50% -10%, #161b2c 0%, #07080c 60%);
+    color:var(--fg); font-family:ui-sans-serif,system-ui,"Inter",sans-serif;
+    min-height:100%; display:flex; flex-direction:column;
+  }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+
+  header {
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:1.2rem 1.5rem;
+  }
+  header a.back { color:var(--dim); font-size:.85rem; }
+  header a.back:hover { color:var(--accent); }
+  h1 { font-weight:300; font-size:1.15rem; letter-spacing:.04em; }
+  h1 b { font-weight:650; }
+
+  main {
+    flex:1; display:flex; align-items:center; justify-content:center;
+    padding:1.2rem; position:relative;
+  }
+  #confetti { position:fixed; inset:0; pointer-events:none; z-index:5; }
+
+  .screen { display:none; width:100%; max-width:640px; text-align:center; }
+  .screen.active { display:block; }
+
+  /* ---------- start ---------- */
+  #screenStart .brain { font-size:3.4rem; margin-bottom:.6rem; }
+  #screenStart h2 { font-size:1.9rem; font-weight:650; margin-bottom:.6rem; }
+  #screenStart p { color:var(--dim); font-size:.98rem; line-height:1.65; max-width:480px; margin:0 auto 1.6rem; }
+  #stats {
+    display:flex; justify-content:center; gap:1.6rem; margin-bottom:1.8rem; flex-wrap:wrap;
+  }
+  #stats .stat { font-size:.78rem; color:var(--dim); }
+  #stats .stat b { display:block; font-size:1.3rem; color:var(--fg); font-weight:650; }
+  .bigbtn {
+    font:inherit; font-size:1rem; font-weight:600; color:#07080c;
+    background:linear-gradient(135deg, var(--teal), var(--accent));
+    border:none; border-radius:999px; padding:.9rem 2.2rem; cursor:pointer;
+    box-shadow:0 8px 30px rgba(110,168,255,.25); transition:transform .18s;
+  }
+  .bigbtn:hover { transform:translateY(-2px); }
+  .bigbtn:active { transform:translateY(0); }
+
+  /* ---------- quiz ---------- */
+  #dots { display:flex; justify-content:center; gap:.4rem; margin-bottom:1.4rem; }
+  #dots .d { width:.5rem; height:.5rem; border-radius:50%; background:var(--border); transition:background .3s, transform .3s; }
+  #dots .d.now { transform:scale(1.4); background:var(--accent); }
+  #dots .d.correct { background:var(--good); }
+  #dots .d.wrong { background:var(--bad); }
+
+  #hud { display:flex; justify-content:center; gap:1.4rem; margin-bottom:1.2rem; font-size:.82rem; color:var(--dim); }
+  #hud b { color:var(--fg); }
+  #streakChip { color:var(--amber); font-weight:650; }
+
+  .card {
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:1.8rem 1.7rem; text-align:left;
+  }
+  .cat {
+    display:inline-flex; align-items:center; gap:.4rem;
+    font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; color:var(--dim);
+    border:1px solid var(--border); border-radius:999px; padding:.3rem .8rem; margin-bottom:1rem;
+  }
+  .qtext { font-size:1.25rem; font-weight:600; line-height:1.5; margin-bottom:1.3rem; }
+  .opts { display:grid; gap:.6rem; }
+  .opt {
+    font:inherit; font-size:.94rem; text-align:left; color:var(--fg);
+    background:rgba(255,255,255,.02); border:1px solid var(--border); border-radius:12px;
+    padding:.8rem 1rem; cursor:pointer; transition:border-color .15s, background .15s, transform .1s;
+  }
+  .opt:hover:not(:disabled) { border-color:var(--accent); background:rgba(110,168,255,.06); }
+  .opt:active:not(:disabled) { transform:scale(.99); }
+  .opt:disabled { cursor:default; }
+  .opt.correct { border-color:var(--good); background:rgba(140,238,221,.12); color:var(--good); }
+  .opt.wrong { border-color:var(--bad); background:rgba(255,140,163,.1); color:var(--bad); }
+  .opt.dim { opacity:.45; }
+
+  #reveal {
+    margin-top:1.2rem; padding-top:1.1rem; border-top:1px dashed var(--border);
+    display:none;
+  }
+  #reveal.show { display:block; animation:slideIn .35s ease; }
+  @keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+  #reveal .verdict { font-weight:700; font-size:1.05rem; margin-bottom:.5rem; }
+  #reveal .verdict.hit { color:var(--good); }
+  #reveal .verdict.miss { color:var(--bad); }
+  #reveal p { color:#d8d2c6; font-size:.92rem; line-height:1.6; }
+  #reveal .tag { display:inline-block; margin-top:.7rem; font-size:.72rem; color:var(--purple); }
+  #nextBtn {
+    margin-top:1.2rem; font:inherit; font-size:.9rem; font-weight:600; color:#07080c;
+    background:var(--teal); border:none; border-radius:999px; padding:.65rem 1.6rem; cursor:pointer;
+    float:right;
+  }
+  .card::after { content:""; display:block; clear:both; }
+
+  /* ---------- end ---------- */
+  #screenEnd .badge { font-size:3.6rem; margin-bottom:.4rem; }
+  #screenEnd h2 { font-size:1.7rem; font-weight:700; margin-bottom:.3rem; }
+  #screenEnd .sub { color:var(--dim); font-size:.95rem; margin-bottom:1.4rem; }
+  #scoreRow { display:flex; justify-content:center; gap:2rem; margin-bottom:1.6rem; flex-wrap:wrap; }
+  #scoreRow .s { text-align:center; }
+  #scoreRow .s b { display:block; font-size:1.8rem; font-weight:700; }
+  #scoreRow .s span { font-size:.75rem; color:var(--dim); text-transform:uppercase; letter-spacing:.08em; }
+  #endBtns { display:flex; gap:.7rem; justify-content:center; flex-wrap:wrap; }
+  .ghostbtn {
+    font:inherit; font-size:.88rem; color:var(--dim); background:none;
+    border:1px solid var(--border); border-radius:999px; padding:.7rem 1.4rem; cursor:pointer;
+  }
+  .ghostbtn:hover { border-color:var(--accent); color:var(--fg); }
+
+  footer { text-align:center; padding:1rem; color:#4a4f61; font-size:.76rem; }
+
+  @media (prefers-reduced-motion: reduce) { #reveal.show { animation:none; } .bigbtn { transition:none; } }
+</style>
+</head>
+<body>
+
+<canvas id="confetti"></canvas>
+
+<header>
+  <h1><b>mind</b>, blown</h1>
+  <a class="back" href="../">&larr; lab</a>
+</header>
+
+<main>
+  <section id="screenStart" class="screen active">
+    <div class="brain">🧠</div>
+    <h2>How much of what you know is actually wrong?</h2>
+    <p>A quiz built from my own daily curiosity log (real notes, real sources) plus a pile of other
+       things that make people go "wait, what?". 8 random questions, every round different.</p>
+    <div id="stats"></div>
+    <button class="bigbtn" id="startBtn" type="button">start the round</button>
+  </section>
+
+  <section id="screenQuiz" class="screen">
+    <div id="dots"></div>
+    <div id="hud"><span>question <b id="qNum"></b>/<b id="qTotal"></b></span><span>score <b id="scoreNow">0</b></span><span id="streakChip"></span></div>
+    <div class="card">
+      <div class="cat" id="catChip"></div>
+      <div class="qtext" id="qText"></div>
+      <div class="opts" id="opts"></div>
+      <div id="reveal">
+        <div class="verdict" id="verdict"></div>
+        <p id="revealText"></p>
+        <span class="tag" id="revealTag"></span>
+        <button id="nextBtn" type="button">next →</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="screenEnd" class="screen">
+    <div class="badge" id="endEmoji"></div>
+    <h2 id="endTitle"></h2>
+    <div class="sub" id="endSub"></div>
+    <div id="scoreRow">
+      <div class="s"><b id="endScore"></b><span>score</span></div>
+      <div class="s"><b id="endStreak"></b><span>best streak</span></div>
+      <div class="s"><b id="endBest"></b><span>your all-time best</span></div>
+    </div>
+    <div id="endBtns">
+      <button class="bigbtn" id="againBtn" type="button">play again</button>
+      <button class="ghostbtn" id="copyBtn" type="button">copy result</button>
+    </div>
+  </section>
+</main>
+
+<footer><a href="https://corentinbel.com">corentinbel.com</a></footer>
+
+<script>
+"use strict";
+/* ============================================================
+   mind, blown — a "reconsider what you know" quiz.
+   QUESTIONS marked source:'personal' come from my actual daily
+   /curiosity log (see the vault note if it ever gets published);
+   the rest are well-established facts picked for the same effect.
+   ============================================================ */
+
+const QUESTIONS = [
+  // ---- from the curiosity log ----
+  { cat: "culture", emoji: "🧠", source: "personal",
+    q: "In 476 CE, the 'fall' of the Western Roman Empire actually looked like:",
+    opts: ["A decisive final battle against the Goths", "A quiet political deposition of a teenage emperor", "A mass evacuation of the city of Rome", "A senate vote to formally dissolve the empire"],
+    correct: 1,
+    reveal: "476 was just Odoacer quietly deposing the boy-emperor Romulus Augustulus — no climactic battle. Historians still don't agree on 'the' cause, and the Eastern half (Byzantium) kept going for another ~1000 years, only falling in 1453." },
+  { cat: "culture", emoji: "🧠", source: "personal",
+    q: "Medieval peasants and their land — myth vs reality:",
+    opts: ["They typically owned their land outright", "They held and worked land, but rarely owned it outright", "They had no legal relationship to land at all", "They were paid a wage, like modern workers"],
+    correct: 1,
+    reveal: "Peasants usually held land under a lord (tenure), not outright ownership. The deeper lesson: 'progress' isn't a straight line, and any 'golden age' framing needs the follow-up question — golden for whom?" },
+  { cat: "culture", emoji: "🧠", source: "personal",
+    q: "Evolutionarily, is the isolated nuclear family (2 parents + kids, no extended help) humanity's default setup?",
+    opts: ["Yes — it's the ancient, universal default", "No — humans are 'cooperative breeders'; it's a recent, narrow arrangement", "Humans never formed stable family units at all", "Polygamy was legally mandatory in most societies"],
+    correct: 1,
+    reveal: "Humans are cooperative breeders — child-rearing was historically spread across a group. 'It takes a village' is literally our evolutionary history. Most societies permitted polygyny but were mostly monogamous in practice; the isolated nuclear family is recent and narrow, not the ancient default." },
+  { cat: "culture", emoji: "🧠", source: "personal",
+    q: "In Benjamin Franklin's 1753 letter, colonists rescued FROM Native American tribes typically...",
+    opts: ["Were relieved and never looked back", "Tried to flee back to the tribes they'd been 'rescued' from", "Immediately assimilated fully into colonial society", "Were treated as war heroes"],
+    correct: 1,
+    reveal: "Many rescued captives tried to escape back — and colonists who'd voluntarily joined tribes almost never chose to return either. Modern echo: Amish Rumspringa — the large majority who taste 'the outside world' choose to come back and stay." },
+  { cat: "stats", emoji: "🔍", source: "personal",
+    q: "A disease test is '99% accurate' and the disease affects 1 in 1000 people. If you test positive, how likely are you to actually have it?",
+    opts: ["About 99%", "About 50%", "About 9%", "Less than 1%"],
+    correct: 2,
+    reveal: "About 9% — the test is a false alarm roughly 91% of the time it flags you, because the disease is so rare relative to the test's error rate. Accuracy lives in (instrument × base rate), not the instrument alone. This exact confusion has sent innocent people to prison." },
+  { cat: "stats", emoji: "🔍", source: "personal",
+    q: "A p-value of .05 tells you:",
+    opts: ["There's a 95% chance your hypothesis is true", "There's only a 5% chance you're wrong", "The probability of seeing data this extreme if the null hypothesis were true", "The effect you found is large and important"],
+    correct: 2,
+    reveal: "p = P(data | null hypothesis), not P(hypothesis | data) — that swap is one of the most common mistakes in science. By one formal bound, a p=.05 result is at most about 2.5:1 evidence against the null — far weaker than most people assume." },
+  { cat: "stats", emoji: "🔍", source: "personal",
+    q: "You flip a coin you know is fair, and get 10 heads in a row. What's P(heads) on flip 11?",
+    opts: ["Still 50% — flips are independent", "Less than 50%, it's 'due' for tails", "Depends on how the coin is held", "100%, heads is clearly favoured"],
+    correct: 0,
+    reveal: "Still 50%, if you truly know the coin is fair — that's the gambler's fallacy trap. But if you're not sure it's fair, 10 heads is real evidence the coin (the model) might be biased — updating toward 'more heads likely' there isn't a fallacy, it's legitimate Bayesian reasoning." },
+  { cat: "health", emoji: "🥗", source: "personal",
+    q: "'Life expectancy was 30 in the Middle Ages' mostly reflects:",
+    opts: ["Adults commonly dropping dead around age 30", "A mean crushed by very high infant and child mortality", "A rough guess with no real basis", "Widespread death by age 30 from plague specifically"],
+    correct: 1,
+    reveal: "The '30' average is dragged down by massive infant/child death, not adults dying young — the modal adult lifespan back then, even for hunter-gatherers, was around 70. Modern medicine still mattered hugely (life expectancy conditional on reaching 15 went 54→83) — it 'squared off' the survival curve rather than raising the ceiling (~115, then and now)." },
+  { cat: "health", emoji: "🥗", source: "personal",
+    q: "After heavy sweating, which rehydrates you better — plain water, or water with a pinch of salt?",
+    opts: ["Plain water, always", "Salted water — your body regulates salt concentration, not just volume", "Neither matters, only total liters count", "Only sugary sports drinks actually work"],
+    correct: 1,
+    reveal: "Your body regulates salt (sodium) concentration, not raw water volume — chugging plain water without replacing electrolytes can even make things worse (hyponatremia). The real 'magic' in rehydration drinks is mostly the sodium." },
+  { cat: "health", emoji: "🥗", source: "personal",
+    q: "Hunter-gatherer groups today with no electric light (Hadza, San, Tsimané) sleep, on average:",
+    opts: ["9–10 hours a night", "Less than us — around 6.5 hours", "Exactly 8 hours, textbook", "In two separate shifts, every single night"],
+    correct: 1,
+    reveal: "Around 6.5 hours — less than modern Westerners, with insomnia nearly absent. Sleep tracks falling temperature more than light exposure. Electricity seems to have changed sleep timing and cues, not the underlying quantity." },
+  { cat: "money", emoji: "💰", source: "personal",
+    q: "When a technology becomes more resource-efficient (e.g. LEDs use less power per lumen), total energy use for that purpose typically:",
+    opts: ["Falls, roughly proportional to the efficiency gain", "Often rises — cheaper use unlocks new demand that outgrows the saving", "Stays exactly flat by definition", "Drops to zero over time"],
+    correct: 1,
+    reveal: "Efficiency gains rarely shrink total resource use — this is Jevons paradox. 1865 coal, LEDs, fuel-efficient cars: cheaper-per-use unlocks new demand that outgrows the saving. Same shape as induced traffic demand and lifestyle inflation." },
+
+  // ---- the wider pile ----
+  { cat: "space", emoji: "🌌",
+    q: "True or false: a day on Venus is longer than a year on Venus.",
+    opts: ["False, that's absurd", "True — Venus rotates so slowly its day outlasts its year", "True, but only because it has no atmosphere", "False, Venus has no measurable rotation"],
+    correct: 1,
+    reveal: "True. Venus takes 243 Earth days to rotate once but only 225 Earth days to orbit the Sun — its day is longer than its year. It also spins backward compared to most planets." },
+  { cat: "space", emoji: "🌌",
+    q: "The star Betelgeuse is about 700 light-years away. If it exploded as a supernova right now, when would we actually see it happen?",
+    opts: ["Instantly", "A few hours later", "Up to ~700 years from now — we're seeing centuries-old light", "We would never see it"],
+    correct: 2,
+    reveal: "Light takes ~700 years to reach us from Betelgeuse, so it could already be gone — we'd have no way of knowing for centuries. Every time you look at a distant star, you're looking at its past, not its present." },
+  { cat: "space", emoji: "🌌",
+    q: "Roughly how many Earths could fit inside the Sun, by volume?",
+    opts: ["About 1.3 million", "About 13,000", "About 130", "About 13 billion"],
+    correct: 0,
+    reveal: "About 1.3 million. The Sun's diameter is ~109× Earth's, and volume scales with the cube of that ratio (109³ ≈ 1.3 million)." },
+  { cat: "space", emoji: "🌌",
+    q: "A sugar-cube-sized piece of neutron star material would weigh approximately:",
+    opts: ["A car, about 1 ton", "A skyscraper, about 100,000 tons", "Roughly a billion tons — comparable to a mountain", "About as much as the Moon"],
+    correct: 2,
+    reveal: "Neutron stars pack a sun's worth of mass into a city-sized sphere. A sugar cube of that material weighs roughly a billion tons — comparable to Mount Everest." },
+  { cat: "brain", emoji: "🧬",
+    q: "How many of the cells in and on your body are actually 'you' (human) versus microbial?",
+    opts: ["Nearly 100% human", "Roughly comparable — recent counts put it near 1:1, not the old '10x more bacteria' claim", "Only about 1% human", "90% microbial, 10% human"],
+    correct: 1,
+    reveal: "The famous '10x more bacterial cells than human cells' figure was an overestimate. Modern counts put the ratio closer to 1:1 — you're roughly half microbiome by cell count, which is still wild, just not the myth's version." },
+  { cat: "brain", emoji: "🧬",
+    q: "Do adult humans grow new brain neurons after childhood?",
+    opts: ["No — your neuron count is fixed for life after childhood", "Yes, in at least some regions like the hippocampus — though how much and how long into old age is still debated", "Only with supplements or special training", "Only in the cerebellum, nowhere else"],
+    correct: 1,
+    reveal: "Adult neurogenesis is real, at least in some brain regions — overturning the old 'you're born with all the neurons you'll ever have' claim. The exact extent, and whether it continues meaningfully into old age, is still an active research debate." },
+  { cat: "brain", emoji: "🧬",
+    q: "How many hearts does an octopus have?",
+    opts: ["1", "2", "3", "4"],
+    correct: 2,
+    reveal: "Three: two pump blood to the gills, one pumps it to the rest of the body. Their blood is also blue, not red — it uses copper-based hemocyanin instead of iron-based hemoglobin." },
+  { cat: "brain", emoji: "🧬",
+    q: "Which organ uses roughly 20% of your body's energy at rest, despite being only ~2% of your body weight?",
+    opts: ["Liver", "Heart", "Brain", "Kidneys"],
+    correct: 2,
+    reveal: "The brain — a huge, disproportionate energy hog, mostly spent on maintaining the electrical and chemical gradients neurons need to fire." },
+  { cat: "brain", emoji: "🧬",
+    q: "Do humans really only use 10% of their brains?",
+    opts: ["True — 90% is dormant, backup capacity", "False — brain imaging shows virtually the entire brain is active over a day, just not all regions simultaneously", "True, but only in childhood", "True, confirmed by modern MRI studies"],
+    correct: 1,
+    reveal: "False, despite being one of the most repeated 'facts' ever. Brain scans show essentially all regions are used, just not all at once — different areas activate for different tasks, the same way not every muscle fires for every movement." },
+  { cat: "perception", emoji: "👁️",
+    q: "You have a literal blind spot on each retina (where the optic nerve exits, no photoreceptors). Why don't you see a hole in your vision right now?",
+    opts: ["You don't actually have a blind spot — it's a myth", "Your brain fills in the gap using surrounding visual context and your other eye", "It only appears in complete darkness", "It only affects people with vision problems"],
+    correct: 1,
+    reveal: "It's real, and it's there right now — your brain actively fills in the missing patch using nearby visual information and input from the other eye, so seamlessly you never notice." },
+  { cat: "perception", emoji: "👁️",
+    q: "Roughly how many distinct colors can the average human eye distinguish?",
+    opts: ["About 100", "About 10,000", "Around 1–10 million", "Effectively infinite, no real limit"],
+    correct: 2,
+    reveal: "Estimates land around 1 to 10 million distinguishable colors, from combining hue, saturation and brightness — vastly more than the ~16 million colors a typical screen can even display, and vastly more than most languages have words for." },
+  { cat: "numbers", emoji: "🔢",
+    q: "How many possible ways are there to shuffle a standard 52-card deck?",
+    opts: ["About 52,000", "About 8 million", "Roughly 8×10⁶⁷ — more than the number of atoms on Earth", "Exactly 1 million"],
+    correct: 2,
+    reveal: "52! ≈ 8×10⁶⁷. Earth has roughly 10⁵⁰ atoms. Every time you properly shuffle a deck, you very likely create an arrangement that has never existed before, in the whole history of cards." },
+  { cat: "numbers", emoji: "🔢",
+    q: "Which is bigger: the number of atoms in the observable universe (~10⁸⁰), or the number of possible chess games (the 'Shannon number', ~10¹²⁰)?",
+    opts: ["Atoms in the universe, easily", "Possible chess games — by 40 orders of magnitude", "They're roughly equal", "Chess games is a small, fixed, countable number"],
+    correct: 1,
+    reveal: "Possible chess games vastly outnumber atoms in the observable universe. Chess isn't a small solved game — the space of possible games is one of the largest finite numbers humans casually talk about." },
+  { cat: "numbers", emoji: "🔢",
+    q: "If you could fold a piece of paper in half 42 times (physically impossible past ~7-8 folds, but hypothetically), how thick would the stack get?",
+    opts: ["About as tall as a person", "About the height of a skyscraper", "Roughly the distance to the Moon", "It would wrap around the Earth's equator"],
+    correct: 2,
+    reveal: "Each fold doubles the thickness, so it grows exponentially: 0.1mm × 2⁴² works out to roughly 440,000 km — in the neighborhood of the Earth-Moon distance (~384,000 km). Exponential growth is very hard to intuit." },
+  { cat: "numbers", emoji: "🔢",
+    q: "A single bacterium dividing every 20 minutes, given unlimited food and space, would in theory outweigh planet Earth after about:",
+    opts: ["2 hours", "2 days", "2 months", "2 years"],
+    correct: 1,
+    reveal: "About 2 days (roughly 120 doublings). It's a classic illustration of exponential growth — the same math that makes 'unlimited growth on a finite planet' mathematically impossible, not just difficult." },
+  { cat: "history", emoji: "🏛️",
+    q: "True or false: the Great Wall of China is visible from space (orbit) with the naked eye.",
+    opts: ["True — it's the only man-made structure visible from the Moon", "False — it's not reliably visible even from low Earth orbit without aid; it's a persistent myth", "True, but only from the ISS", "True, only visible at night when lit"],
+    correct: 1,
+    reveal: "False. Astronauts have confirmed it's not reliably visible to the naked eye even from low Earth orbit, let alone the Moon — it's simply too narrow relative to the viewing distance. One of the most repeated wrong 'facts' in circulation." },
+  { cat: "history", emoji: "🏛️",
+    q: "Napoleon Bonaparte's real height, compared to the average Frenchman of his era, was:",
+    opts: ["Notably short, hence 'Napoleon complex'", "About average, or even slightly above — the myth comes from a French-to-English unit mix-up plus British propaganda cartoons", "Extremely tall for the time", "Unrecorded — no reliable historical data exists"],
+    correct: 1,
+    reveal: "He was around average height for a Frenchman of his time. The 'short' myth largely comes from confusing French inches (longer than English inches) with English ones, amplified by British caricaturists like Gillray who drew him tiny for mockery." },
+  { cat: "history", emoji: "🏛️",
+    q: "The last woolly mammoths, an isolated population on Wrangel Island, went extinct:",
+    opts: ["About 10,000 years ago, at the end of the last Ice Age", "About 4,000 years ago — after the Great Pyramid of Giza had already been built", "They aren't actually extinct; isolated herds still exist", "About 40,000 years ago"],
+    correct: 1,
+    reveal: "The Wrangel Island mammoths survived until roughly 4,000 years ago — meaning the pyramids of Giza (~4,500 years old) were already standing monuments while mammoths were still alive on Earth." },
+  { cat: "history", emoji: "🏛️",
+    q: "By the time the Aztec Empire was founded (1325 CE), Oxford University had already been teaching students for:",
+    opts: ["It hadn't been founded yet", "About 50 years", "Roughly 200+ years — teaching dates back to at least 1096", "The exact same year"],
+    correct: 2,
+    reveal: "Oxford has evidence of teaching from 1096 onward — over two centuries before the Aztec Empire (built around Tenochtitlan, founded 1325) even existed. Institutions we think of as 'old' and 'new' don't always line up with intuition." },
+];
+
+/* ---------- state ---------- */
+const ROUND_LEN = 8;
+let round = [], idx = 0, score = 0, streak = 0, bestStreakRound = 0, answered = false;
+
+function shuffled(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function shuffledOptions(q) {
+  const idxs = shuffled(q.opts.map((_, i) => i));
+  return { opts: idxs.map(i => q.opts[i]), correct: idxs.indexOf(q.correct) };
+}
+
+/* ---------- persistence ---------- */
+const LS_KEY = "mindblown_v1";
+function loadStats() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || { plays: 0, bestScore: 0, bestStreak: 0 }; }
+  catch { return { plays: 0, bestScore: 0, bestStreak: 0 }; }
+}
+function saveStats(s) { try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch {} }
+
+function renderStartStats() {
+  const s = loadStats();
+  const el = document.getElementById("stats");
+  if (s.plays === 0) { el.innerHTML = ""; return; }
+  el.innerHTML =
+    `<div class="stat"><b>${s.plays}</b>rounds played</div>` +
+    `<div class="stat"><b>${s.bestScore}/${ROUND_LEN}</b>best score</div>` +
+    `<div class="stat"><b>${s.bestStreak}</b>longest streak</div>`;
+}
+renderStartStats();
+
+/* ---------- screens ---------- */
+function show(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+function startRound() {
+  round = shuffled(QUESTIONS).slice(0, ROUND_LEN);
+  idx = 0; score = 0; streak = 0; bestStreakRound = 0;
+  document.getElementById("qTotal").textContent = ROUND_LEN;
+  const dots = document.getElementById("dots");
+  dots.innerHTML = "";
+  for (let i = 0; i < ROUND_LEN; i++) {
+    const d = document.createElement("div");
+    d.className = "d"; d.id = "dot" + i;
+    dots.appendChild(d);
+  }
+  show("screenQuiz");
+  renderQuestion();
+}
+
+function renderQuestion() {
+  answered = false;
+  const q = round[idx];
+  const sh = shuffledOptions(q);
+  document.getElementById("qNum").textContent = idx + 1;
+  document.getElementById("scoreNow").textContent = score;
+  document.getElementById("streakChip").textContent = streak > 1 ? "🔥 " + streak + " streak" : "";
+  document.getElementById("catChip").innerHTML = q.emoji + " " + q.cat;
+  document.getElementById("qText").textContent = q.q;
+  document.querySelectorAll("#dots .d").forEach((d, i) => d.classList.toggle("now", i === idx));
+
+  const optsEl = document.getElementById("opts");
+  optsEl.innerHTML = "";
+  sh.opts.forEach((text, i) => {
+    const b = document.createElement("button");
+    b.className = "opt"; b.type = "button"; b.textContent = text;
+    b.addEventListener("click", () => selectAnswer(i, sh.correct, q));
+    optsEl.appendChild(b);
+  });
+  document.getElementById("reveal").classList.remove("show");
+}
+
+function selectAnswer(chosen, correctIdx, q) {
+  if (answered) return;
+  answered = true;
+  const isCorrect = chosen === correctIdx;
+  const buttons = document.querySelectorAll("#opts .opt");
+  buttons.forEach((b, i) => {
+    b.disabled = true;
+    if (i === correctIdx) b.classList.add("correct");
+    else if (i === chosen) b.classList.add("wrong");
+    else b.classList.add("dim");
+  });
+
+  const dot = document.getElementById("dot" + idx);
+  dot.classList.remove("now");
+  dot.classList.add(isCorrect ? "correct" : "wrong");
+
+  if (isCorrect) { score++; streak++; bestStreakRound = Math.max(bestStreakRound, streak); }
+  else streak = 0;
+  document.getElementById("scoreNow").textContent = score;
+  document.getElementById("streakChip").textContent = streak > 1 ? "🔥 " + streak + " streak" : "";
+
+  const verdict = document.getElementById("verdict");
+  verdict.textContent = isCorrect ? "Correct — you already knew this one." : "Reconsider:";
+  verdict.className = "verdict " + (isCorrect ? "hit" : "miss");
+  document.getElementById("revealText").textContent = q.reveal;
+  document.getElementById("revealTag").textContent = q.source === "personal" ? "🌱 from my actual curiosity log" : "";
+  document.getElementById("reveal").classList.add("show");
+}
+
+document.getElementById("nextBtn").addEventListener("click", () => {
+  idx++;
+  if (idx >= round.length) endRound();
+  else renderQuestion();
+});
+
+function endRound() {
+  const stats = loadStats();
+  stats.plays++;
+  stats.bestScore = Math.max(stats.bestScore, score);
+  stats.bestStreak = Math.max(stats.bestStreak, bestStreakRound);
+  saveStats(stats);
+
+  const tiers = [
+    { min: 0, emoji: "🙈", title: "Comfortably Wrong", sub: "Confidence: high. Accuracy: a work in progress. That's the fun part." },
+    { min: 3, emoji: "🤔", title: "Second-Guesser", sub: "A few things just quietly rearranged themselves in your head." },
+    { min: 5, emoji: "🌀", title: "Mind Adjuster", sub: "More than half of what you assumed just got a footnote." },
+    { min: 7, emoji: "🤯", title: "Reality Bender", sub: "Almost nothing got past you — the good kind of unsettling." },
+    { min: 8, emoji: "🧙", title: "Nothing Left To Reconsider", sub: "Either you knew all this, or you're very good at doubting yourself. Both count." },
+  ];
+  const tier = [...tiers].reverse().find(t => score >= t.min);
+
+  document.getElementById("endEmoji").textContent = tier.emoji;
+  document.getElementById("endTitle").textContent = tier.title;
+  document.getElementById("endSub").textContent = tier.sub;
+  document.getElementById("endScore").textContent = score + "/" + ROUND_LEN;
+  document.getElementById("endStreak").textContent = bestStreakRound;
+  document.getElementById("endBest").textContent = stats.bestScore + "/" + ROUND_LEN;
+  show("screenEnd");
+  renderStartStats();
+
+  if (score >= 7) burstConfetti();
+}
+
+document.getElementById("startBtn").addEventListener("click", startRound);
+document.getElementById("againBtn").addEventListener("click", startRound);
+document.getElementById("copyBtn").addEventListener("click", () => {
+  const txt = `mind, blown — ${score}/${ROUND_LEN}, best streak ${bestStreakRound}. ${document.getElementById("endTitle").textContent}\ncorentinbel.com/lab/mindblown`;
+  navigator.clipboard?.writeText(txt).then(() => {
+    const btn = document.getElementById("copyBtn");
+    const old = btn.textContent; btn.textContent = "copied!";
+    setTimeout(() => { btn.textContent = old; }, 1400);
+  }).catch(() => {});
+});
+
+/* ---------- confetti ---------- */
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const cv = document.getElementById("confetti");
+const cx = cv.getContext("2d");
+function resizeConfetti() { cv.width = innerWidth; cv.height = innerHeight; }
+addEventListener("resize", resizeConfetti); resizeConfetti();
+const COLORS = ["#6ea8ff", "#b48ce8", "#8ceedd", "#ffd27a", "#ff8ca3"];
+function burstConfetti() {
+  if (reduced) return;
+  const parts = [];
+  for (let i = 0; i < 140; i++) {
+    parts.push({
+      x: innerWidth / 2, y: innerHeight * .35,
+      vx: (Math.random() - .5) * 12, vy: -Math.random() * 9 - 3,
+      g: .28 + Math.random() * .12, size: 3 + Math.random() * 4,
+      rot: Math.random() * Math.PI, vr: (Math.random() - .5) * .3,
+      c: COLORS[(Math.random() * COLORS.length) | 0], life: 100 + Math.random() * 60,
+    });
+  }
+  function tick() {
+    cx.clearRect(0, 0, cv.width, cv.height);
+    let alive = false;
+    for (const p of parts) {
+      if (p.life <= 0) continue;
+      alive = true;
+      p.vy += p.g; p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.life--;
+      cx.save(); cx.translate(p.x, p.y); cx.rotate(p.rot);
+      cx.fillStyle = p.c; cx.globalAlpha = Math.min(1, p.life / 40);
+      cx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * .6);
+      cx.restore();
+    }
+    if (alive) requestAnimationFrame(tick);
+    else cx.clearRect(0, 0, cv.width, cv.height);
+  }
+  tick();
+}
+</script>
+</body>
+</html>
