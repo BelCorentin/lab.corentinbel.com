@@ -70,11 +70,24 @@
   .zone-quiz #quizSpark { opacity:.5; transition:opacity .4s; }
   .zone-quiz:hover #quizSpark, .zone-quiz:focus #quizSpark { opacity:1; }
 
+  /* mushroom ring → mycelium/ */
+  #mycThreads { transition:opacity .5s; }
+  .zone-myc:hover #mycThreads, .zone-myc:focus #mycThreads { opacity:.85; }
+  @keyframes capGlow {
+    0%, 100% { filter:drop-shadow(0 0 0px rgba(140,238,221,.5)); }
+    50% { filter:drop-shadow(0 0 4px rgba(140,238,221,.8)); }
+  }
+  #mycCaps { animation:capGlow 3.2s ease-in-out infinite; transform-box:fill-box; transform-origin:center; }
+  .zone-myc:hover #mycCaps, .zone-myc:focus #mycCaps { animation-duration:1.3s; }
+  #mycSpore { opacity:.4; transition:opacity .4s; }
+  .zone-myc:hover #mycSpore, .zone-myc:focus #mycSpore { opacity:1; }
+
   @media (prefers-reduced-motion: reduce) {
     .zone-city:hover .coin, .zone-city:focus .coin { animation:none; opacity:.8; }
     #scope { transition:none; }
     .win { transition:none; }
     #quizGlow { animation:none; opacity:.6; }
+    #mycCaps { animation:none; }
   }
 
   /* ---------- floating label chip ---------- */
@@ -303,6 +316,43 @@
   <path d="M0 900 L0 858 Q300 832 700 858 Q1000 874 1600 848 L1600 900 Z" fill="#131722"/>
   <path d="M0 858 Q300 832 700 858 Q1000 874 1600 848" stroke="#232b3a" stroke-width="1" fill="none" opacity=".6"/>
 
+  <!-- ===== mushroom ring / mycelium patch → mycelium/ ===== -->
+  <a class="zone zone-myc" data-zone="myc" href="mycelium/"
+     aria-label="a ring of glowing mushrooms on the sand — grow a fungal network and read a few mycelium facts">
+    <g id="mycThreads" stroke="#8ceedd" stroke-width="1" fill="none" opacity=".3">
+      <path d="M505 862 Q478 838 465 810"/>
+      <path d="M505 862 Q525 830 548 806"/>
+      <path d="M505 862 Q498 826 484 796"/>
+      <path d="M505 862 Q515 822 534 792"/>
+      <path d="M505 862 Q490 840 468 828"/>
+    </g>
+    <g id="mycCaps">
+      <g transform="translate(465,808)">
+        <path d="M-8 0 Q0 -13 8 0 Z" fill="#b48ce8"/>
+        <rect x="-1.8" y="0" width="3.6" height="8" fill="#241a30"/>
+      </g>
+      <g transform="translate(505,850)">
+        <path d="M-11 0 Q0 -17 11 0 Z" fill="#8ceedd"/>
+        <rect x="-2.4" y="0" width="4.8" height="11" fill="#12241f"/>
+      </g>
+      <g transform="translate(538,798)">
+        <path d="M-7 0 Q0 -10 7 0 Z" fill="#ffd27a"/>
+        <rect x="-1.5" y="0" width="3" height="7" fill="#332a17"/>
+      </g>
+      <g transform="translate(486,824)">
+        <path d="M-6 0 Q0 -9 6 0 Z" fill="#8ceedd"/>
+        <rect x="-1.3" y="0" width="2.6" height="6" fill="#12241f"/>
+      </g>
+    </g>
+    <g id="mycSpore" fill="#e0c3fc">
+      <circle cx="470" cy="774" r="1.4"/>
+      <circle cx="528" cy="764" r="1.2"/>
+      <circle cx="500" cy="748" r="1.3"/>
+      <circle cx="452" cy="792" r="1.1"/>
+    </g>
+    <rect class="hit" x="430" y="740" width="150" height="145"/>
+  </a>
+
   <!-- ===== glass lighthouse → glass-brain/ ===== -->
   <a class="zone zone-brain" data-zone="brain" href="glass-brain/"
      aria-label="glass brain — a brain of light in a glass tower, click to stimulate">
@@ -374,6 +424,10 @@
       <div class="t">🧠 mind, blown</div>
       <div class="s">a quiz of things you probably believe that aren't quite true</div>
     </a></li>
+    <li><a href="mycelium/">
+      <div class="t">🍄 mycelium</div>
+      <div class="s">grow a glowing fungal network, then some facts that'll mess with you</div>
+    </a></li>
     <li class="soon"><div>
       <div class="t">🎬 movie → brain</div>
       <div class="s">à la TRIBE — soon</div>
@@ -395,6 +449,8 @@
 var ZONES = {
   quiz:  { title: '🧠 mind, blown',
            desc: 'a quiz of things you probably believe that aren\'t quite true' },
+  myc:   { title: '🍄 mycelium',
+           desc: 'grow a glowing fungal network, then a handful of facts about it' },
   aero:  { title: '✈️ how things fly',
            desc: 'planes, foils, stalls — potential-flow playground' },
   space: { title: '🌌 space',

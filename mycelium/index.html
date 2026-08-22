@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mycelium · lab · Corentin Bel</title>
+<meta name="description" content="Grow a glowing fungal network in the browser, then a handful of facts about mycelium that reconsider what you think you know.">
+<style>
+  :root {
+    --bg:#07080c; --panel:#0d1310; --fg:#e8e6df; --dim:#8a9186;
+    --teal:#38a3a5; --teal2:#8ceedd; --purple:#b48ce8; --amber:#ffd27a;
+    --border:#1c2620; --radius:14px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:var(--bg); color:var(--fg);
+    font-family:ui-sans-serif,system-ui,sans-serif;
+  }
+  a { color:var(--teal2); }
+  header {
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:1.4rem 2rem; flex-wrap:wrap; gap:.4rem;
+  }
+  header .links { display:flex; gap:1.1rem; }
+  header a { color:var(--dim); text-decoration:none; font-size:.9rem; }
+  header a:hover { color:var(--teal2); }
+  h1 { font-weight:300; font-size:1.3rem; letter-spacing:.04em; }
+  h1 b { font-weight:600; }
+
+  main { max-width:980px; margin:0 auto; padding:0 1.2rem 3rem; }
+
+  .hero { text-align:center; padding:1.2rem 0 1.8rem; }
+  .hero h2 { font-size:1.7rem; font-weight:600; margin-bottom:.4rem; }
+  .hero p { color:var(--dim); font-size:.95rem; }
+
+  /* ---------- demo stage ---------- */
+  #stage {
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:1rem; margin-bottom:2.4rem;
+  }
+  #wrap { position:relative; width:100%; border-radius:10px; overflow:hidden; background:#0a0f0b; }
+  canvas#c { display:block; width:100%; touch-action:none; cursor:crosshair; }
+  .hud {
+    display:flex; align-items:center; gap:.9rem; flex-wrap:wrap;
+    margin-top:.8rem; font-size:.82rem; color:var(--dim);
+  }
+  .hud button {
+    background:#12241f; color:var(--teal2); border:1px solid #26433a; border-radius:8px;
+    padding:.5rem .9rem; font-size:.85rem; cursor:pointer; transition:border-color .18s, transform .18s;
+  }
+  .hud button:hover { border-color:var(--teal2); transform:translateY(-1px); }
+  .hud .hint { flex:1 1 220px; }
+  .hud .stats { font-variant-numeric:tabular-nums; }
+
+  /* ---------- facts ---------- */
+  #facts h3 {
+    font-size:1.1rem; font-weight:600; margin-bottom:1rem; text-align:center;
+  }
+  #facts .sub { text-align:center; color:var(--dim); font-size:.85rem; margin:-.6rem 0 1.4rem; }
+  .grid {
+    display:grid; gap:.9rem;
+    grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));
+  }
+  .card {
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:1rem 1.1rem; transition:border-color .18s, transform .18s;
+  }
+  .card:hover { border-color:var(--teal); transform:translateY(-2px); }
+  .card .em { font-size:1.4rem; margin-bottom:.4rem; display:block; }
+  .card h4 { font-size:.95rem; font-weight:600; margin-bottom:.35rem; }
+  .card p { font-size:.82rem; color:#aeb3a6; line-height:1.45; }
+
+  footer { text-align:center; padding:2rem 0; color:var(--dim); font-size:.8rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hud button, .card { transition:none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1><b>mycelium</b> · lab</h1>
+  <div class="links">
+    <a href="../">&larr; lab</a>
+    <a href="https://corentinbel.com">home</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <h2>🍄 the internet the forest built</h2>
+    <p>a thread network under every step you take, quietly moving sugar, water and warnings between trees.</p>
+  </section>
+
+  <section id="stage">
+    <div id="wrap">
+      <canvas id="c"></canvas>
+    </div>
+    <div class="hud">
+      <button id="regrow">🌱 new spore</button>
+      <button id="feed">🍂 drop nutrients</button>
+      <span class="hint">click the soil to drop nutrients — threads reach toward them and sprout caps where they arrive</span>
+      <span class="stats" id="stats">threads: 0 · nutrients: 0</span>
+    </div>
+  </section>
+
+  <section id="facts">
+    <h3>fungal facts</h3>
+    <p class="sub">a few things that hold up under a closer look</p>
+    <div class="grid">
+      <div class="card">
+        <span class="em">🌲</span>
+        <h4>the wood wide web is real</h4>
+        <p>tree roots and fungal mycelium form mycorrhizal networks that link separate trees underground — nutrients and chemical signals measurably move between them. how much of that is cooperation versus each fungus quietly serving itself is still an active, contested question.</p>
+      </div>
+      <div class="card">
+        <span class="em">🍄</span>
+        <h4>the biggest known organism is a fungus</h4>
+        <p>a single <em>Armillaria ostoyae</em> individual in Oregon's Malheur forest spans roughly 2,400 acres of mostly-underground mycelium — one connected organism, plausibly thousands of years old.</p>
+      </div>
+      <div class="card">
+        <span class="em">🧵</span>
+        <h4>a pinch of soil, kilometres of thread</h4>
+        <p>hyphae are only a few micrometres wide, but they pack density: a single gram of healthy soil can contain on the order of a hundred metres of fungal thread, coiled invisibly underfoot.</p>
+      </div>
+      <div class="card">
+        <span class="em">⚡</span>
+        <h4>mycelium fires like a nervous system</h4>
+        <p>researchers have recorded spontaneous electrical spikes travelling through fungal networks — not thought, but a real spiking pattern that some labs are trying to use as a slow, living logic gate.</p>
+      </div>
+      <div class="card">
+        <span class="em">🐜</span>
+        <h4>some fungi puppet their host</h4>
+        <p><em>Ophiocordyceps</em> infects an ant, steers it to climb and clamp onto a leaf at just the right height and humidity, then grows a fruiting body out of its head. the behavioural hijack is precise enough to look scripted.</p>
+      </div>
+      <div class="card">
+        <span class="em">🧬</span>
+        <h4>fungi are closer to you than to a plant</h4>
+        <p>fungi and animals share a more recent common ancestor than fungi and plants do — both branch off the same "opisthokont" side of the eukaryote tree. mushrooms are, distantly, closer kin to us.</p>
+      </div>
+      <div class="card">
+        <span class="em">📦</span>
+        <h4>you can grow packaging instead of moulding it</h4>
+        <p>mycelium fed on agricultural waste binds into a dense foam as it grows — already used as compostable packaging, leather-like sheets and building insulation, no petroleum required.</p>
+      </div>
+      <div class="card">
+        <span class="em">🔁</span>
+        <h4>cut it up, it doesn't die</h4>
+        <p>a mycelium colony has no fixed body plan — a single fragment can regrow the network from scratch. it behaves less like an animal and more like a distributed, self-healing map.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>grown in a canvas, not in the ground</footer>
+
+<script>
+(function () {
+'use strict';
+
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var wrap = document.getElementById('wrap');
+var statsEl = document.getElementById('stats');
+var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+var W = 0, H = 0, DPR = 1;
+function resize() {
+  var rect = wrap.getBoundingClientRect();
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = Math.max(280, rect.width);
+  H = Math.round(Math.min(520, Math.max(300, W * 0.56)));
+  canvas.width = Math.round(W * DPR);
+  canvas.height = Math.round(H * DPR);
+  canvas.style.height = H + 'px';
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+window.addEventListener('resize', resize);
+
+var STEP = 6, INFLUENCE = 95, KILL = 15;
+var nodes = [], attractors = [], spores = [];
+var age = 0;
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+var rnd = mulberry32(Date.now() & 0xffffffff);
+
+function scatter(n, x0, x1, y0, y1) {
+  for (var i = 0; i < n; i++) {
+    attractors.push({ x: x0 + rnd() * (x1 - x0), y: y0 + rnd() * (y1 - y0), reached: false });
+  }
+}
+
+function reset() {
+  nodes = [];
+  attractors = [];
+  spores = [];
+  age = 0;
+  var root = { x: W * (0.35 + rnd() * 0.3), y: H - 4, parent: null, depth: 0,
+               dir: { x: 0, y: -1 }, hasChild: false, cap: false, capT: 0 };
+  nodes.push(root);
+  scatter(60, W * 0.08, W * 0.92, H * 0.1, H * 0.82);
+  updateStats();
+}
+
+function feed() {
+  scatter(18, W * 0.1, W * 0.9, H * 0.1, H * 0.7);
+  updateStats();
+}
+
+function plantAt(x, y) {
+  attractors.push({ x: x, y: y, reached: false });
+  for (var i = 0; i < 4; i++) {
+    attractors.push({
+      x: x + (rnd() - 0.5) * 60, y: y + (rnd() - 0.5) * 60, reached: false
+    });
+  }
+  updateStats();
+}
+
+function updateStats() {
+  statsEl.textContent = 'threads: ' + nodes.length + ' · nutrients: ' + attractors.length;
+}
+
+function growStep() {
+  var acc = new Map();
+  var any = false;
+  for (var ai = 0; ai < attractors.length; ai++) {
+    var a = attractors[ai];
+    var best = null, bd = INFLUENCE;
+    for (var ni = 0; ni < nodes.length; ni++) {
+      var n = nodes[ni];
+      var dx = a.x - n.x, dy = a.y - n.y;
+      var d = Math.sqrt(dx * dx + dy * dy);
+      if (d < bd) { bd = d; best = n; }
+    }
+    if (best) {
+      var dx2 = a.x - best.x, dy2 = a.y - best.y;
+      var d2 = Math.sqrt(dx2 * dx2 + dy2 * dy2) || 1;
+      var cur = acc.get(best) || { x: 0, y: 0 };
+      cur.x += dx2 / d2; cur.y += dy2 / d2;
+      acc.set(best, cur);
+      any = true;
+    }
+  }
+  var fresh = [];
+  acc.forEach(function (v, n) {
+    var len = Math.sqrt(v.x * v.x + v.y * v.y) || 1;
+    var dx = v.x / len, dy = v.y / len;
+    dx = dx * 0.7 + n.dir.x * 0.3;
+    dy = dy * 0.7 + n.dir.y * 0.3;
+    var dl = Math.sqrt(dx * dx + dy * dy) || 1;
+    dx /= dl; dy /= dl;
+    var nx = n.x + dx * STEP, ny = n.y + dy * STEP;
+    nx = Math.max(4, Math.min(W - 4, nx));
+    ny = Math.max(4, Math.min(H - 4, ny));
+    n.hasChild = true;
+    fresh.push({ x: nx, y: ny, parent: n, depth: n.depth + 1,
+                 dir: { x: dx, y: dy }, hasChild: false, cap: false, capT: 0 });
+  });
+  if (fresh.length) nodes.push.apply(nodes, fresh);
+
+  if (attractors.length) {
+    var kept = [];
+    for (var i2 = 0; i2 < attractors.length; i2++) {
+      var a2 = attractors[i2], eaten = false;
+      for (var n2 = nodes.length - 1; n2 >= Math.max(0, nodes.length - fresh.length - 40); n2--) {
+        var nn = nodes[n2];
+        var ddx = a2.x - nn.x, ddy = a2.y - nn.y;
+        if (ddx * ddx + ddy * ddy < KILL * KILL) { eaten = true; break; }
+      }
+      if (!eaten) kept.push(a2);
+    }
+    attractors = kept;
+  }
+
+  for (var t3 = 0; t3 < nodes.length; t3++) {
+    var nd = nodes[t3];
+    if (!nd.hasChild && !nd.cap && nd.depth > 2 && rnd() < 0.02) {
+      nd.cap = true;
+      nd.capKind = rnd() < 0.34 ? 'amber' : (rnd() < 0.5 ? 'purple' : 'teal');
+      if (spores.length < 60 && rnd() < 0.6) {
+        spores.push({ x: nd.x, y: nd.y - 4, vy: -8 - rnd() * 10, vx: (rnd() - 0.5) * 6,
+                      life: 3 + rnd() * 2, age: 0 });
+      }
+    }
+  }
+  updateStats();
+  return any;
+}
+
+function drawSoil() {
+  var g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#0c130f');
+  g.addColorStop(0.75, '#0a0f0b');
+  g.addColorStop(1, '#070a08');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+}
+
+function drawAttractors(t) {
+  ctx.fillStyle = 'rgba(255,210,122,.55)';
+  for (var i = 0; i < attractors.length; i++) {
+    var a = attractors[i];
+    var pulse = 0.5 + 0.5 * Math.sin(t * 2 + a.x * 0.05);
+    ctx.globalAlpha = 0.25 + pulse * 0.35;
+    ctx.beginPath();
+    ctx.arc(a.x, a.y, 1.6 + pulse, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawNetwork(t) {
+  for (var i = 0; i < nodes.length; i++) {
+    var n = nodes[i];
+    if (!n.parent) continue;
+    var w = Math.max(0.6, 3.2 - n.depth * 0.06);
+    var glow = 0.55 + 0.25 * Math.sin(t * 1.6 + n.depth * 0.4);
+    var hue = n.depth < 8 ? '140,238,221' : (n.depth < 20 ? '56,163,165' : '180,140,232');
+    ctx.strokeStyle = 'rgba(' + hue + ',' + glow.toFixed(2) + ')';
+    ctx.lineWidth = w;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(n.parent.x, n.parent.y);
+    ctx.lineTo(n.x, n.y);
+    ctx.stroke();
+  }
+  for (var j = 0; j < nodes.length; j++) {
+    var c = nodes[j];
+    if (!c.cap) continue;
+    var col = c.capKind === 'amber' ? '#ffd27a' : (c.capKind === 'purple' ? '#b48ce8' : '#8ceedd');
+    var bob = Math.sin(t * 1.2 + c.depth) * 0.6;
+    ctx.save();
+    ctx.translate(c.x, c.y + bob);
+    ctx.fillStyle = col;
+    ctx.globalAlpha = 0.92;
+    ctx.beginPath();
+    ctx.ellipse(0, -3, 4.2, 3.1, 0, Math.PI, 0);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(10,15,11,.85)';
+    ctx.fillRect(-0.9, -3, 1.8, 3.6);
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawSpores(dt, t) {
+  for (var i = spores.length - 1; i >= 0; i--) {
+    var s = spores[i];
+    s.age += dt;
+    if (s.age > s.life) { spores.splice(i, 1); continue; }
+    s.x += s.vx * dt;
+    s.y += s.vy * dt;
+    var a = Math.max(0, 1 - s.age / s.life);
+    ctx.fillStyle = 'rgba(224,195,252,' + (a * 0.8).toFixed(2) + ')';
+    ctx.beginPath();
+    ctx.arc(s.x + Math.sin(t * 2 + i) * 3, s.y, 1.3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+var growTimer = 0, growInterval = 0.09;
+var last = performance.now(), t = 0;
+function frame(now) {
+  var dt = Math.min((now - last) / 1000, 0.05);
+  last = now;
+  t += dt;
+
+  growTimer += dt;
+  if (growTimer >= growInterval) {
+    growTimer = 0;
+    growStep();
+  }
+
+  drawSoil();
+  drawAttractors(t);
+  drawNetwork(t);
+  if (!reduced) drawSpores(dt, t);
+
+  requestAnimationFrame(frame);
+}
+
+function pointerXY(ev) {
+  var r = canvas.getBoundingClientRect();
+  var cx = (ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left;
+  var cy = (ev.touches ? ev.touches[0].clientY : ev.clientY) - r.top;
+  return { x: cx, y: cy };
+}
+canvas.addEventListener('click', function (ev) {
+  var p = pointerXY(ev);
+  plantAt(p.x, p.y);
+});
+document.getElementById('regrow').addEventListener('click', function () {
+  resize();
+  reset();
+});
+document.getElementById('feed').addEventListener('click', function () {
+  feed();
+});
+
+resize();
+reset();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
