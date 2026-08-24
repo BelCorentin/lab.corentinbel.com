@@ -1,0 +1,1041 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>redacted · Corentin Bel</title>
+<meta name="description" content="A whole Wikipedia page, blacked out. Type words to un-redact it and guess what it is. Pick your difficulty, play as many as you like.">
+<style>
+  :root {
+    --bg:#07080c; --panel:#0e1119; --panel2:#121724; --fg:#e8e6df; --dim:#8a8fa3;
+    --accent:#6ea8ff; --purple:#b48ce8; --teal:#8ceedd; --amber:#ffd27a; --rose:#ff8ca3;
+    --border:#232b3a; --radius:16px;
+    --block:#1b2130; --block2:#232b3a;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    background:radial-gradient(ellipse at 50% -12%, #161b2c 0%, #07080c 62%);
+    background-attachment:fixed;
+    color:var(--fg); font-family:ui-sans-serif,system-ui,"Inter",sans-serif;
+    min-height:100%; display:flex; flex-direction:column;
+  }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  button { font:inherit; color:inherit; }
+
+  header {
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:1.1rem 1.4rem; flex:0 0 auto;
+  }
+  header a.back { color:var(--dim); font-size:.85rem; }
+  header a.back:hover { color:var(--accent); }
+  h1 { font-weight:300; font-size:1.15rem; letter-spacing:.04em; }
+  h1 b { font-weight:650; }
+  h1 .bar {
+    display:inline-block; background:var(--fg); color:transparent;
+    border-radius:3px; padding:0 .1em; user-select:none;
+  }
+
+  main { flex:1; display:flex; flex-direction:column; padding:0 1.2rem 1.2rem; }
+  .screen { display:none; }
+  .screen.active { display:block; }
+
+  /* ================= setup ================= */
+  #setup { max-width:760px; margin:1rem auto 3rem; width:100%; }
+  #setup .lead { text-align:center; margin-bottom:2rem; }
+  #setup .lead .big { font-size:2.1rem; font-weight:700; letter-spacing:-.01em; margin-bottom:.5rem; }
+  #setup .lead .big em { font-style:normal; background:var(--fg); color:transparent; border-radius:5px; padding:0 .12em; }
+  #setup .lead p { color:var(--dim); font-size:.95rem; line-height:1.65; max-width:520px; margin:0 auto; }
+
+  .field { margin-bottom:1.5rem; }
+  .field > label {
+    display:block; font-size:.72rem; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--dim); margin-bottom:.6rem;
+  }
+  .opts { display:grid; gap:.7rem; }
+  .opts.three { grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); }
+  .opts.four { grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); }
+  .opt {
+    text-align:left; background:var(--panel); border:1px solid var(--border);
+    border-radius:14px; padding:.85rem .95rem; cursor:pointer;
+    transition:border-color .18s, transform .18s, background .18s;
+  }
+  .opt:hover { transform:translateY(-2px); border-color:#3b475f; }
+  .opt[aria-pressed="true"] {
+    border-color:var(--teal); background:linear-gradient(180deg, rgba(140,238,221,.09), rgba(140,238,221,.02));
+  }
+  .opt .n { font-size:.95rem; font-weight:650; display:flex; align-items:center; gap:.45rem; }
+  .opt .d { font-size:.75rem; color:var(--dim); margin-top:.25rem; line-height:1.45; }
+
+  .seg { display:inline-flex; background:var(--panel); border:1px solid var(--border); border-radius:999px; padding:.25rem; gap:.2rem; }
+  .seg button {
+    background:none; border:none; border-radius:999px; padding:.42rem 1rem;
+    font-size:.85rem; color:var(--dim); cursor:pointer; transition:.18s;
+  }
+  .seg button[aria-pressed="true"] { background:var(--block2); color:var(--fg); }
+
+  .playrow { display:flex; align-items:center; justify-content:center; gap:1rem; flex-wrap:wrap; margin-top:2rem; }
+  .bigbtn {
+    font-size:1rem; font-weight:650; color:#07080c;
+    background:linear-gradient(135deg, var(--teal), var(--accent));
+    border:none; border-radius:999px; padding:.9rem 2.4rem; cursor:pointer;
+    box-shadow:0 10px 34px rgba(110,168,255,.25); transition:transform .18s, box-shadow .18s;
+  }
+  .bigbtn:hover { transform:translateY(-2px); box-shadow:0 14px 40px rgba(110,168,255,.32); }
+  .bigbtn:disabled { opacity:.5; cursor:wait; transform:none; }
+
+  #stats { display:flex; justify-content:center; gap:1.8rem; flex-wrap:wrap; margin-top:2.4rem; }
+  #stats .st { font-size:.72rem; color:var(--dim); text-align:center; }
+  #stats .st b { display:block; font-size:1.35rem; color:var(--fg); font-weight:650; }
+
+  details.rules { margin-top:2rem; border-top:1px solid var(--border); padding-top:1rem; }
+  details.rules summary { cursor:pointer; font-size:.82rem; color:var(--dim); }
+  details.rules p { font-size:.82rem; color:var(--dim); line-height:1.7; margin-top:.7rem; }
+  details.rules code { background:var(--panel); padding:.1rem .35rem; border-radius:4px; color:var(--teal); }
+
+  /* ================= game ================= */
+  #game { flex:1; display:none; flex-direction:column; min-height:0; }
+  #game.active { display:flex; }
+
+  #hud {
+    display:flex; align-items:center; gap:.55rem; flex-wrap:wrap;
+    padding:.5rem 0 .8rem; flex:0 0 auto;
+  }
+  .chip {
+    display:inline-flex; align-items:center; gap:.4rem;
+    background:var(--panel); border:1px solid var(--border); border-radius:999px;
+    padding:.34rem .8rem; font-size:.78rem; color:var(--dim); white-space:nowrap;
+  }
+  .chip b { color:var(--fg); font-weight:650; font-variant-numeric:tabular-nums; }
+  .chip.warn { border-color:var(--rose); color:var(--rose); }
+  .chip.warn b { color:var(--rose); }
+  #hud .spacer { flex:1; }
+  .gbtn {
+    background:var(--panel); border:1px solid var(--border); border-radius:999px;
+    padding:.34rem .85rem; font-size:.78rem; color:var(--dim); cursor:pointer; transition:.18s;
+  }
+  .gbtn:hover { border-color:var(--teal); color:var(--fg); }
+  .gbtn:disabled { opacity:.4; cursor:not-allowed; }
+  .gbtn.hint { border-color:#3d3320; color:var(--amber); }
+  .gbtn.hint:hover { border-color:var(--amber); }
+
+  #bar { height:3px; background:var(--block); border-radius:2px; overflow:hidden; flex:0 0 auto; margin-bottom:.9rem; }
+  #barfill { height:100%; width:0; background:linear-gradient(90deg, var(--teal), var(--accent)); transition:width .45s ease; }
+
+  #layout {
+    flex:1; display:grid; gap:1rem; min-height:0;
+    grid-template-columns:minmax(0,1fr) 280px;
+  }
+
+  /* --- page --- */
+  #pagewrap {
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    overflow:auto; min-height:0; position:relative;
+  }
+  #page { padding:1.6rem 1.8rem 3rem; line-height:2.15; font-size:.95rem; }
+  #page .title { font-size:1.6rem; line-height:1.9; margin-bottom:.4rem; font-weight:600; }
+  #page .titlebar { height:1px; background:var(--border); margin:.9rem 0 1.4rem; }
+  #page h2 { font-size:1.1rem; line-height:2; margin:1.6rem 0 .5rem; font-weight:600; }
+  #page h3 { font-size:1rem; line-height:2; margin:1.2rem 0 .4rem; font-weight:600; color:var(--dim); }
+  #page p { margin-bottom:.55rem; }
+  .w {
+    display:inline-block; vertical-align:baseline; border-radius:3px;
+    background:var(--block); color:transparent; user-select:none;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    letter-spacing:0; transition:background .25s;
+  }
+  .w.t { background:var(--block2); }
+  .w.on {
+    background:none; color:var(--fg); user-select:auto; width:auto !important;
+    font-family:inherit;
+  }
+  .w.on.near { color:var(--amber); }
+  .w.on.hinted { color:var(--purple); }
+  .w.on.tw { color:var(--teal); font-weight:650; }
+  .w.flash { animation:flash .9s ease-out; }
+  @keyframes flash {
+    0% { background:var(--teal); color:#07080c; border-radius:3px; }
+    100% { background:transparent; }
+  }
+  .punct { color:#39415c; }
+  .w.on + .punct, .punct { transition:color .3s; }
+  #page.done .punct { color:var(--dim); }
+
+  /* --- side --- */
+  #side { display:flex; flex-direction:column; gap:.7rem; min-height:0; }
+  #inputwrap { position:relative; flex:0 0 auto; }
+  #guess {
+    width:100%; background:var(--panel2); border:1px solid var(--border);
+    border-radius:12px; padding:.85rem 1rem; font-size:1rem; color:var(--fg);
+    outline:none; transition:border-color .18s;
+  }
+  #guess:focus { border-color:var(--teal); }
+  #guess::placeholder { color:#4a4f61; }
+  #feedback { font-size:.78rem; min-height:1.2rem; padding:.15rem .2rem; color:var(--dim); }
+  #feedback.good { color:var(--teal); }
+  #feedback.near { color:var(--amber); }
+  #feedback.bad { color:#5a5f73; }
+  #feedback.dup { color:var(--purple); }
+
+  #listhead { display:flex; align-items:center; justify-content:space-between; font-size:.7rem;
+              letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+  #sortbtn { background:none; border:none; color:var(--dim); font-size:.7rem; cursor:pointer; letter-spacing:.08em; }
+  #sortbtn:hover { color:var(--teal); }
+  #list {
+    flex:1; overflow:auto; min-height:80px;
+    background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:.4rem;
+  }
+  #list .g {
+    display:flex; align-items:center; gap:.5rem; padding:.32rem .5rem;
+    border-radius:8px; font-size:.85rem;
+  }
+  #list .g:nth-child(odd) { background:rgba(255,255,255,.018); }
+  #list .g .num { font-size:.68rem; color:#4a4f61; width:2ch; text-align:right; font-variant-numeric:tabular-nums; }
+  #list .g .word { flex:1; overflow:hidden; text-overflow:ellipsis; }
+  #list .g .cnt { font-size:.72rem; font-variant-numeric:tabular-nums; color:var(--dim); }
+  #list .g.zero .word { color:#5a5f73; }
+  #list .g.hit .word { color:var(--teal); }
+  #list .g.nearg .word { color:var(--amber); }
+  #list .g.title .word { color:var(--teal); font-weight:650; }
+
+  /* ================= overlays ================= */
+  #veil {
+    position:fixed; inset:0; background:rgba(4,6,10,.78);
+    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    display:none; align-items:center; justify-content:center; padding:1.2rem; z-index:20;
+  }
+  #veil.on { display:flex; }
+  #modal {
+    background:var(--panel); border:1px solid var(--border); border-radius:20px;
+    max-width:460px; width:100%; padding:1.8rem; text-align:center;
+    box-shadow:0 30px 80px rgba(0,0,0,.6);
+  }
+  #modal .verdict { font-size:.75rem; letter-spacing:.16em; text-transform:uppercase; color:var(--dim); }
+  #modal h2 { font-size:1.7rem; font-weight:700; margin:.5rem 0 .2rem; line-height:1.25; }
+  #modal .sub { color:var(--dim); font-size:.85rem; margin-bottom:1.1rem; }
+  #modal img { max-width:170px; border-radius:12px; margin:0 auto 1.1rem; display:block; }
+  #modal .mstats { display:flex; justify-content:center; gap:1.6rem; margin-bottom:1.4rem; }
+  #modal .mstats div { font-size:.7rem; color:var(--dim); }
+  #modal .mstats b { display:block; font-size:1.3rem; color:var(--fg); font-weight:650; }
+  #modal .row { display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap; }
+  #modal .row button, #modal .row a {
+    background:var(--panel2); border:1px solid var(--border); border-radius:999px;
+    padding:.6rem 1.2rem; font-size:.85rem; cursor:pointer; color:var(--fg); transition:.18s;
+  }
+  #modal .row button:hover, #modal .row a:hover { border-color:var(--teal); text-decoration:none; }
+  #modal .row .primary { background:linear-gradient(135deg,var(--teal),var(--accent)); color:#07080c; border:none; font-weight:650; }
+
+  #confetti { position:fixed; inset:0; pointer-events:none; z-index:25; }
+  #toast {
+    position:fixed; left:50%; bottom:1.4rem; transform:translate(-50%,140%);
+    background:var(--panel2); border:1px solid var(--border); border-radius:999px;
+    padding:.55rem 1.1rem; font-size:.82rem; z-index:30; transition:transform .3s;
+  }
+  #toast.on { transform:translate(-50%,0); }
+
+  @media (max-width:820px) {
+    #layout { grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr) auto; }
+    #side { flex-direction:column-reverse; }
+    #list { max-height:26vh; flex:0 0 auto; }
+    #page { padding:1.1rem 1.1rem 2rem; }
+    main { padding:0 .8rem .8rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation:none !important; transition:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><b>redacted</b> <span class="bar">·····</span></h1>
+  <a class="back" href="../">← lab</a>
+</header>
+
+<main>
+
+<!-- ========================= SETUP ========================= -->
+<section id="setup" class="screen active">
+  <div class="lead">
+    <div class="big">a whole <em>wikipedia page</em>, blacked out</div>
+    <p>Type any word. Every place it appears in the hidden article lights up. Keep going
+       until you can read the title. That's the whole game.</p>
+  </div>
+
+  <div class="field">
+    <label>mode</label>
+    <div class="opts three" id="modeOpts">
+      <button class="opt" data-mode="daily" aria-pressed="true">
+        <div class="n">📅 daily</div>
+        <div class="d">one page a day, same for everyone. builds a streak.</div>
+      </button>
+      <button class="opt" data-mode="endless" aria-pressed="false">
+        <div class="n">♾️ endless</div>
+        <div class="d">a fresh page whenever you want one. play all night.</div>
+      </button>
+      <button class="opt" data-mode="blitz" aria-pressed="false">
+        <div class="n">⏱️ blitz</div>
+        <div class="d">same game, three minutes on the clock.</div>
+      </button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>difficulty</label>
+    <div class="opts four" id="diffOpts">
+      <button class="opt" data-diff="easy" aria-pressed="false">
+        <div class="n">🟢 warm-up</div>
+        <div class="d">famous subjects, long article, small words free, 5 hints</div>
+      </button>
+      <button class="opt" data-diff="normal" aria-pressed="true">
+        <div class="n">🔵 normal</div>
+        <div class="d">the classic. medium-known subjects, 3 hints</div>
+      </button>
+      <button class="opt" data-diff="hard" aria-pressed="false">
+        <div class="n">🟣 obscure</div>
+        <div class="d">things you half-know, short article, 1 hint</div>
+      </button>
+      <button class="opt" data-diff="brutal" aria-pressed="false">
+        <div class="n">🔴 brutal</div>
+        <div class="d">lead paragraph only, no hints, no near-misses</div>
+      </button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>language</label>
+    <div class="seg" id="langSeg">
+      <button data-lang="en" aria-pressed="true">english</button>
+      <button data-lang="fr" aria-pressed="false">français</button>
+    </div>
+  </div>
+
+  <div class="playrow">
+    <button class="bigbtn" id="playBtn">redact something</button>
+  </div>
+
+  <div id="stats"></div>
+
+  <details class="rules">
+    <summary>how it works / differences from pedantix</summary>
+    <p>Every word of a real Wikipedia article is replaced by a grey block the width of the
+       word. You guess words; each guess reveals <b>all</b> occurrences of that word in the
+       page, title included. You win when the title is fully readable.</p>
+    <p><b>Colours:</b> <span style="color:var(--fg)">white</span> = exact match ·
+       <span style="color:var(--amber)">amber</span> = near match (same root, e.g.
+       <code>build</code> → <code>building</code>) ·
+       <span style="color:var(--purple)">purple</span> = revealed by a hint ·
+       <span style="color:var(--teal)">teal</span> = a word of the title.</p>
+    <p><b>No word2vec.</b> Pedantix scores how semantically close a wrong guess was, using a
+       server-side embedding model. This page has no server — it talks straight to the
+       Wikipedia API from your browser. So instead of proximity scores you get a hint budget,
+       difficulty tiers, unlimited replays and a clock. Everything else is the same idea.</p>
+    <p>Articles are pulled live from Wikipedia, so no two runs of <b>endless</b> feel the same.
+       Nothing leaves your browser; stats live in <code>localStorage</code>.</p>
+  </details>
+</section>
+
+<!-- ========================= GAME ========================= -->
+<section id="game" class="screen">
+  <div id="hud">
+    <span class="chip" id="chipMode">📅 daily</span>
+    <span class="chip" id="chipGuess">guesses <b>0</b></span>
+    <span class="chip" id="chipFound">revealed <b>0%</b></span>
+    <span class="chip" id="chipTime" hidden>⏱ <b>3:00</b></span>
+    <span class="spacer"></span>
+    <button class="gbtn hint" id="hintBtn">💡 hint <b>·</b></button>
+    <button class="gbtn" id="giveBtn">give up</button>
+    <button class="gbtn" id="newBtn">new page</button>
+  </div>
+  <div id="bar"><div id="barfill"></div></div>
+
+  <div id="layout">
+    <div id="pagewrap"><div id="page"></div></div>
+    <div id="side">
+      <div id="inputwrap">
+        <input id="guess" type="text" autocomplete="off" autocapitalize="off"
+               autocorrect="off" spellcheck="false" placeholder="type a word…">
+        <div id="feedback"></div>
+      </div>
+      <div id="listhead">
+        <span>your guesses</span>
+        <button id="sortbtn">sort: newest</button>
+      </div>
+      <div id="list"></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div id="veil"><div id="modal"></div></div>
+<canvas id="confetti"></canvas>
+<div id="toast"></div>
+
+<script>
+(function () {
+'use strict';
+
+/* ============================================================
+   article pools — curated per language / difficulty.
+   A title that no longer exists is not fatal: fetch() falls back
+   to a Wikipedia search, then to the next candidate.
+   ============================================================ */
+var POOLS = {
+  en: {
+    easy: ['Paris','Eiffel Tower','Cat','Chocolate','Association football','Sun','Ocean','Bicycle',
+      'Pizza','Wolfgang Amadeus Mozart','Leonardo da Vinci','Mount Everest','Amazon River','Blue whale',
+      'Coffee','Computer','Internet','Volcano','Dinosaur','Moon','Guitar','Cheese','Human brain',
+      'Marie Curie','French Revolution','Olympic Games','Titanic','Gray wolf','Honey bee','Wine',
+      'Sahara','Polar bear','Piano','Tokyo','Chess','Rainbow','Desert','Bridge','Coral reef','Antarctica'],
+    normal: ['Mycelium','Photosynthesis','Special relativity','Hokusai','Silk Road','Vikings','Antibiotic',
+      'Tide','Aurora','Baroque','Berlin Wall','Semiconductor','Spice','Plate tectonics','Esperanto',
+      'Origami','Penicillin','Voynich manuscript','Chernobyl disaster','Steam engine','Cryptography',
+      'Bird migration','Library of Alexandria','Sumo','Fado','Cartography','Horology','Lighthouse',
+      'Bioluminescence','Permafrost','Monsoon','Loom','Cuneiform','Terraced field','Sourdough',
+      'Nuclear fusion','Falconry','Whale song','Glassblowing','Camera obscura'],
+    hard: ['Tardigrade','Zoetrope','Ergotism','Carnac stones','Cymatics','Antikythera mechanism',
+      'Coandă effect','Benford’s law','Dunbar’s number','Panspermia','Bathysphere','Cenote',
+      'Ambergris','Hapax legomenon','Bayes’ theorem','Time crystal','Radiolaria','Vantablack',
+      'Cargo cult','Solastalgia','Sonoluminescence','Palimpsest','Zugzwang','Kintsugi','Fulgurite',
+      'Petrichor','Boustrophedon','Apophenia','Ostinato','Silbo Gomero','Mpemba effect','Ball lightning',
+      'Cordyceps','Brown note','Dazzle camouflage','Isochronous timing','Wow! signal','Toponymy',
+      'Ceteris paribus','Anechoic chamber'],
+    brutal: ['Sortition','Anosognosia','Hylozoism','Sprachbund','Enantiodromia','Chiastic structure',
+      'Quaquaversal','Sublimation (phase transition)','Dendrochronology','Hysteresis','Ekphrasis',
+      'Metonymy','Bezoar','Wunderkammer','Contronym','Diastema','Fumarole','Lacuna (manuscripts)',
+      'Nychthemeron','Pareidolia','Sfumato','Thalassophobia','Aeolian harp','Hodological space',
+      'Nominative determinism','Skeuomorph','Longue durée','Sympatric speciation','Errantry',
+      'Gemütlichkeit','Fernweh','Sesquipedalianism','Umwelt','Cryptobiosis','Antipodes','Verdigris',
+      'Chiaroscuro','Marginalia','Fossil water','Ley line']
+  },
+  fr: {
+    easy: ['Paris','Tour Eiffel','Chat','Chocolat','Football','Soleil','Océan','Bicyclette','Pizza',
+      'Wolfgang Amadeus Mozart','Léonard de Vinci','Everest','Amazone (fleuve)','Rorqual bleu','Café',
+      'Ordinateur','Internet','Volcan','Dinosauria','Lune','Guitare','Fromage','Cerveau humain',
+      'Marie Curie','Révolution française','Jeux olympiques','Titanic','Loup gris','Abeille','Vin',
+      'Sahara','Ours blanc','Piano','Tokyo','Échecs','Arc-en-ciel','Désert','Pont','Récif corallien',
+      'Antarctique'],
+    normal: ['Mycélium','Photosynthèse','Relativité restreinte','Hokusai','Route de la soie','Vikings',
+      'Antibiotique','Marée','Aurore polaire','Baroque','Mur de Berlin','Semi-conducteur','Épice',
+      'Tectonique des plaques','Espéranto','Origami','Pénicilline','Manuscrit de Voynich',
+      'Catastrophe nucléaire de Tchernobyl','Machine à vapeur','Cryptographie','Migration des oiseaux',
+      'Bibliothèque d’Alexandrie','Sumo','Fado','Cartographie','Horlogerie','Phare',
+      'Bioluminescence','Pergélisol','Mousson','Métier à tisser','Cunéiforme','Culture en terrasses',
+      'Levain','Fusion nucléaire','Fauconnerie','Chant des baleines','Soufflage du verre',
+      'Camera obscura'],
+    hard: ['Tardigrada','Zootrope','Ergotisme','Alignements de Carnac','Cymatique',
+      'Machine d’Anticythère','Effet Coandă','Loi de Benford','Nombre de Dunbar','Panspermie',
+      'Bathyscaphe','Cénote','Ambre gris','Hapax','Théorème de Bayes','Cristal temporel','Radiolaire',
+      'Vantablack','Culte du cargo','Solastalgie','Sonoluminescence','Palimpseste','Zugzwang','Kintsugi',
+      'Fulgurite','Pétrichor','Boustrophédon','Apophénie','Ostinato','Silbo gomero','Effet Mpemba',
+      'Foudre en boule','Cordyceps','Camouflage dazzle','Isochronisme','Signal Wow!','Toponymie',
+      'Ceteris paribus','Chambre anéchoïque','Vitrail'],
+    brutal: ['Tirage au sort en politique','Anosognosie','Hylozoïsme','Aire linguistique','Énantiodromie',
+      'Chiasme','Sublimation (physique)','Dendrochronologie','Hystérésis','Ekphrasis','Métonymie',
+      'Bézoard','Cabinet de curiosités','Énantiosémie','Diastème','Fumerolle','Anacoluthe',
+      'Nycthémère','Paréidolie','Sfumato','Thalassophobie','Harpe éolienne','Aptonyme','Skeuomorphisme',
+      'Spéciation sympatrique','Umwelt','Cryptobiose','Antipode','Vert-de-gris','Clair-obscur',
+      'Marginalia','Eau fossile','Ley line','Anamorphose','Antanaclase','Tautogramme','Épenthèse',
+      'Zeugme','Litote','Chronotope']
+  }
+};
+
+/* stop-words handed out for free on warm-up difficulty */
+var FREEBIES = {
+  en: 'the a an and or of to in on at is are was were be been by for with from as it its this that these those he she they we you not but if then than so such also into over under after before between during about all any each more most other some no nor can could would should may might must will shall do does did has have had one two his her their our your'.split(' '),
+  fr: 'le la les un une des du de d l et ou a au aux en dans sur par pour avec sans sous entre vers chez est sont etait etaient ete etre son sa ses leur leurs ce cet cette ces qui que quoi dont ou il elle ils elles on nous vous je tu ne pas plus moins tres tout tous toute toutes aussi mais donc car si comme deux trois premier avoir eu ete fait faire peut peuvent doit'.split(' ')
+};
+
+var DIFF = {
+  easy:   { hints:5, chars:7000, freebies:true,  near:true,  label:'🟢 warm-up' },
+  normal: { hints:3, chars:5000, freebies:false, near:true,  label:'🔵 normal' },
+  hard:   { hints:1, chars:2600, freebies:false, near:true,  label:'🟣 obscure' },
+  brutal: { hints:0, chars:1200, freebies:false, near:false, label:'🔴 brutal' }
+};
+var MODE_LABEL = { daily:'📅 daily', endless:'♾️ endless', blitz:'⏱️ blitz' };
+var BLITZ_SECONDS = 180;
+
+/* ============================================================
+   small utils
+   ============================================================ */
+function $(id) { return document.getElementById(id); }
+function norm(s) {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .replace(/œ/g, 'oe').replace(/æ/g, 'ae')
+          .replace(/[^a-z0-9]/g, '');
+}
+var SUFFIXES = ['ations','ation','ements','ement','issement','ismes','istes','ances','ance','ences',
+  'ence','euses','elles','ieres','aient','erons','eront','iront','tions','sions','ings','ness','ment',
+  'tion','sion','eurs','euse','ants','ents','iens','ales','aux','ees','ers','est','ies','ing','ies',
+  'ed','es','er','ez','ir','it','ie','ee','al','en','s','e'];
+function stem(n) {
+  var w = n, pass;
+  for (pass = 0; pass < 2; pass++) {
+    for (var i = 0; i < SUFFIXES.length; i++) {
+      var s = SUFFIXES[i];
+      if (w.length - s.length >= 4 && w.slice(-s.length) === s) { w = w.slice(0, -s.length); break; }
+    }
+  }
+  return w;
+}
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function hash(str) {
+  var h = 2166136261;
+  for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function todayKey() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' +
+         String(d.getDate()).padStart(2, '0');
+}
+function fmtTime(s) {
+  return Math.floor(s / 60) + ':' + String(Math.max(0, s % 60)).padStart(2, '0');
+}
+function toast(msg) {
+  var t = $('toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toast._h); toast._h = setTimeout(function () { t.classList.remove('on'); }, 2200);
+}
+
+/* ============================================================
+   persistent stats
+   ============================================================ */
+var SKEY = 'redacted.stats.v1';
+var S = { played:0, won:0, bestGuesses:null, streak:0, lastDaily:null, dailyDone:{} };
+try { var raw = localStorage.getItem(SKEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch (e) {}
+function saveStats() { try { localStorage.setItem(SKEY, JSON.stringify(S)); } catch (e) {} }
+function renderStats() {
+  var pct = S.played ? Math.round(100 * S.won / S.played) : 0;
+  $('stats').innerHTML =
+    '<div class="st"><b>' + S.played + '</b>played</div>' +
+    '<div class="st"><b>' + S.won + '</b>solved</div>' +
+    '<div class="st"><b>' + pct + '%</b>win rate</div>' +
+    '<div class="st"><b>' + (S.bestGuesses == null ? '–' : S.bestGuesses) + '</b>best (guesses)</div>' +
+    '<div class="st"><b>' + S.streak + '</b>daily streak</div>';
+}
+
+/* ============================================================
+   setup screen wiring
+   ============================================================ */
+var cfg = { mode:'daily', diff:'normal', lang:'en' };
+try {
+  var c = JSON.parse(localStorage.getItem('redacted.cfg') || 'null');
+  if (c) { cfg.diff = c.diff || cfg.diff; cfg.lang = c.lang || cfg.lang; cfg.mode = c.mode || cfg.mode; }
+} catch (e) {}
+function saveCfg() { try { localStorage.setItem('redacted.cfg', JSON.stringify(cfg)); } catch (e) {} }
+
+function wireGroup(container, attr, key) {
+  var btns = container.querySelectorAll('[' + attr + ']');
+  function paint() {
+    Array.prototype.forEach.call(btns, function (b) {
+      b.setAttribute('aria-pressed', b.getAttribute(attr) === cfg[key] ? 'true' : 'false');
+    });
+  }
+  Array.prototype.forEach.call(btns, function (b) {
+    b.addEventListener('click', function () { cfg[key] = b.getAttribute(attr); paint(); saveCfg(); });
+  });
+  paint();
+}
+wireGroup($('modeOpts'), 'data-mode', 'mode');
+wireGroup($('diffOpts'), 'data-diff', 'diff');
+wireGroup($('langSeg'), 'data-lang', 'lang');
+renderStats();
+
+/* ============================================================
+   wikipedia fetch
+   ============================================================ */
+function api(lang, params) {
+  var url = 'https://' + lang + '.wikipedia.org/w/api.php?origin=*&format=json&formatversion=2&' + params;
+  return fetch(url).then(function (r) {
+    if (!r.ok) throw new Error('http ' + r.status);
+    return r.json();
+  });
+}
+function fetchExtract(lang, title) {
+  return api(lang, 'action=query&redirects=1&prop=extracts|pageimages&explaintext=1' +
+                   '&exsectionformat=plain&piprop=thumbnail&pithumbsize=340&titles=' +
+                   encodeURIComponent(title))
+    .then(function (j) {
+      var p = j && j.query && j.query.pages && j.query.pages[0];
+      if (!p || p.missing || !p.extract || p.extract.length < 400) return null;
+      return { title:p.title, extract:p.extract,
+               thumb:p.thumbnail ? p.thumbnail.source : null,
+               url:'https://' + lang + '.wikipedia.org/wiki/' + encodeURIComponent(p.title.replace(/ /g, '_')) };
+    });
+}
+function searchTitle(lang, q) {
+  return api(lang, 'action=query&list=search&srlimit=1&srsearch=' + encodeURIComponent(q))
+    .then(function (j) {
+      var r = j && j.query && j.query.search && j.query.search[0];
+      return r ? r.title : null;
+    });
+}
+/* try candidates in order; each candidate gets a search fallback */
+function resolveArticle(lang, candidates, i) {
+  i = i || 0;
+  if (i >= candidates.length) return Promise.reject(new Error('no article'));
+  var t = candidates[i];
+  return fetchExtract(lang, t)
+    .then(function (a) {
+      if (a) return a;
+      return searchTitle(lang, t).then(function (t2) {
+        return t2 ? fetchExtract(lang, t2) : null;
+      });
+    })
+    .catch(function () { return null; })
+    .then(function (a) { return a || resolveArticle(lang, candidates, i + 1); });
+}
+
+/* ============================================================
+   game state
+   ============================================================ */
+var G = null;   /* current game */
+var sortByHits = false;
+
+var WORD_RE = /[0-9A-Za-zÀ-ÖØ-öø-ÿŒœŸ]+/g;
+
+function tokenize(text) {
+  var out = [], last = 0, m;
+  WORD_RE.lastIndex = 0;
+  while ((m = WORD_RE.exec(text)) !== null) {
+    if (m.index > last) out.push({ w:false, s:text.slice(last, m.index) });
+    out.push({ w:true, s:m[0], n:norm(m[0]) });
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) out.push({ w:false, s:text.slice(last) });
+  return out;
+}
+
+/* cut the extract at a paragraph boundary near the cap */
+function trimExtract(text, cap) {
+  if (text.length <= cap) return text;
+  var cut = text.lastIndexOf('\n', cap);
+  if (cut < cap * 0.5) cut = text.indexOf('\n', cap);
+  if (cut < 0) cut = cap;
+  return text.slice(0, cut);
+}
+
+/* build the blocks of the page: title, headings, paragraphs */
+function buildBlocks(article, cap) {
+  var blocks = [{ kind:'title', text:article.title.replace(/\s*\([^)]*\)\s*$/, '') }];
+  var body = trimExtract(article.extract, cap);
+  body.split('\n').forEach(function (line) {
+    var t = line.trim();
+    if (!t) return;
+    var m = t.match(/^(=+)\s*(.*?)\s*=+$/);
+    if (m) blocks.push({ kind:m[1].length >= 3 ? 'h3' : 'h2', text:m[2] });
+    else blocks.push({ kind:'p', text:t });
+  });
+  return blocks;
+}
+
+function startGame(article, seedInfo) {
+  if (G && G.timer) { clearInterval(G.timer); G.timer = null; }
+  $('veil').classList.remove('on');
+  var d = DIFF[cfg.diff];
+  var blocks = buildBlocks(article, d.chars);
+
+  G = {
+    article:article, diff:cfg.diff, mode:cfg.mode, lang:cfg.lang,
+    seedInfo:seedInfo, d:d,
+    tokens:[],            /* all word tokens, in page order */
+    index:{},             /* normalised form -> [token idx] */
+    stems:{},             /* stem -> [token idx] */
+    titleIdx:[],          /* token idx belonging to the title */
+    guesses:[], seen:{},
+    hintsLeft:d.hints, revealed:0, wordCount:0,
+    over:false, won:false,
+    t0:Date.now(), timeLeft:BLITZ_SECONDS, timer:null
+  };
+
+  /* ---- render page + build indexes ---- */
+  var page = $('page');
+  page.className = '';
+  page.innerHTML = '';
+  var frag = document.createDocumentFragment();
+
+  blocks.forEach(function (b) {
+    var el;
+    if (b.kind === 'title') { el = document.createElement('div'); el.className = 'title'; }
+    else if (b.kind === 'h2') el = document.createElement('h2');
+    else if (b.kind === 'h3') el = document.createElement('h3');
+    else el = document.createElement('p');
+
+    tokenize(b.text).forEach(function (t) {
+      if (!t.w) {
+        var sp = document.createElement('span');
+        sp.className = 'punct'; sp.textContent = t.s;
+        el.appendChild(sp);
+        return;
+      }
+      var i = G.tokens.length;
+      var span = document.createElement('span');
+      span.className = 'w' + (b.kind === 'title' ? ' t' : '');
+      span.style.width = t.s.length + 'ch';
+      span.style.height = '1.05em';
+      el.appendChild(span);
+
+      var tok = { s:t.s, n:t.n, el:span, on:false, title:b.kind === 'title' };
+      G.tokens.push(tok);
+      (G.index[t.n] || (G.index[t.n] = [])).push(i);
+      var st = stem(t.n);
+      (G.stems[st] || (G.stems[st] = [])).push(i);
+      if (b.kind === 'title') G.titleIdx.push(i);
+    });
+    frag.appendChild(el);
+    if (b.kind === 'title') {
+      var hr = document.createElement('div'); hr.className = 'titlebar'; frag.appendChild(hr);
+    }
+  });
+  page.appendChild(frag);
+  G.wordCount = G.tokens.length;
+
+  /* ---- freebies ---- */
+  if (d.freebies) {
+    FREEBIES[cfg.lang].forEach(function (w) {
+      var n = norm(w);
+      if (G.index[n]) reveal(G.index[n], 'on', false);
+    });
+  }
+
+  /* ---- hud ---- */
+  $('setup').classList.remove('active');
+  $('game').classList.add('active');
+  $('chipMode').textContent = MODE_LABEL[cfg.mode] + ' · ' + d.label;
+  $('list').innerHTML = '';
+  $('feedback').textContent = '';
+  $('feedback').className = '';
+  $('guess').value = '';
+  $('guess').disabled = false;
+  $('hintBtn').disabled = d.hints === 0;
+  $('giveBtn').disabled = false;
+  updateHud();
+  $('guess').focus();
+
+  if (cfg.mode === 'blitz') {
+    $('chipTime').hidden = false;
+    G.timer = setInterval(tick, 1000);
+  } else {
+    $('chipTime').hidden = true;
+  }
+}
+
+function tick() {
+  if (!G || G.over) return;
+  G.timeLeft--;
+  var c = $('chipTime');
+  c.innerHTML = '⏱ <b>' + fmtTime(G.timeLeft) + '</b>';
+  c.classList.toggle('warn', G.timeLeft <= 30);
+  if (G.timeLeft <= 0) endGame(false, 'time');
+}
+
+function reveal(idxs, cls, flash) {
+  var n = 0;
+  idxs.forEach(function (i) {
+    var t = G.tokens[i];
+    if (t.on) return;
+    t.on = true; n++; G.revealed++;
+    t.el.textContent = t.s;
+    t.el.className = 'w on ' + (t.title ? 'tw ' : '') + (cls === 'on' ? '' : cls) + (flash ? ' flash' : '');
+  });
+  return n;
+}
+
+function titleDone() {
+  return G.titleIdx.every(function (i) { return G.tokens[i].on; });
+}
+
+function updateHud() {
+  $('chipGuess').innerHTML = 'guesses <b>' + G.guesses.length + '</b>';
+  var pct = G.wordCount ? Math.round(100 * G.revealed / G.wordCount) : 0;
+  $('chipFound').innerHTML = 'revealed <b>' + pct + '%</b>';
+  var tdone = G.titleIdx.filter(function (i) { return G.tokens[i].on; }).length;
+  $('barfill').style.width = (G.titleIdx.length ? 100 * tdone / G.titleIdx.length : 0) + '%';
+  $('hintBtn').innerHTML = '💡 hint <b>' + G.hintsLeft + '</b>';
+  $('hintBtn').disabled = G.hintsLeft <= 0 || G.over;
+}
+
+function scrollToFirst(idxs) {
+  var wrap = $('pagewrap');
+  for (var k = 0; k < idxs.length; k++) {
+    var el = G.tokens[idxs[k]].el;
+    var top = el.offsetTop - wrap.clientHeight / 2;
+    if (top < wrap.scrollTop || top > wrap.scrollTop + wrap.clientHeight) {
+      wrap.scrollTo({ top:Math.max(0, top), behavior:'smooth' });
+    }
+    return;
+  }
+}
+
+function renderList() {
+  var arr = G.guesses.slice();
+  if (sortByHits) arr.sort(function (a, b) { return b.hits - a.hits || a.i - b.i; });
+  else arr.reverse();
+  var html = arr.map(function (g) {
+    var cls = g.hits === 0 ? 'zero' : (g.inTitle ? 'title' : (g.exact ? 'hit' : 'nearg'));
+    return '<div class="g ' + cls + '"><span class="num">' + g.i + '</span>' +
+           '<span class="word">' + g.word.replace(/[<&]/g, '') + '</span>' +
+           '<span class="cnt">' + (g.hits || '—') + '</span></div>';
+  }).join('');
+  $('list').innerHTML = html;
+}
+
+function submitGuess(raw) {
+  if (!G || G.over) return;
+  var words = raw.split(/[^0-9A-Za-zÀ-ÿŒœ]+/).filter(Boolean);
+  if (!words.length) return;
+  var fb = $('feedback');
+  var total = 0, anyNew = false, lastIdx = null;
+
+  words.forEach(function (w) {
+    var n = norm(w);
+    if (!n) return;
+    if (G.seen[n]) {
+      fb.className = 'dup';
+      fb.textContent = '“' + w + '” already tried (' + G.seen[n].hits + ')';
+      return;
+    }
+    var exactIdx = G.index[n] || [];
+    var hits = 0, inTitle = false, isExact = exactIdx.length > 0;
+
+    if (exactIdx.length) {
+      hits += reveal(exactIdx, 'on', true);
+      lastIdx = exactIdx;
+    }
+    if (G.d.near) {
+      var st = stem(n);
+      var nearIdx = (G.stems[st] || []).filter(function (i) { return G.tokens[i].n !== n; });
+      if (nearIdx.length) {
+        var got = reveal(nearIdx, 'near', true);
+        hits += got;
+        if (got && !lastIdx) lastIdx = nearIdx;
+      }
+    }
+    inTitle = G.titleIdx.some(function (i) {
+      return G.tokens[i].n === n || (G.d.near && stem(G.tokens[i].n) === stem(n));
+    });
+
+    var rec = { i:G.guesses.length + 1, word:w, hits:exactIdx.length + (G.d.near ? (G.stems[stem(n)] || []).filter(function (i) { return G.tokens[i].n !== n; }).length : 0), exact:isExact, inTitle:inTitle };
+    G.guesses.push(rec);
+    G.seen[n] = rec;
+    total += rec.hits;
+    if (hits) anyNew = true;
+
+    if (rec.hits === 0) { fb.className = 'bad'; fb.textContent = '“' + w + '” — nowhere on this page'; }
+    else if (inTitle) { fb.className = 'good'; fb.textContent = '“' + w + '” ×' + rec.hits + ' — and it is in the title'; }
+    else if (isExact) { fb.className = 'good'; fb.textContent = '“' + w + '” ×' + rec.hits; }
+    else { fb.className = 'near'; fb.textContent = '“' + w + '” — near match ×' + rec.hits; }
+  });
+
+  renderList();
+  updateHud();
+  if (anyNew && lastIdx) scrollToFirst(lastIdx);
+  if (titleDone()) endGame(true, 'solved');
+}
+
+function useHint() {
+  if (!G || G.over || G.hintsLeft <= 0) return;
+  /* a hint gives away a title word only while more than one is still hidden —
+     never the last one, or the hint would just win the game for you */
+  var hidTitle = G.titleIdx.filter(function (i) { return !G.tokens[i].on; });
+  var pick = null;
+  if (hidTitle.length > 1) {
+    /* the shortest hidden title word — cheapest useful nudge */
+    pick = hidTitle.slice().sort(function (a, b) {
+      return G.tokens[a].s.length - G.tokens[b].s.length;
+    })[0];
+  } else {
+    /* otherwise the most frequent word still hidden in the body */
+    var best = null, bestN = 0;
+    for (var n in G.index) {
+      if (G.tokens[G.index[n][0]].on) continue;
+      if (G.titleIdx.indexOf(G.index[n][0]) >= 0) continue;
+      if (G.index[n].length > bestN) { bestN = G.index[n].length; best = n; }
+    }
+    if (best) pick = G.index[best][0];
+  }
+  if (pick == null) { toast('nothing left to reveal'); return; }
+  var n2 = G.tokens[pick].n;
+  G.hintsLeft--;
+  reveal(G.index[n2], 'hinted', true);
+  G.seen[n2] = { i:0, word:G.tokens[pick].s, hits:G.index[n2].length, exact:true, inTitle:G.tokens[pick].title };
+  scrollToFirst(G.index[n2]);
+  updateHud();
+  $('feedback').className = 'dup';
+  $('feedback').textContent = 'hint: “' + G.tokens[pick].s + '”';
+  if (titleDone()) endGame(true, 'solved');
+}
+
+/* ============================================================
+   end of game
+   ============================================================ */
+function endGame(won, why) {
+  if (G.over) return;
+  G.over = true; G.won = won;
+  if (G.timer) { clearInterval(G.timer); G.timer = null; }
+  $('guess').disabled = true;
+  $('hintBtn').disabled = true;
+  $('giveBtn').disabled = true;
+
+  /* reveal everything */
+  G.tokens.forEach(function (t, i) {
+    if (!t.on) { t.on = true; t.el.textContent = t.s; t.el.className = 'w on' + (t.title ? ' tw' : '') + (won ? '' : ' near'); }
+  });
+  $('page').className = 'done';
+  updateHud();
+
+  var secs = Math.round((Date.now() - G.t0) / 1000);
+  S.played++;
+  if (won) {
+    S.won++;
+    if (S.bestGuesses == null || G.guesses.length < S.bestGuesses) S.bestGuesses = G.guesses.length;
+    if (G.mode === 'daily') {
+      var k = todayKey();
+      if (S.lastDaily !== k) {
+        var y = new Date(Date.now() - 864e5);
+        var ykey = y.getFullYear() + '-' + String(y.getMonth() + 1).padStart(2, '0') + '-' + String(y.getDate()).padStart(2, '0');
+        S.streak = (S.lastDaily === ykey) ? S.streak + 1 : 1;
+        S.lastDaily = k;
+      }
+    }
+  } else if (G.mode === 'daily') {
+    S.streak = 0;
+  }
+  saveStats(); renderStats();
+
+  var titleText = G.article.title;
+  var verdict = won ? 'un-redacted' : (why === 'time' ? 'time' : 'revealed');
+  var head = won ? 'you got it' : titleText;
+  var sub = won ? titleText : (why === 'time' ? 'the clock ran out' : 'better luck on the next page');
+
+  var share = 'redacted · ' + MODE_LABEL[G.mode].replace(/^\S+\s/, '') + ' · ' + G.diff +
+    (G.mode === 'daily' ? ' · ' + todayKey() : '') + '\n' +
+    (won ? '🟩 solved in ' + G.guesses.length + ' guesses, ' + fmtTime(secs) :
+           '🟥 gave up after ' + G.guesses.length + ' guesses') + '\n' +
+    'lab.corentinbel.com/redacted/';
+
+  $('modal').innerHTML =
+    '<div class="verdict">' + verdict + '</div>' +
+    '<h2>' + head.replace(/[<&]/g, '') + '</h2>' +
+    '<div class="sub">' + sub.replace(/[<&]/g, '') + '</div>' +
+    (G.article.thumb ? '<img src="' + G.article.thumb + '" alt="">' : '') +
+    '<div class="mstats">' +
+      '<div><b>' + G.guesses.length + '</b>guesses</div>' +
+      '<div><b>' + fmtTime(secs) + '</b>time</div>' +
+      '<div><b>' + Math.round(100 * G.revealed / Math.max(1, G.wordCount)) + '%</b>page</div>' +
+    '</div>' +
+    '<div class="row">' +
+      '<button class="primary" id="againBtn">another page</button>' +
+      '<button id="shareBtn">copy result</button>' +
+      '<a href="' + G.article.url + '" target="_blank" rel="noopener">read it</a>' +
+      '<button id="closeBtn">look at the page</button>' +
+    '</div>';
+  $('veil').classList.add('on');
+  $('againBtn').addEventListener('click', function () { $('veil').classList.remove('on'); newGame(); });
+  $('closeBtn').addEventListener('click', function () { $('veil').classList.remove('on'); });
+  $('shareBtn').addEventListener('click', function () {
+    if (navigator.clipboard) navigator.clipboard.writeText(share).then(function () { toast('copied'); },
+      function () { toast('copy failed'); });
+    else toast('clipboard unavailable');
+  });
+  if (won) confetti();
+}
+
+/* ============================================================
+   picking + launching
+   ============================================================ */
+function pickCandidates() {
+  var pool = POOLS[cfg.lang][cfg.diff].slice();
+  var rnd;
+  var seedInfo = null;
+  if (cfg.mode === 'daily') {
+    var key = todayKey() + '|' + cfg.lang + '|' + cfg.diff;
+    rnd = mulberry32(hash(key));
+    seedInfo = todayKey();
+  } else {
+    rnd = mulberry32((Math.random() * 4294967296) >>> 0);
+  }
+  /* shuffle so fallbacks stay deterministic per seed */
+  for (var i = pool.length - 1; i > 0; i--) {
+    var j = Math.floor(rnd() * (i + 1)), t = pool[i]; pool[i] = pool[j]; pool[j] = t;
+  }
+  return { list:pool, seedInfo:seedInfo };
+}
+
+function newGame() {
+  var btn = $('playBtn');
+  btn.disabled = true; btn.textContent = 'fetching…';
+  $('feedback').textContent = '';
+  var pick = pickCandidates();
+  resolveArticle(cfg.lang, pick.list)
+    .then(function (a) {
+      btn.disabled = false; btn.textContent = 'redact something';
+      startGame(a, pick.seedInfo);
+    })
+    .catch(function (e) {
+      btn.disabled = false; btn.textContent = 'redact something';
+      toast('could not reach wikipedia — check your connection');
+    });
+}
+
+$('playBtn').addEventListener('click', newGame);
+$('newBtn').addEventListener('click', function () { $('veil').classList.remove('on'); newGame(); });
+$('giveBtn').addEventListener('click', function () {
+  if (G && !G.over && confirm('Give up and reveal the page?')) endGame(false, 'gaveup');
+});
+$('hintBtn').addEventListener('click', useHint);
+$('sortbtn').addEventListener('click', function () {
+  sortByHits = !sortByHits;
+  this.textContent = 'sort: ' + (sortByHits ? 'hits' : 'newest');
+  renderList();
+});
+$('guess').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') { submitGuess(this.value); this.value = ''; }
+});
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') $('veil').classList.remove('on');
+  if (e.key === '/' && document.activeElement !== $('guess') && $('game').classList.contains('active')) {
+    e.preventDefault(); $('guess').focus();
+  }
+});
+
+/* ============================================================
+   confetti
+   ============================================================ */
+function confetti() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var cv = $('confetti'), ctx = cv.getContext('2d');
+  var W = cv.width = window.innerWidth, H = cv.height = window.innerHeight;
+  var cols = ['#8ceedd', '#6ea8ff', '#b48ce8', '#ffd27a', '#ff8ca3'];
+  var ps = [];
+  for (var i = 0; i < 140; i++) {
+    ps.push({ x:W / 2 + (Math.random() - .5) * 240, y:H / 2 - 60,
+      vx:(Math.random() - .5) * 9, vy:-Math.random() * 11 - 3,
+      s:3 + Math.random() * 5, c:cols[i % cols.length], r:Math.random() * 6 });
+  }
+  var t0 = Date.now();
+  (function frame() {
+    ctx.clearRect(0, 0, W, H);
+    ps.forEach(function (p) {
+      p.vy += .32; p.x += p.vx; p.y += p.vy; p.r += .1;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
+      ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * 1.6); ctx.restore();
+    });
+    if (Date.now() - t0 < 2600) requestAnimationFrame(frame);
+    else ctx.clearRect(0, 0, W, H);
+  })();
+}
+
+})();
+</script>
+</body>
+</html>

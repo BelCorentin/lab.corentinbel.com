@@ -82,12 +82,26 @@
   #mycSpore { opacity:.4; transition:opacity .4s; }
   .zone-myc:hover #mycSpore, .zone-myc:focus #mycSpore { opacity:1; }
 
+  /* driftwood notice board → redacted/ */
+  #redBars rect {
+    transform-box:fill-box; transform-origin:left center;
+    transition:transform .55s cubic-bezier(.2,.8,.2,1);
+  }
+  .zone-red:hover #redBars rect, .zone-red:focus #redBars rect { transform:scaleX(.1); }
+  #redBars rect:nth-child(2) { transition-delay:.07s; }
+  #redBars rect:nth-child(3) { transition-delay:.14s; }
+  #redBars rect:nth-child(4) { transition-delay:.21s; }
+  #redBars rect:nth-child(5) { transition-delay:.28s; }
+  #redGlow { opacity:.3; transition:opacity .5s; }
+  .zone-red:hover #redGlow, .zone-red:focus #redGlow { opacity:.85; }
+
   @media (prefers-reduced-motion: reduce) {
     .zone-city:hover .coin, .zone-city:focus .coin { animation:none; opacity:.8; }
     #scope { transition:none; }
     .win { transition:none; }
     #quizGlow { animation:none; opacity:.6; }
     #mycCaps { animation:none; }
+    #redBars rect { transition:none; }
   }
 
   /* ---------- floating label chip ---------- */
@@ -353,6 +367,35 @@
     <rect class="hit" x="430" y="740" width="150" height="145"/>
   </a>
 
+  <!-- ===== driftwood notice board → redacted/ ===== -->
+  <a class="zone zone-red" data-zone="red" href="redacted/"
+     aria-label="a notice board on the sand, its lines blacked out — guess the hidden wikipedia page">
+    <g transform="translate(0,18)">
+    <ellipse id="redGlow" cx="1306" cy="792" rx="86" ry="66" fill="url(#hglow)"/>
+    <rect x="1302" y="826" width="8" height="46" fill="#2b2436"/>
+    <rect x="1288" y="866" width="36" height="5" rx="2.5" fill="#1b1f2c"/>
+    <g transform="rotate(-3 1306 786)">
+      <rect x="1246" y="738" width="120" height="92" rx="4" fill="#dcd8cd"/>
+      <rect x="1246" y="738" width="120" height="92" rx="4" fill="none" stroke="#8a8fa3" stroke-width=".8" opacity=".5"/>
+      <g fill="#38a3a5" opacity=".75">
+        <rect x="1256" y="750" width="66" height="6" rx="1.5"/>
+        <rect x="1256" y="766" width="98" height="5" rx="1.5"/>
+        <rect x="1256" y="779" width="86" height="5" rx="1.5"/>
+        <rect x="1256" y="792" width="100" height="5" rx="1.5"/>
+        <rect x="1256" y="805" width="58" height="5" rx="1.5"/>
+      </g>
+      <g id="redBars" fill="#14161f">
+        <rect x="1256" y="749" width="68" height="8" rx="2"/>
+        <rect x="1256" y="765" width="100" height="7" rx="2"/>
+        <rect x="1256" y="778" width="88" height="7" rx="2"/>
+        <rect x="1256" y="791" width="102" height="7" rx="2"/>
+        <rect x="1256" y="804" width="60" height="7" rx="2"/>
+      </g>
+    </g>
+    </g>
+    <rect class="hit" x="1230" y="743" width="160" height="155"/>
+  </a>
+
   <!-- ===== glass lighthouse → glass-brain/ ===== -->
   <a class="zone zone-brain" data-zone="brain" href="glass-brain/"
      aria-label="glass brain — a brain of light in a glass tower, click to stimulate">
@@ -428,6 +471,10 @@
       <div class="t">🍄 mycelium</div>
       <div class="s">grow a glowing fungal network, then some facts that'll mess with you</div>
     </a></li>
+    <li><a href="redacted/">
+      <div class="t">📰 redacted</div>
+      <div class="s">a wikipedia page, blacked out — type words to un-redact it</div>
+    </a></li>
     <li class="soon"><div>
       <div class="t">🎬 movie → brain</div>
       <div class="s">à la TRIBE — soon</div>
@@ -449,6 +496,8 @@
 var ZONES = {
   quiz:  { title: '🧠 mind, blown',
            desc: 'a quiz of things you probably believe that aren\'t quite true' },
+  red:   { title: '📰 redacted',
+           desc: 'a wikipedia page, blacked out — type words until you can read the title' },
   myc:   { title: '🍄 mycelium',
            desc: 'grow a glowing fungal network, then a handful of facts about it' },
   aero:  { title: '✈️ how things fly',
