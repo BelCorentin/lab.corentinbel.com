@@ -82,6 +82,17 @@
   #mycSpore { opacity:.4; transition:opacity .4s; }
   .zone-myc:hover #mycSpore, .zone-myc:focus #mycSpore { opacity:1; }
 
+  /* beached radio → codec/ */
+  #codArcs { transition:opacity .5s; }
+  .zone-codec:hover #codArcs, .zone-codec:focus #codArcs { opacity:.1; }
+  #codBars { opacity:0; transition:opacity .5s; }
+  .zone-codec:hover #codBars, .zone-codec:focus #codBars { opacity:.95; }
+  #codDial { transform-box:fill-box; transform-origin:center;
+             transition:transform .9s ease; }
+  .zone-codec:hover #codDial, .zone-codec:focus #codDial { transform:rotate(160deg); }
+  #codLamp { opacity:.45; transition:opacity .5s; }
+  .zone-codec:hover #codLamp, .zone-codec:focus #codLamp { opacity:1; }
+
   /* driftwood notice board → redacted/ */
   #redBars rect {
     transform-box:fill-box; transform-origin:left center;
@@ -330,6 +341,43 @@
   <path d="M0 900 L0 858 Q300 832 700 858 Q1000 874 1600 848 L1600 900 Z" fill="#131722"/>
   <path d="M0 858 Q300 832 700 858 Q1000 874 1600 848" stroke="#232b3a" stroke-width="1" fill="none" opacity=".6"/>
 
+  <!-- ===== a radio on the sand → codec/ ===== -->
+  <a class="zone zone-codec" data-zone="codec" href="codec/"
+     aria-label="an old radio half-buried in the sand — how sound gets squeezed into a file">
+    <ellipse cx="786" cy="869" rx="58" ry="7" fill="#0e1119"/>
+    <g id="codArcs" stroke="#8ceedd" stroke-width="1.4" fill="none" opacity=".4">
+      <path d="M762.4 805.0 A26 26 0 0 1 809.6 805.0"/>
+      <path d="M751.6 799.9 A38 38 0 0 1 820.4 799.9"/>
+      <path d="M740.7 794.9 A50 50 0 0 1 831.3 794.9"/>
+    </g>
+    <g id="codBars" fill="#6ea8ff">
+      <rect x="748" y="810" width="8" height="6" rx="1"/>
+      <rect x="758" y="802" width="8" height="14" rx="1"/>
+      <rect x="768" y="794" width="8" height="22" rx="1"/>
+      <rect x="778" y="788" width="8" height="28" rx="1"/>
+      <rect x="788" y="792" width="8" height="24" rx="1"/>
+      <rect x="798" y="800" width="8" height="16" rx="1"/>
+      <rect x="808" y="806" width="8" height="10" rx="1"/>
+      <rect x="818" y="810" width="8" height="6" rx="1"/>
+    </g>
+    <line x1="824" y1="820" x2="850" y2="778" stroke="#8a8fa3" stroke-width="1.6"/>
+    <circle cx="850" cy="776" r="2.2" fill="#ffd98a" opacity=".8"/>
+    <rect x="740" y="818" width="92" height="48" rx="6"
+          fill="#171420" stroke="#8a8fa3" stroke-width="1.1"/>
+    <circle cx="766" cy="842" r="16" fill="#0e1119" stroke="#38a3a5" stroke-width="1"/>
+    <g fill="#38a3a5" opacity=".55">
+      <circle cx="760" cy="836" r="1.2"/><circle cx="766" cy="836" r="1.2"/><circle cx="772" cy="836" r="1.2"/>
+      <circle cx="760" cy="842" r="1.2"/><circle cx="766" cy="842" r="1.2"/><circle cx="772" cy="842" r="1.2"/>
+      <circle cx="760" cy="848" r="1.2"/><circle cx="766" cy="848" r="1.2"/><circle cx="772" cy="848" r="1.2"/>
+    </g>
+    <rect x="792" y="826" width="34" height="12" rx="2" fill="#0e1119" stroke="#232b3a" stroke-width=".8"/>
+    <rect id="codLamp" x="794" y="828" width="30" height="8" rx="1.5" fill="#ffd98a"/>
+    <circle id="codDial" cx="800" cy="852" r="7" fill="#0e1119" stroke="#b48ce8" stroke-width="1"/>
+    <line x1="800" y1="852" x2="800" y2="846" stroke="#b48ce8" stroke-width="1.4"/>
+    <circle cx="820" cy="852" r="4.5" fill="#0e1119" stroke="#8a8fa3" stroke-width=".9"/>
+    <rect class="hit" x="720" y="778" width="140" height="112"/>
+  </a>
+
   <!-- ===== mushroom ring / mycelium patch → mycelium/ ===== -->
   <a class="zone zone-myc" data-zone="myc" href="mycelium/"
      aria-label="a ring of glowing mushrooms on the sand — grow a fungal network and read a few mycelium facts">
@@ -475,6 +523,10 @@
       <div class="t">📰 redacted</div>
       <div class="s">a wikipedia page, blacked out — type words to un-redact it</div>
     </a></li>
+    <li><a href="codec/">
+      <div class="t">🎚️ codec</div>
+      <div class="s">how sound gets squeezed — sampling, masking, and the bits your ear never misses</div>
+    </a></li>
     <li class="soon"><div>
       <div class="t">🎬 movie → brain</div>
       <div class="s">à la TRIBE — soon</div>
@@ -496,6 +548,8 @@
 var ZONES = {
   quiz:  { title: '🧠 mind, blown',
            desc: 'a quiz of things you probably believe that aren\'t quite true' },
+  codec: { title: '🎚️ codec',
+           desc: 'how sound gets squeezed — sampling, masking, and the bits your ear never misses' },
   red:   { title: '📰 redacted',
            desc: 'a wikipedia page, blacked out — type words until you can read the title' },
   myc:   { title: '🍄 mycelium',

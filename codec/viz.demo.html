@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>viz.js demo — codec scratch</title>
+<style>
+  :root {
+    --bg:#07080c; --panel:#0d1014; --fg:#e8e6df; --dim:#8a8fa3;
+    --accent:#6ea8ff; --purple:#b48ce8; --teal:#38a3a5; --teal2:#8ceedd;
+    --amber:#ffd27a; --red:#ff8f7a; --border:#232b3a; --radius:14px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:var(--bg); color:var(--fg);
+    font-family:ui-sans-serif,system-ui,sans-serif;
+    padding-bottom:3rem;
+  }
+  header {
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:1.4rem 2rem; flex-wrap:wrap; gap:.6rem;
+    border-bottom:1px solid var(--border);
+  }
+  h1 { font-weight:300; font-size:1.25rem; letter-spacing:.04em; }
+  h1 b { font-weight:600; }
+  header .sub { color:var(--dim); font-size:.82rem; }
+  header button {
+    background:#131721; color:var(--teal2); border:1px solid var(--border); border-radius:8px;
+    padding:.45rem .8rem; font-size:.8rem; cursor:pointer;
+  }
+  header button:hover { border-color:var(--teal2); }
+
+  #errbar {
+    display:none; margin:1rem 2rem 0; padding:.8rem 1rem;
+    background:rgba(255,143,122,.1); border:1px solid var(--red); border-radius:10px;
+    color:var(--red); font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:.78rem; white-space:pre-wrap; max-height:260px; overflow:auto;
+  }
+  #errbar.on { display:block; }
+  #errbar .title { font-weight:700; margin-bottom:.4rem; font-family:ui-sans-serif,system-ui,sans-serif; }
+
+  main {
+    max-width:1280px; margin:0 auto; padding:1.6rem 2rem;
+    display:grid; gap:1.1rem;
+    grid-template-columns:repeat(auto-fit, minmax(360px, 1fr));
+  }
+  .card {
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:.9rem 1rem 1rem; display:flex; flex-direction:column; gap:.55rem;
+  }
+  .card.wide { grid-column:1 / -1; }
+  .card h3 {
+    font-size:.86rem; font-weight:600; color:var(--fg);
+    display:flex; justify-content:space-between; align-items:baseline;
+  }
+  .card h3 code {
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.78rem;
+    color:var(--teal2); font-weight:400;
+  }
+  .card p { font-size:.76rem; color:var(--dim); line-height:1.4; }
+  .cv-wrap { border-radius:10px; overflow:hidden; background:#050609; border:1px solid var(--border); }
+  canvas { display:block; width:100%; height:200px; }
+  canvas.tall { height:260px; }
+  canvas.short { height:150px; }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; }
+  .row2 .cv-wrap canvas { height:170px; }
+  /* the hero panel, sized close to what index.html actually gives it
+     (~900x270 css px) so label-collision logic is tested at real scale */
+  .mask-row { display:flex; flex-wrap:wrap; gap:1rem; }
+  .mask-row .cv-wrap { flex:1 1 420px; max-width:900px; }
+  .mask-row .cv-wrap canvas { height:270px; }
+  /* row of same-scale VQ panels, e.g. RVQ stages sharing one opts.range */
+  .row4 { display:grid; grid-template-columns:repeat(4, 1fr); gap:.6rem; }
+  .row4 .cv-wrap canvas { height:200px; }
+  @media (max-width:820px) { .row4 { grid-template-columns:repeat(2, 1fr); } }
+
+  footer { text-align:center; padding:2rem 0 .5rem; color:var(--dim); font-size:.76rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><b>viz.js</b> · demo</h1>
+    <div class="sub">scratch page — every painter, synthetic data, no dsp.js dependency</div>
+  </div>
+  <button id="regen">↻ regenerate random data</button>
+</header>
+
+<div id="errbar"><div class="title">viz.js threw an error</div><div id="errlog"></div></div>
+
+<main id="main">
+
+  <div class="card">
+    <h3>waveform <code>VIZ.waveform</code></h3>
+    <p>full melody-ish signal, decimated min/max envelope + amber overlay.</p>
+    <div class="cv-wrap"><canvas id="cv-wave-full"></canvas></div>
+  </div>
+
+  <div class="card">
+    <h3>waveform, zoomed <code>VIZ.waveform(dots:true)</code></h3>
+    <p>same signal, ~40 samples across the width — individual sample dots.</p>
+    <div class="cv-wrap"><canvas id="cv-wave-zoom"></canvas></div>
+  </div>
+
+  <div class="card">
+    <h3>staircase <code>VIZ.staircase</code></h3>
+    <p>original (faint) vs 3-bit quantized (teal step function), error shaded red.</p>
+    <div class="cv-wrap"><canvas id="cv-staircase"></canvas></div>
+  </div>
+
+  <div class="card wide">
+    <h3>spectrum <code>VIZ.spectrum</code></h3>
+    <p>log-frequency magnitude with threshold curve (purple, dashed, shaded = inaudible), ATH reference (faint white), kept bins teal2 / discarded dim, and a marker. yMin/yMax not passed — derived from the (normalized, ≤0 dB) data.</p>
+    <div class="cv-wrap"><canvas class="tall" id="cv-spectrum"></canvas></div>
+  </div>
+
+  <div class="card wide">
+    <h3>spectrum, realistic dB <code>VIZ.spectrum</code></h3>
+    <p>regression check for the "clips to a hardcoded -100..0 window" bug: <code>20*log10(mag)</code> of an <b>unnormalized</b> STFT, peaks around +50 dB. No yMin/yMax passed — must still render the shape, not clip to a flat line.</p>
+    <div class="cv-wrap"><canvas class="tall" id="cv-spectrum-real"></canvas></div>
+  </div>
+
+  <div class="card wide">
+    <h3>spectrogram <code>VIZ.spectrogram</code></h3>
+    <p>synthetic sweep + transient burst, viridis-ish ramp, log-y (Y = frequency), playhead at 55%, no dbMin/dbMax passed — derived from the (normalized, ≤0 dB) data.</p>
+    <div class="cv-wrap"><canvas class="tall" id="cv-spectrogram"></canvas></div>
+  </div>
+
+  <div class="card wide">
+    <h3>spectrogram, realistic dB <code>VIZ.spectrogram</code></h3>
+    <p>same regression check: unnormalized STFT dB, peaks around +50 dB, no dbMin/dbMax passed. Should read as a legible ramp, not a saturated wall of white/yellow.</p>
+    <div class="cv-wrap"><canvas class="tall" id="cv-spectrogram-real"></canvas></div>
+  </div>
+
+  <div class="card">
+    <h3>band bits <code>VIZ.bandBits</code></h3>
+    <p>bits-per-critical-band, colour ramps dim→teal2→amber with value.</p>
+    <div class="cv-wrap"><canvas id="cv-bandbits"></canvas></div>
+  </div>
+
+  <div class="card">
+    <h3>bitrate scale <code>VIZ.bitrateScale</code></h3>
+    <p>wav 1411 down to a neural codec at 3 kbps — log-scaled bars.</p>
+    <div class="cv-wrap"><canvas id="cv-bitratescale"></canvas></div>
+  </div>
+
+  <div class="card wide">
+    <h3>vq scatter <code>VIZ.vq</code></h3>
+    <p>three synthetic clusters, points coloured by assignment, centroids as rings, residual lines on.</p>
+    <div class="row2">
+      <div class="cv-wrap"><canvas id="cv-vq1"></canvas></div>
+      <div class="cv-wrap"><canvas id="cv-vq2"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card wide">
+    <h3>vq, fixed range <code>VIZ.vq(opts.range)</code></h3>
+    <p>regression check for the "every stage looks identical" bug: four panels sharing one <code>opts.range</code>, fed progressively tighter synthetic residual clouds (RVQ stage 1 → 4). The shrink toward the origin (faint crosshair) must be visible across the row, not auto-fitted away. Rightmost panel also has points intentionally outside the range, to check clipping.</p>
+    <div class="row4">
+      <div class="cv-wrap"><canvas id="cv-vq-r1"></canvas></div>
+      <div class="cv-wrap"><canvas id="cv-vq-r2"></canvas></div>
+      <div class="cv-wrap"><canvas id="cv-vq-r3"></canvas></div>
+      <div class="cv-wrap"><canvas id="cv-vq-r4"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card wide">
+    <h3>masking scene — the hero <code>VIZ.maskingScene</code></h3>
+    <p>ATH curve (legend, top-left), masker (tall amber bar) at 1 kHz, the skirt it casts (bold purple fill = "you cannot hear this"), and a probe tone. Left: probe pokes above the skirt (bright teal2, audible). Right: same masker, quieter probe, buried under the skirt (hollow grey). Canvas sized ~900×270 CSS px per side, matching the real page.</p>
+    <div class="mask-row">
+      <div class="cv-wrap"><canvas id="cv-mask-audible"></canvas></div>
+      <div class="cv-wrap"><canvas id="cv-mask-buried"></canvas></div>
+    </div>
+  </div>
+
+</main>
+
+<footer>everything on this page is synthetic — no audio, no dsp.js</footer>
+
+<script src="viz.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var errbar = document.getElementById('errbar');
+  var errlog = document.getElementById('errlog');
+  var seenErrors = [];
+
+  function reportError(where, err) {
+    var msg = where + ': ' + (err && err.stack ? err.stack : String(err));
+    seenErrors.push(msg);
+    errlog.textContent = seenErrors.join('\n\n');
+    errbar.classList.add('on');
+    if (window.console) console.error(msg);
+  }
+
+  function safe(where, fn) {
+    try { fn(); } catch (e) { reportError(where, e); }
+  }
+
+  // ---------------------------------------------------------- rng
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  var rnd = mulberry32(20260902);
+
+  // ---------------------------------------------------------- synth helpers
+  var SR = 48000;
+
+  function genMelody(seconds) {
+    var n = Math.round(SR * seconds);
+    var x = new Float32Array(n);
+    var notes = [261.6, 329.6, 392.0, 523.3, 392.0, 329.6];
+    var noteLen = Math.floor(n / notes.length);
+    for (var k = 0; k < notes.length; k++) {
+      var f = notes[k];
+      var start = k * noteLen;
+      for (var i = 0; i < noteLen; i++) {
+        var t = i / SR;
+        var env = Math.exp(-3.5 * t);
+        var v = Math.sin(2 * Math.PI * f * t) * 0.6 + Math.sin(2 * Math.PI * f * 2 * t) * 0.2;
+        x[start + i] = v * env;
+      }
+    }
+    // 5ms fades
+    var fade = Math.floor(SR * 0.005);
+    for (var j = 0; j < fade && j < n; j++) {
+      var g = j / fade;
+      x[j] *= g;
+      x[n - 1 - j] *= g;
+    }
+    return x;
+  }
+
+  function genFreqsLog(nBins, fMin, fMax) {
+    var freqs = new Float32Array(nBins);
+    for (var i = 0; i < nBins; i++) {
+      freqs[i] = fMin * Math.pow(fMax / fMin, i / (nBins - 1));
+    }
+    return freqs;
+  }
+
+  // Terhardt absolute threshold of hearing, dB SPL, f in Hz.
+  function athDbAt(f) {
+    var khz = f / 1000;
+    return 3.64 * Math.pow(khz, -0.8)
+      - 6.5 * Math.exp(-0.6 * Math.pow(khz - 3.3, 2))
+      + 0.001 * Math.pow(khz, 4);
+  }
+
+  // Traunmuller-ish bark scale, good enough for a cosmetic demo skirt.
+  function barkOf(hz) {
+    return 13 * Math.atan(0.00076 * hz) + 3.5 * Math.atan(Math.pow(hz / 7500, 2));
+  }
+
+  function maskingSkirt(freqs, athDb, maskerHz, maskerDb) {
+    var mBark = barkOf(maskerHz);
+    var out = new Float32Array(freqs.length);
+    for (var i = 0; i < freqs.length; i++) {
+      var db = barkOf(freqs[i]) - mBark;
+      var slope = db < 0 ? 27 : 15; // steeper downward, shallower upward
+      var skirt = maskerDb - Math.abs(db) * slope - 8;
+      out[i] = Math.max(athDb[i], skirt);
+    }
+    return out;
+  }
+
+  // ---------------------------------------------------------- draw-all
+  function drawWaveforms() {
+    var x = genMelody(3.0);
+    var overlay = new Float32Array(x.length);
+    for (var i = 0; i < x.length; i++) overlay[i] = x[i] * 0.55 + (rnd() - 0.5) * 0.04;
+
+    VIZ.waveform(document.getElementById('cv-wave-full'), x, {
+      overlay: overlay, label: 'melody · original vs encoded (amber)', zeroLine: true
+    });
+
+    var mid = Math.floor(x.length * 0.12);
+    VIZ.waveform(document.getElementById('cv-wave-zoom'), x, {
+      t0: mid, t1: mid + 40, dots: true, color: VIZ.colors.teal2, label: '40 samples, zoomed'
+    });
+  }
+
+  function drawStaircase() {
+    var n = 600;
+    var x = new Float32Array(n);
+    for (var i = 0; i < n; i++) x[i] = Math.sin(i * 0.06) * 0.85 + Math.sin(i * 0.021) * 0.1;
+    var levels = 8; // 3-bit
+    var y = new Float32Array(n);
+    for (var j = 0; j < n; j++) {
+      y[j] = Math.round(((x[j] + 1) / 2) * (levels - 1)) / (levels - 1) * 2 - 1;
+    }
+    VIZ.staircase(document.getElementById('cv-staircase'), x, y, { levels: levels, label: '3-bit quantization' });
+  }
+
+  function drawSpectrum() {
+    var n = 1024;
+    var freqs = genFreqsLog(n, 20, SR / 2);
+    var magDb = new Float32Array(n);
+    var athDb = new Float32Array(n);
+    for (var i = 0; i < n; i++) athDb[i] = athDbAt(freqs[i]);
+
+    // noise floor + three resonant peaks
+    for (var k = 0; k < n; k++) {
+      var f = freqs[k];
+      var floor2 = -80 + (rnd() - 0.5) * 5;
+      var bump = 62 * Math.exp(-Math.pow((f - 440) / 35, 2))
+        + 44 * Math.exp(-Math.pow((f - 1500) / 150, 2))
+        + 30 * Math.exp(-Math.pow((f - 4200) / 600, 2));
+      magDb[k] = floor2 + bump;
+    }
+    var maskerHz = 1500, maskerDb = 60;
+    var threshDbAbs = maskingSkirt(freqs, athDb, maskerHz, maskerDb);
+    // rescale threshold into the same rough dBFS-ish range as magDb for a
+    // legible demo overlay (this is cosmetic, not a physical unit match)
+    var threshDb = new Float32Array(n);
+    var kept = new Uint8Array(n);
+    for (var m = 0; m < n; m++) {
+      threshDb[m] = threshDbAbs[m] - 80;
+      kept[m] = magDb[m] > threshDb[m] ? 1 : 0;
+    }
+    var athDbScaled = new Float32Array(n);
+    for (var p = 0; p < n; p++) athDbScaled[p] = athDb[p] - 80;
+
+    VIZ.spectrum(document.getElementById('cv-spectrum'), magDb, freqs, {
+      threshDb: threshDb, athDb: athDbScaled, kept: kept,
+      marker: { hz: 4200, db: magDb[Math.round(n * 0.62)], label: '3rd formant' },
+      yMin: -100, yMax: 0, label: 'synthetic three-peak spectrum (explicit yMin/yMax)'
+    });
+  }
+
+  // Regression check for defect #2: 20*log10(mag) of an UNNORMALIZED STFT
+  // routinely peaks well above 0 dB. No yMin/yMax passed here — the painter
+  // must derive the window from the data itself, not clip to -100..0.
+  function drawSpectrumRealistic() {
+    var n = 1024;
+    var freqs = genFreqsLog(n, 20, SR / 2);
+    var magDb = new Float32Array(n);
+    for (var k = 0; k < n; k++) {
+      var f = freqs[k];
+      var floor2 = -20 + (rnd() - 0.5) * 6;
+      var bump = 68 * Math.exp(-Math.pow((f - 440) / 35, 2))
+        + 50 * Math.exp(-Math.pow((f - 1500) / 150, 2))
+        + 34 * Math.exp(-Math.pow((f - 4200) / 600, 2));
+      magDb[k] = floor2 + bump; // peaks land around +48 dB
+    }
+    VIZ.spectrum(document.getElementById('cv-spectrum-real'), magDb, freqs, {
+      label: 'unnormalized: peaks ≈ +48 dB, no yMin/yMax passed'
+    });
+  }
+
+  function genSweepFrames(nFrames, nBins, dbOffset) {
+    var frames = [];
+    for (var t = 0; t < nFrames; t++) {
+      var frame = new Float32Array(nBins);
+      var sweepBin = 20 + (nBins - 60) * (t / nFrames);
+      for (var b = 0; b < nBins; b++) {
+        var floor = -95 + (rnd() - 0.5) * 4;
+        var sweep = 60 * Math.exp(-Math.pow((b - sweepBin) / 6, 2));
+        var burst = (t > 60 && t < 68) ? 55 * Math.exp(-Math.pow((b - 220) / 30, 2)) : 0;
+        var harmonic = 22 * Math.exp(-Math.pow((b - sweepBin * 2) / 10, 2));
+        frame[b] = floor + sweep + burst + harmonic + dbOffset;
+      }
+      frames.push(frame);
+    }
+    return frames;
+  }
+
+  function drawSpectrogram() {
+    var frames = genSweepFrames(160, 300, 0);
+    VIZ.spectrogram(document.getElementById('cv-spectrogram'), frames, SR, {
+      maxHz: 12000, logY: true, playhead: 0.55
+    });
+  }
+
+  // Same regression check as drawSpectrumRealistic, for the spectrogram:
+  // unnormalized dB (peaks ≈ +50 dB), no dbMin/dbMax passed.
+  function drawSpectrogramRealistic() {
+    var frames = genSweepFrames(160, 300, 50);
+    VIZ.spectrogram(document.getElementById('cv-spectrogram-real'), frames, SR, {
+      maxHz: 12000, logY: true, playhead: 0.3
+    });
+  }
+
+  function drawBandBits() {
+    var n = 25;
+    var bandBits = new Float32Array(n);
+    var bandFreqs = new Float32Array(n);
+    for (var i = 0; i < n; i++) {
+      bandFreqs[i] = 50 * Math.pow(1.35, i);
+      bandBits[i] = Math.max(0, 9 - i * 0.32 + Math.sin(i * 0.7) * 1.4 + rnd() * 0.6);
+    }
+    VIZ.bandBits(document.getElementById('cv-bandbits'), bandBits, bandFreqs, { label: 'mean bits / Bark band' });
+  }
+
+  function drawBitrateScale() {
+    VIZ.bitrateScale(document.getElementById('cv-bitratescale'), [
+      { label: 'wav', kbps: 1411, color: VIZ.colors.dim },
+      { label: 'flac', kbps: 800, color: VIZ.colors.teal },
+      { label: 'mp3', kbps: 128, color: VIZ.colors.accent },
+      { label: 'opus', kbps: 64, color: VIZ.colors.teal2 },
+      { label: 'opus-speech', kbps: 24, color: VIZ.colors.purple },
+      { label: 'neural', kbps: 3, color: VIZ.colors.amber }
+    ], {});
+  }
+
+  function genCluster(cx, cy, n, spread) {
+    var pts = [];
+    for (var i = 0; i < n; i++) {
+      pts.push([cx + (rnd() - 0.5) * 2 * spread, cy + (rnd() - 0.5) * 2 * spread]);
+    }
+    return pts;
+  }
+
+  function drawVQ() {
+    var centroids = [[0, 0], [4, 3], [-3, 2.5], [1, -3.5]];
+    var points = [];
+    var assign = [];
+    for (var c = 0; c < centroids.length; c++) {
+      var cluster = genCluster(centroids[c][0], centroids[c][1], 60, 1.1);
+      for (var i = 0; i < cluster.length; i++) {
+        points.push(cluster[i]);
+        assign.push(c);
+      }
+    }
+    VIZ.vq(document.getElementById('cv-vq1'), points, centroids, assign, {
+      stage: 1, title: 'RVQ stage 1', showLines: true
+    });
+
+    // stage 2: residuals re-quantized around a finer grid (still synthetic)
+    var centroids2 = [[0.4, -0.3], [-0.5, 0.4], [0.2, 0.5], [-0.3, -0.5]];
+    var points2 = [];
+    var assign2 = [];
+    for (var j = 0; j < points.length; j++) {
+      var best = 0, bd = Infinity;
+      var res = [points[j][0] - centroids[assign[j]][0], points[j][1] - centroids[assign[j]][1]];
+      for (var k = 0; k < centroids2.length; k++) {
+        var dx = res[0] - centroids2[k][0], dy = res[1] - centroids2[k][1];
+        var d = dx * dx + dy * dy;
+        if (d < bd) { bd = d; best = k; }
+      }
+      points2.push(res);
+      assign2.push(best);
+    }
+    VIZ.vq(document.getElementById('cv-vq2'), points2, centroids2, assign2, {
+      stage: 2, title: 'RVQ stage 2 (residual)', showLines: true
+    });
+  }
+
+  // Regression check for the "every stage looks identical" bug: a fixed
+  // opts.range shared by all four panels, fed progressively tighter
+  // clouds — the shrink toward the origin must stay visible across the
+  // row instead of each panel re-normalizing to its own extent.
+  function drawVQFixedRange() {
+    var range = { x0: -6, x1: 6, y0: -6, y1: 6 };
+    var stages = [
+      { n: 1, id: 'cv-vq-r1', spread: 3.4, offset: 2.2 },
+      { n: 2, id: 'cv-vq-r2', spread: 1.5, offset: 0.9 },
+      { n: 3, id: 'cv-vq-r3', spread: 0.6, offset: 0.35 },
+      { n: 4, id: 'cv-vq-r4', spread: 0.22, offset: 0.12 }
+    ];
+    for (var s = 0; s < stages.length; s++) {
+      var st = stages[s];
+      var centroids = [[st.offset, st.offset * 0.4], [-st.offset * 0.6, -st.offset]];
+      var points = [], assign = [];
+      for (var c = 0; c < centroids.length; c++) {
+        var cluster = genCluster(centroids[c][0], centroids[c][1], 45, st.spread);
+        for (var i = 0; i < cluster.length; i++) { points.push(cluster[i]); assign.push(c); }
+      }
+      if (s === stages.length - 1) {
+        // deliberately outside `range` — must clip to the plot rect, not
+        // draw over the axes or the title.
+        points.push([20, 20], [-30, 5], [0, -40]);
+        assign.push(0, 1, 0);
+      }
+      VIZ.vq(document.getElementById(st.id), points, centroids, assign, {
+        range: range, stage: st.n, title: 'stage ' + st.n
+      });
+    }
+  }
+
+  function drawMaskingScenes() {
+    var n = 640;
+    var freqs = genFreqsLog(n, 20, 20000);
+    var athDb = new Float32Array(n);
+    for (var i = 0; i < n; i++) athDb[i] = athDbAt(freqs[i]);
+
+    var maskerHz = 1000, maskerDb = 78;
+    var threshDb = maskingSkirt(freqs, athDb, maskerHz, maskerDb);
+
+    VIZ.maskingScene(document.getElementById('cv-mask-audible'), {
+      freqs: freqs, athDb: athDb, threshDb: threshDb,
+      maskerHz: maskerHz, maskerDb: maskerDb,
+      probeHz: 1250, probeDb: 50
+    }, {});
+
+    VIZ.maskingScene(document.getElementById('cv-mask-buried'), {
+      freqs: freqs, athDb: athDb, threshDb: threshDb,
+      maskerHz: maskerHz, maskerDb: maskerDb,
+      probeHz: 1120, probeDb: 15
+    }, {});
+  }
+
+  function drawAll() {
+    safe('VIZ.waveform', drawWaveforms);
+    safe('VIZ.staircase', drawStaircase);
+    safe('VIZ.spectrum', drawSpectrum);
+    safe('VIZ.spectrum (realistic dB)', drawSpectrumRealistic);
+    safe('VIZ.spectrogram', drawSpectrogram);
+    safe('VIZ.spectrogram (realistic dB)', drawSpectrogramRealistic);
+    safe('VIZ.bandBits', drawBandBits);
+    safe('VIZ.bitrateScale', drawBitrateScale);
+    safe('VIZ.vq', drawVQ);
+    safe('VIZ.vq (fixed range)', drawVQFixedRange);
+    safe('VIZ.maskingScene', drawMaskingScenes);
+  }
+
+  if (typeof VIZ === 'undefined') {
+    reportError('load', new Error('VIZ global is not defined — viz.js did not load or threw at parse time'));
+  } else {
+    drawAll();
+  }
+
+  document.getElementById('regen').addEventListener('click', function () {
+    rnd = mulberry32((Math.random() * 1e9) | 0);
+    drawAll();
+  });
+
+  var resizeTimer = null;
+  window.addEventListener('resize', function () {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(drawAll, 120);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>codec · lab · Corentin Bel</title>
+<meta name="description" content="build a perceptual audio codec in your browser: sampling, quantization, masking and a neural tokenizer, all playable.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎚️</text></svg>">
+<style>
+  :root {
+    --bg:#07080c; --panel:#0d1014; --fg:#e8e6df; --dim:#8a8fa3;
+    --accent:#6ea8ff; --purple:#b48ce8; --teal:#38a3a5; --teal2:#8ceedd;
+    --amber:#ffd27a; --red:#ff8f7a; --border:#232b3a; --radius:14px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:var(--bg); color:var(--fg);
+    font-family:ui-sans-serif,system-ui,sans-serif;
+    line-height:1.55;
+  }
+  a { color:var(--teal2); }
+  .mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-variant-numeric:tabular-nums; }
+
+  header {
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:1.4rem 2rem; flex-wrap:wrap; gap:.4rem;
+  }
+  header .links { display:flex; gap:1.1rem; }
+  header a { color:var(--dim); text-decoration:none; font-size:.9rem; }
+  header a:hover { color:var(--teal2); }
+  h1 { font-weight:300; font-size:1.3rem; letter-spacing:.04em; }
+  h1 b { font-weight:600; }
+
+  main { max-width:980px; margin:0 auto; padding:0 1.2rem 4rem; }
+
+  .hero { text-align:center; padding:.6rem 0 2rem; }
+  .hero h2 { font-size:1.6rem; font-weight:600; margin-bottom:.6rem; }
+  .hero p { color:var(--dim); font-size:.95rem; max-width:42em; margin:0 auto; }
+
+  /* ---------- sticky source bar ---------- */
+  #sourcebar {
+    position:sticky; top:0; z-index:30;
+    background:rgba(13,16,20,.92); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    border:1px solid var(--border); border-radius:var(--radius);
+    padding:.9rem 1rem; margin-bottom:2.2rem;
+  }
+  #srcPicker { display:flex; flex-wrap:wrap; gap:.4rem; margin-bottom:.6rem; }
+  .pill {
+    background:#11151c; color:var(--fg); border:1px solid var(--border); border-radius:999px;
+    padding:.35rem .8rem; font-size:.78rem; cursor:pointer; transition:border-color .15s, color .15s;
+  }
+  .pill:hover { border-color:var(--accent); }
+  .pill.sel { border-color:var(--accent); color:var(--accent); background:#132038; }
+  .pill.active { border-color:var(--teal2); color:var(--teal2); }
+  #fileInput { display:none; }
+
+  .transport { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; margin-bottom:.6rem; }
+  button.btn {
+    background:#12161f; color:var(--teal2); border:1px solid var(--border); border-radius:8px;
+    padding:.45rem .85rem; font-size:.82rem; cursor:pointer; transition:border-color .15s, transform .15s;
+    font-family:inherit;
+  }
+  button.btn:hover { border-color:var(--teal2); transform:translateY(-1px); }
+  button.btn:disabled { opacity:.4; cursor:default; transform:none; }
+  button.btn.primary { color:var(--accent); }
+  button.btn.primary:hover { border-color:var(--accent); }
+  button.btn.danger { color:var(--red); }
+  #srcStatus { font-size:.78rem; color:var(--dim); }
+
+  .scopes { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+  @media (max-width:640px) { .scopes { grid-template-columns:1fr; } }
+  .cv-wrap { position:relative; border-radius:10px; overflow:hidden; background:#0a0d13; border:1px solid var(--border); }
+  canvas { display:block; width:100%; }
+  .cv-wrap canvas { height:110px; }
+  .cv-med canvas { height:190px; }
+  .cv-tall canvas { height:260px; }
+  .cv-wrap.clickable canvas { cursor:crosshair; }
+
+  /* ---------- sections ---------- */
+  section.sec { margin-bottom:3rem; }
+  section.sec h2 {
+    font-size:1.2rem; font-weight:600; margin-bottom:.5rem;
+  }
+  section.sec h2 .no { color:#4a4f61; font-weight:300; margin-right:.4rem; }
+  section.sec > p.lead { color:var(--dim); font-size:.9rem; max-width:44em; margin-bottom:1rem; }
+  .panel {
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:1rem 1.1rem;
+  }
+  .controls { display:flex; flex-wrap:wrap; gap:1rem 1.4rem; align-items:flex-end; margin-bottom:.9rem; }
+  .field { display:flex; flex-direction:column; gap:.3rem; font-size:.78rem; color:var(--dim); min-width:150px; }
+  .field input[type=range] { accent-color:var(--accent); width:100%; }
+  .field .out { color:var(--fg); }
+  .check { display:flex; align-items:center; gap:.4rem; font-size:.8rem; color:var(--dim); }
+  .check input { accent-color:var(--teal2); }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:.9rem; }
+  @media (max-width:700px) { .grid2 { grid-template-columns:1fr; } }
+  .readout { font-size:.82rem; color:var(--dim); margin-top:.7rem; }
+  .readout b { color:var(--fg); }
+  .note { font-size:.78rem; color:#5a5f73; margin-top:.5rem; }
+  .status { font-size:.78rem; color:var(--amber); min-height:1.1em; }
+  .presetgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:.6rem; margin-bottom:.9rem; }
+  .preset {
+    background:#11151c; border:1px solid var(--border); border-radius:10px; padding:.7rem .8rem;
+    text-align:left; cursor:pointer; color:var(--fg); font-family:inherit; transition:border-color .15s;
+  }
+  .preset:hover { border-color:var(--amber); }
+  .preset.sel { border-color:var(--amber); background:#1a140a; }
+  .preset.sel .t { color:var(--amber); }
+  .preset .t { font-size:.85rem; font-weight:600; margin-bottom:.2rem; }
+  .preset .d { font-size:.74rem; color:var(--dim); }
+
+  footer { border-top:1px solid var(--border); padding:2.4rem 0 3rem; }
+  footer h3 { font-size:.78rem; text-transform:uppercase; letter-spacing:.14em; color:var(--dim); margin-bottom:.8rem; }
+  footer ul { list-style:none; }
+  footer li { font-size:.82rem; color:var(--dim); margin-bottom:.4rem; }
+  footer .caveat { font-size:.78rem; color:#5a5f73; margin-top:1.2rem; max-width:44em; }
+  footer .back { margin-top:1.6rem; font-size:.85rem; }
+
+  @media (max-width:640px) {
+    .controls { gap:.7rem 1rem; }
+    .field { min-width:130px; flex:1 1 130px; }
+    section.sec h2 { font-size:1.05rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    button.btn, .pill, .preset { transition:none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1><b>codec</b> · lab</h1>
+  <div class="links">
+    <a href="../">&larr; lab</a>
+    <a href="https://corentinbel.com">home</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <h2>🎚️ how does a song shrink to 3% of its size and still sound fine</h2>
+    <p>digital audio is a long list of numbers. a codec's whole job is deciding which of those numbers you would actually miss. this page builds one — badly, but honestly — in your browser: sampling a wave, the psychoacoustic trick that does most of the real work, and the neural codecs that turn sound into tokens.</p>
+  </section>
+
+  <!-- ================= sticky source bar ================= -->
+  <section id="sourcebar">
+    <div id="srcPicker"></div>
+    <input id="fileInput" type="file" accept="audio/*">
+    <div class="transport">
+      <button class="btn primary" id="playBtn">▶ play</button>
+      <button class="btn" id="loopBtn">↻ loop</button>
+      <button class="btn" id="stopBtn">■ stop</button>
+      <span id="srcStatus" class="mono">nothing loaded yet</span>
+    </div>
+    <div class="scopes">
+      <div class="cv-wrap"><canvas id="liveWave"></canvas></div>
+      <div class="cv-wrap"><canvas id="liveSpec"></canvas></div>
+    </div>
+  </section>
+
+  <!-- ================= 1. sampling & quantization ================= -->
+  <section class="sec" id="sec1">
+    <h2><span class="no">1.</span>a wave becomes numbers</h2>
+    <p class="lead">a microphone sees a continuous pressure wave. a computer needs a finite list of numbers. sampling asks "what's the amplitude right now?" some number of times per second; quantization rounds each answer to the nearest of a finite set of levels. do either one badly and you can hear it exactly — that's what these two sliders are for.</p>
+    <div class="panel">
+      <div class="controls">
+        <label class="field">
+          <span>sample rate</span>
+          <input type="range" id="s1Sr" min="0" max="8" step="1" value="0">
+          <output class="out mono" id="s1SrOut">48000 Hz</output>
+        </label>
+        <label class="check"><input type="checkbox" id="s1Aa" checked> anti-alias filter</label>
+        <label class="field">
+          <span>bit depth</span>
+          <input type="range" id="s1Bits" min="2" max="16" step="1" value="16">
+          <output class="out mono" id="s1BitsOut">16 bit</output>
+        </label>
+        <label class="check"><input type="checkbox" id="s1Dither" checked> dither</label>
+      </div>
+      <div class="grid2">
+        <div class="cv-wrap cv-med"><canvas id="s1Stair"></canvas></div>
+        <div class="cv-wrap cv-med"><canvas id="s1Dots"></canvas></div>
+      </div>
+      <p class="readout" id="s1Rate"></p>
+      <p class="readout" id="s1Snr"></p>
+      <p class="note">turn off anti-aliasing and drop the rate: you'll hear tones that were never in the recording — frequencies above half the new rate fold back down and impersonate real ones. turn off dither at low bit depth and quiet passages get a harsh, correlated crunch instead of soft hiss.</p>
+    </div>
+  </section>
+
+  <!-- ================= 2. redundancy vs irrelevance ================= -->
+  <section class="sec" id="sec2">
+    <h2><span class="no">2.</span>two ways to shrink</h2>
+    <p class="lead">there are exactly two honest ways to make a file smaller. exploit <b>redundancy</b> — patterns the data repeats — and you can always get the original back exactly (that's FLAC, roughly 2:1, lossless). exploit <b>irrelevance</b> — information a human wouldn't notice missing — and you can never get it back (that's every lossy codec you've used). same three minutes of music, six very different diets.</p>
+    <div class="panel">
+      <div class="controls">
+        <button class="btn" id="s2Scale">scale: log</button>
+      </div>
+      <div class="cv-wrap cv-tall"><canvas id="s2Cv"></canvas></div>
+      <p class="note">wav (1411.2 kbps, CD-quality stereo PCM) · flac (~800 kbps, lossless) · mp3 (128 kbps) · opus (64 kbps) · opus voice mode (24 kbps) · neural, EnCodec-class (~3 kbps) — figures are round, illustrative averages, not guarantees for any one file.</p>
+    </div>
+  </section>
+
+  <!-- ================= 3. STFT ================= -->
+  <section class="sec" id="sec3">
+    <h2><span class="no">3.</span>store the recipe, not the wave</h2>
+    <p class="lead">the short-time fourier transform rewrites a signal as "how much of each frequency, in each short slice of time" — a spectrogram. a pure tone is one loud bin and a wall of near-silence: one number worth keeping. noise lights up every bin at once — there's no redundant structure left to exploit. click anywhere on the spectrum below to add a partial to a tiny synth and hear the recipe you just wrote.</p>
+    <div class="panel">
+      <div class="controls">
+        <button class="btn" id="s3Tone">try: pure tone</button>
+        <button class="btn" id="s3Noise">try: noise</button>
+        <button class="btn danger" id="s3Clear">clear partials</button>
+      </div>
+      <div class="cv-wrap cv-med clickable"><canvas id="s3Spec"></canvas></div>
+      <p class="note">y-axis: dB relative to this window's loudest bin (not absolute level).</p>
+      <div class="cv-wrap cv-med" style="margin-top:.6rem"><canvas id="s3Specgram"></canvas></div>
+      <p class="readout" id="s3Info"></p>
+    </div>
+  </section>
+
+  <!-- ================= 4. masking (hero) ================= -->
+  <section class="sec" id="sec4">
+    <h2><span class="no">4.</span>what your ear throws away</h2>
+    <p class="lead">a loud tone doesn't just compete with quiet ones for attention — it makes nearby frequencies briefly, literally inaudible. that's <b>masking</b>, and it's where most of an mp3's compression actually comes from: a codec that knows exactly where your ear's blind spots are can spend zero bits on anything hiding in one.</p>
+    <div class="panel">
+      <div class="controls">
+        <label class="field">
+          <span>masker frequency</span>
+          <input type="range" id="s4Mf" min="200" max="6000" step="10" value="1000">
+          <output class="out mono" id="s4MfOut">1000 Hz</output>
+        </label>
+        <label class="field">
+          <span>masker level</span>
+          <input type="range" id="s4Ml" min="-40" max="0" step="1" value="-6">
+          <output class="out mono" id="s4MlOut">-6 dB</output>
+        </label>
+        <label class="field">
+          <span>probe frequency</span>
+          <input type="range" id="s4Pf" min="200" max="6000" step="10" value="1250">
+          <output class="out mono" id="s4PfOut">1250 Hz</output>
+        </label>
+        <label class="field">
+          <span>probe level</span>
+          <input type="range" id="s4Pl" min="-80" max="0" step="1" value="-40">
+          <output class="out mono" id="s4PlOut">-40 dB</output>
+        </label>
+      </div>
+      <div class="cv-wrap cv-tall"><canvas id="s4Cv"></canvas></div>
+      <p class="readout" id="s4Readout"></p>
+      <p class="note" id="s4Ath30"></p>
+      <div class="controls" style="margin-top:.8rem">
+        <button class="btn" id="s4PlayMasker">▶ masker only</button>
+        <button class="btn" id="s4PlayBoth">▶ masker + probe</button>
+      </div>
+
+      <div style="margin-top:1.2rem; padding-top:1rem; border-top:1px dashed var(--border)">
+        <p class="readout" style="margin-bottom:.6rem">prove it to yourself: one clip is the masker alone, the other has the probe hidden inside it — assigned to A/B at random. can you tell which is which?</p>
+        <div class="controls">
+          <button class="btn" id="s4AbA">▶ play A</button>
+          <button class="btn" id="s4AbB">▶ play B</button>
+          <button class="btn primary" id="s4AbPickA">I heard it in A</button>
+          <button class="btn primary" id="s4AbPickB">I heard it in B</button>
+          <button class="btn" id="s4AbNew">↻ new round</button>
+        </div>
+        <p class="status" id="s4AbStatus"></p>
+        <p class="readout" id="s4AbResult"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 5. spending the bits ================= -->
+  <section class="sec" id="sec5">
+    <h2><span class="no">5.</span>spending the bits</h2>
+    <p class="lead">real encoding is a budgeting problem: given a target bitrate, decide which STFT bins survive. bins under the masking threshold quantize to zero for free — the ear was never going to notice. everything else gets a coarser or finer step until the running bit-cost estimate hits the target. drag the slider down and watch which frequencies get sacrificed first.</p>
+    <div class="panel">
+      <div class="controls">
+        <label class="field">
+          <span>bitrate</span>
+          <input type="range" id="s5Br" min="0" max="11" step="1" value="6">
+          <output class="out mono" id="s5BrOut">64 kbps</output>
+        </label>
+        <label class="check"><input type="checkbox" id="s5UseMasking" checked> use masking</label>
+      </div>
+      <p class="status" id="s5Status"></p>
+      <div class="grid2">
+        <div class="cv-wrap cv-med"><canvas id="s5Band"></canvas></div>
+        <div class="cv-wrap cv-med"><canvas id="s5Spec"></canvas></div>
+      </div>
+      <p class="readout" id="s5Stats"></p>
+      <div class="controls" style="margin-top:.8rem">
+        <button class="btn" id="s5PlayOrig">▶ original</button>
+        <button class="btn" id="s5PlayEnc">▶ encoded</button>
+        <button class="btn primary" id="s5PlayResidual">▶ play the residual</button>
+      </div>
+      <p class="note">the residual is <span class="mono">original − encoded</span>: everything the codec decided you wouldn't miss. it's boosted to an audible level for playback here — at high bitrate it's close to silence, which is itself the point.</p>
+    </div>
+  </section>
+
+  <!-- ================= 6. artifacts ================= -->
+  <section class="sec" id="sec6">
+    <h2><span class="no">6.</span>when it breaks</h2>
+    <p class="lead">every lossy codec has a party trick for embarrassing itself. these four are the classics — click one to hear it (and see why) at once.</p>
+    <div class="panel">
+      <div class="presetgrid">
+        <button class="preset" id="s6PreEcho"><div class="t">pre-echo</div><div class="d">castanets @ 32 kbps</div></button>
+        <button class="preset" id="s6Birdies"><div class="t">birdies / warble</div><div class="d">pink noise @ 24 kbps</div></button>
+        <button class="preset" id="s6Lowpass"><div class="t">the lowpass cliff</div><div class="d">melody @ 64 kbps</div></button>
+        <button class="preset" id="s6Overquant"><div class="t">over-quantized tone</div><div class="d">1 kHz sine @ 3-bit</div></button>
+      </div>
+      <p class="status" id="s6Status"></p>
+      <div class="cv-wrap cv-tall"><canvas id="s6Cv"></canvas></div>
+      <p class="readout" id="s6Info"></p>
+    </div>
+  </section>
+
+  <!-- ================= 7. beyond mp3 ================= -->
+  <section class="sec" id="sec7">
+    <h2><span class="no">7.</span>beyond mp3</h2>
+    <p class="lead">opus (RFC 6716, 2012) is the current state of the art for general-purpose audio: a hybrid of SILK (built for speech) and CELT (built for music), switchable frame by frame, with as little as 5 ms of algorithmic latency — good enough that it quietly replaced almost everything else in real-time voice and video. neural codecs go one step further: instead of a hand-designed transform and masking curve, a model learns to map short chunks of audio onto a small set of discrete codes. SoundStream (Zeghidour et al., 2021) and EnCodec (Défossez et al., 2022) both do it with <b>residual vector quantization</b>: one small codebook can't capture everything, so a second codebook cleans up its leftovers, and a third cleans up what's left after that. sound becomes tokens — the same trick that lets a language model "speak".</p>
+    <div class="panel">
+      <div class="controls">
+        <label class="field">
+          <span>RVQ stage</span>
+          <input type="range" id="s7Stage" min="1" max="4" step="1" value="1">
+          <output class="out mono" id="s7StageOut">1</output>
+        </label>
+      </div>
+      <div class="cv-wrap cv-tall"><canvas id="s7Cv"></canvas></div>
+      <p class="readout" id="s7Info"></p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div style="max-width:980px;margin:0 auto;padding:0 1.2rem">
+    <h3>further reading</h3>
+    <ul>
+      <li>· Christopher "Monty" Montgomery — <a href="https://xiph.org/video/vid1.shtml" target="_blank" rel="noopener">A Digital Media Primer for Geeks</a> (Xiph.Org, 2010) — the sampling/quantization myths, properly busted.</li>
+      <li>· <a href="https://www.rfc-editor.org/rfc/rfc6716" target="_blank" rel="noopener">RFC 6716 — Definition of the Opus Audio Codec</a> (IETF, 2012).</li>
+      <li>· Zeghidour, Luebs, Omran, Skoglund, Tagliasacchi — <a href="https://arxiv.org/abs/2107.03312" target="_blank" rel="noopener">SoundStream: An End-to-End Neural Audio Codec</a> (2021).</li>
+      <li>· Défossez, Copet, Synnaeve, Adi — <a href="https://arxiv.org/abs/2210.13438" target="_blank" rel="noopener">High Fidelity Neural Audio Compression</a> — EnCodec (2022).</li>
+      <li>· Kleijn et al. — <a href="https://arxiv.org/abs/2102.09660" target="_blank" rel="noopener">Generative Speech Coding with Predictive Variance Regularization</a> — Lyra (2021).</li>
+    </ul>
+    <p class="caveat">honesty note: everything on this page runs a small STFT + masking encoder built for this demo, and toy k-means/RVQ for the tokenizer picture — not a real MP3/Opus decoder or a trained neural codec. the ideas are right; the exact numbers a shipped codec would choose are not. bitrates in §2 and §6 are round, illustrative figures.</p>
+    <p class="back"><a href="../">← back to the lab</a></p>
+  </div>
+</footer>
+
+<script src="dsp.js"></script>
+<script src="viz.js"></script>
+<script>
+(function () {
+'use strict';
+
+/* =================================================================
+   constants & small helpers
+   ================================================================= */
+
+// nominal working sample rate for all offline analysis. sources have to be
+// generated and drawn before any user gesture exists to create an
+// AudioContext (no autoplay), so the page picks one fixed rate for its own
+// state; playback wraps it in an AudioBuffer that carries this rate, and the
+// audio graph resamples to whatever the real AudioContext.sampleRate turns
+// out to be. dsp.js itself never hardcodes a rate — this is purely a page
+// bootstrapping choice.
+var WORK_SR = 48000;
+
+var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// palette, mirrored from the CSS custom properties (kept local so this
+// script never has to guess VIZ.colors' internal key names)
+var COLOR = {
+  accent: '#6ea8ff', purple: '#b48ce8', teal: '#38a3a5', teal2: '#8ceedd',
+  amber: '#ffd27a', red: '#ff8f7a', dim: '#8a8fa3'
+};
+
+function $(id) { return document.getElementById(id); }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function dbToAmp(db) { return Math.pow(10, db / 20); }
+
+function debounce(fn, ms) {
+  var t = null;
+  return function () {
+    var args = arguments, ctx = this;
+    if (t) clearTimeout(t);
+    t = setTimeout(function () { fn.apply(ctx, args); }, ms);
+  };
+}
+
+// defer a heavy synchronous call by two ticks so a "computing…" status
+// string gets painted first
+function deferHeavy(fn) {
+  requestAnimationFrame(function () { setTimeout(fn, 0); });
+}
+
+function findSource(id) {
+  for (var i = 0; i < CODEC.sources.length; i++) {
+    if (CODEC.sources[i].id === id) return CODEC.sources[i];
+  }
+  return null;
+}
+
+// STFT re/im -> array of Float32Array magnitude-in-dB per frame, using the
+// shared convention: 20*log10(max(mag,1e-12))
+function stftMagDbFrames(S) {
+  var out = new Array(S.nFrames);
+  for (var i = 0; i < S.nFrames; i++) {
+    var re = S.re[i], im = S.im[i], n = re.length;
+    var d = new Float32Array(n);
+    for (var k = 0; k < n; k++) {
+      var mag = Math.sqrt(re[k] * re[k] + im[k] * im[k]);
+      d[k] = 20 * Math.log10(Math.max(mag, 1e-12));
+    }
+    out[i] = d;
+  }
+  return out;
+}
+
+function synthTone(freqHz, dbFS, sr, seconds) {
+  var n = Math.round(seconds * sr);
+  var y = new Float32Array(n);
+  var amp = dbToAmp(dbFS);
+  var fadeN = Math.max(1, Math.round(0.005 * sr));
+  for (var i = 0; i < n; i++) {
+    var g = 1;
+    if (i < fadeN) g = i / fadeN;
+    else if (i > n - fadeN) g = (n - i) / fadeN;
+    y[i] = amp * g * Math.sin(2 * Math.PI * freqHz * i / sr);
+  }
+  return y;
+}
+
+function mixdownMono(audioBuffer, capSeconds) {
+  var sr = audioBuffer.sampleRate;
+  var len = Math.min(audioBuffer.length, Math.round(capSeconds * sr));
+  var out = new Float32Array(len);
+  var ch = audioBuffer.numberOfChannels;
+  for (var c = 0; c < ch; c++) {
+    var d = audioBuffer.getChannelData(c);
+    for (var i = 0; i < len; i++) out[i] += d[i] / ch;
+  }
+  return { x: out, sr: sr };
+}
+
+function nearestBinIndex(freqs, hz) {
+  var bi = 0, bd = Infinity;
+  for (var i = 0; i < freqs.length; i++) {
+    var d = Math.abs(freqs[i] - hz);
+    if (d < bd) { bd = d; bi = i; }
+  }
+  return bi;
+}
+
+/* =================================================================
+   shared audio transport — ONE AudioContext, created lazily on the
+   first user gesture. every section routes playback through
+   playBuffer() so a new sound always stops whatever was playing.
+   ================================================================= */
+
+var actx = null, master = null, curNode = null;
+var transport = { playing: false, loop: false, label: '', dur: 0, startedAt: 0 };
+
+function ensureCtx() {
+  if (!actx) {
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    master = actx.createGain();
+    master.gain.value = 0.85;
+    master.connect(actx.destination);
+  }
+  if (actx.state === 'suspended') actx.resume();
+  return actx;
+}
+
+function stopPlayback() {
+  if (curNode) {
+    curNode.onended = null;
+    try { curNode.stop(); } catch (e) {}
+    try { curNode.disconnect(); } catch (e) {}
+    curNode = null;
+  }
+  transport.playing = false;
+  refreshTransportUI();
+}
+
+// the shared transport every section plays through
+function playBuffer(x, label, opts) {
+  opts = opts || {};
+  if (!x || !x.length) return null;
+  var c = ensureCtx();
+  stopPlayback();
+  var sr = opts.sr || WORK_SR;
+  var buf = c.createBuffer(1, x.length, sr);
+  buf.copyToChannel(x instanceof Float32Array ? x : new Float32Array(x), 0);
+  var src = c.createBufferSource();
+  src.buffer = buf;
+  src.loop = !!opts.loop;
+  src.connect(master);
+  src.onended = function () {
+    if (curNode === src) { transport.playing = false; refreshTransportUI(); }
+  };
+  src.start();
+  curNode = src;
+  transport.playing = true;
+  transport.loop = !!opts.loop;
+  transport.label = label || '';
+  transport.dur = x.length / sr;
+  transport.startedAt = c.currentTime;
+  refreshTransportUI();
+  onTransportChanged(x, sr, label);
+  return src;
+}
+
+function refreshTransportUI() {
+  playBtn.disabled = false;
+  loopBtn.classList.toggle('active', transport.loop);
+  if (transport.playing) {
+    srcStatus.textContent = '▶ ' + transport.label + '  ·  ' + transport.dur.toFixed(1) + 's';
+  } else {
+    srcStatus.textContent = work.x ? (work.label + ' ready — press play') : 'nothing loaded yet';
+  }
+}
+
+/* =================================================================
+   the "working" source — what sections 1/3/5/7 analyze — and the
+   "scope" buffer — whatever last played, shown in the sticky header
+   ================================================================= */
+
+var work = { x: null, sr: WORK_SR, label: '' };
+var scope = { x: null, sr: WORK_SR, frames: null, freqs: null };
+
+var onSourceChangedHandlers = [];
+function setWorkingSource(x, sr, label) {
+  work.x = x; work.sr = sr; work.label = label;
+  onTransportChanged(x, sr, label); // preview in the header scope too
+  refreshTransportUI();
+  for (var i = 0; i < onSourceChangedHandlers.length; i++) onSourceChangedHandlers[i]();
+}
+
+function onTransportChanged(x, sr, label) {
+  scope.x = x; scope.sr = sr;
+  try {
+    var S = CODEC.stft(x, 1024, 256);
+    scope.frames = stftMagDbFrames(S);
+    scope.freqs = CODEC.binFreqs(S.N, sr);
+  } catch (e) {
+    scope.frames = null; scope.freqs = null;
+  }
+  renderScope(null);
+}
+
+function renderScope(playheadFrac) {
+  if (!scope.x) return;
+  VIZ.waveform(liveWave, scope.x, { zeroLine: true, color: COLOR.accent, label: transport.label || work.label });
+  if (scope.frames) {
+    VIZ.spectrogram(liveSpec, scope.frames, scope.sr, {
+      maxHz: scope.sr / 2, logY: true,
+      playhead: (typeof playheadFrac === 'number' ? playheadFrac : null)
+    });
+  }
+}
+
+/* rAF loop — the ONLY animation loop on the page, and only when motion is
+   allowed. it exists purely to sweep the sticky bar's playhead. */
+function rafTick() {
+  if (transport.playing && actx) {
+    var t = actx.currentTime - transport.startedAt;
+    var frac = transport.loop
+      ? ((t % transport.dur) / transport.dur)
+      : clamp(t / transport.dur, 0, 1);
+    renderScope(frac);
+  }
+  requestAnimationFrame(rafTick);
+}
+if (!reduced) requestAnimationFrame(rafTick);
+
+/* =================================================================
+   DOM refs used above (declared after they're referenced is fine —
+   function declarations hoist, but these are plain vars used inside
+   those functions, so grab them before wiring anything else)
+   ================================================================= */
+
+var playBtn = $('playBtn'), loopBtn = $('loopBtn'), stopBtn = $('stopBtn'), srcStatus = $('srcStatus');
+var liveWave = $('liveWave'), liveSpec = $('liveSpec');
+var srcPicker = $('srcPicker'), fileInput = $('fileInput');
+var sourcebar = $('sourcebar');
+
+playBtn.addEventListener('click', function () {
+  if (!work.x) return;
+  playBuffer(work.x, work.label, { loop: transport.loop, sr: work.sr });
+});
+loopBtn.addEventListener('click', function () {
+  transport.loop = !transport.loop;
+  loopBtn.classList.toggle('active', transport.loop);
+  if (curNode) curNode.loop = transport.loop;
+});
+stopBtn.addEventListener('click', stopPlayback);
+
+/* ---- source picker: 6 CODEC.sources + mic + drop a file ---- */
+function selectPill(el) {
+  var pills = srcPicker.querySelectorAll('.pill');
+  for (var i = 0; i < pills.length; i++) pills[i].classList.remove('sel');
+  if (el) el.classList.add('sel');
+}
+
+(CODEC.sources || []).forEach(function (src) {
+  var b = document.createElement('button');
+  b.className = 'pill';
+  b.type = 'button';
+  b.textContent = src.label || src.id;
+  b.title = src.desc || '';
+  b.addEventListener('click', function () {
+    var x = src.make(WORK_SR, 3.0);
+    setWorkingSource(x, WORK_SR, src.label || src.id);
+    selectPill(b);
+  });
+  srcPicker.appendChild(b);
+});
+
+var micBtn = document.createElement('button');
+micBtn.className = 'pill'; micBtn.type = 'button'; micBtn.textContent = '🎤 mic';
+micBtn.addEventListener('click', function () { useMic(micBtn); });
+srcPicker.appendChild(micBtn);
+
+var dropBtn = document.createElement('button');
+dropBtn.className = 'pill'; dropBtn.type = 'button'; dropBtn.textContent = '⇩ drop a file';
+dropBtn.addEventListener('click', function () { fileInput.click(); });
+srcPicker.appendChild(dropBtn);
+
+fileInput.addEventListener('change', function () {
+  var f = fileInput.files && fileInput.files[0];
+  if (f) loadAudioFile(f, dropBtn);
+});
+
+sourcebar.addEventListener('dragover', function (ev) { ev.preventDefault(); sourcebar.style.borderColor = COLOR.amber; });
+sourcebar.addEventListener('dragleave', function () { sourcebar.style.borderColor = ''; });
+sourcebar.addEventListener('drop', function (ev) {
+  ev.preventDefault();
+  sourcebar.style.borderColor = '';
+  var f = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+  if (f) loadAudioFile(f, dropBtn);
+});
+
+function loadAudioFile(file, pillEl) {
+  srcStatus.textContent = 'decoding ' + file.name + '…';
+  var c = ensureCtx(); // decoding needs a context; opening a file is a user gesture
+  file.arrayBuffer().then(function (ab) { return c.decodeAudioData(ab); })
+    .then(function (audioBuf) {
+      var m = mixdownMono(audioBuf, 10);
+      setWorkingSource(m.x, m.sr, '📄 ' + file.name);
+      selectPill(pillEl);
+    })
+    .catch(function () { srcStatus.textContent = 'could not decode that file'; });
+}
+
+function useMic(pillEl) {
+  var c = ensureCtx(); // gesture
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    srcStatus.textContent = 'mic not available in this browser'; return;
+  }
+  srcStatus.textContent = 'requesting mic…';
+  navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+    var chunks = [], mr;
+    try { mr = new MediaRecorder(stream); }
+    catch (e) { srcStatus.textContent = 'mic recording not supported here'; stream.getTracks().forEach(function (t) { t.stop(); }); return; }
+    mr.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+    mr.onstop = function () {
+      stream.getTracks().forEach(function (t) { t.stop(); });
+      var blob = new Blob(chunks);
+      blob.arrayBuffer().then(function (ab) { return c.decodeAudioData(ab); })
+        .then(function (audioBuf) {
+          var m = mixdownMono(audioBuf, 10);
+          setWorkingSource(m.x, m.sr, '🎤 mic');
+          selectPill(pillEl);
+        })
+        .catch(function () { srcStatus.textContent = 'could not decode mic audio'; });
+    };
+    mr.start();
+    srcStatus.textContent = 'recording 3s…';
+    setTimeout(function () { if (mr.state !== 'inactive') mr.stop(); }, 3000);
+  }).catch(function () {
+    srcStatus.textContent = 'mic permission denied or unavailable';
+  });
+}
+
+/* =================================================================
+   section 1 — sampling & quantization
+   ================================================================= */
+(function () {
+  var SR_STEPS = [48000, 44100, 32000, 22050, 16000, 11025, 8000, 6000, 4000];
+  var srSlider = $('s1Sr'), srOut = $('s1SrOut'), aa = $('s1Aa');
+  var bitsSlider = $('s1Bits'), bitsOut = $('s1BitsOut'), dither = $('s1Dither');
+  var stairCv = $('s1Stair'), dotsCv = $('s1Dots');
+  var rateOut = $('s1Rate'), snrOut = $('s1Snr');
+
+  function render() {
+    if (!work.x) return;
+    var sr = work.sr;
+    var targetSr = SR_STEPS[+srSlider.value];
+    var bits = +bitsSlider.value;
+    srOut.textContent = targetSr + ' Hz';
+    bitsOut.textContent = bits + ' bit';
+
+    var y1 = CODEC.downsampleSim(work.x, sr, targetSr, { antialias: aa.checked });
+    var q = CODEC.quantize(y1, bits, { dither: dither.checked });
+
+    var rawKbps = targetSr * bits / 1000;
+    rateOut.innerHTML = 'raw PCM here: <b class="mono">' + rawKbps.toFixed(1) + ' kbps</b> mono &nbsp;·&nbsp; CD audio = <b class="mono">1411.2 kbps</b> stereo (44.1 kHz × 16 bit × 2 ch)';
+    snrOut.innerHTML = 'quantization SNR: <b class="mono">' + q.snrDb.toFixed(1) + ' dB</b> · ' + q.levels + ' levels';
+
+    var t0 = Math.floor(sr * 0.5);
+    var t1 = Math.min(work.x.length, t0 + Math.round(sr * 0.02));
+    VIZ.staircase(stairCv, work.x, q.y, { levels: q.levels, t0: t0, t1: t1, label: targetSr + ' Hz / ' + bits + '-bit' });
+
+    var dt1 = Math.min(q.y.length, t0 + Math.round(sr * 0.006));
+    VIZ.waveform(dotsCv, q.y, { t0: t0, t1: dt1, dots: true, zeroLine: true, color: COLOR.teal2, label: 'zoomed' });
+  }
+
+  srSlider.addEventListener('input', render);
+  aa.addEventListener('input', render);
+  bitsSlider.addEventListener('input', render);
+  dither.addEventListener('input', render);
+  onSourceChangedHandlers.push(render);
+  window.addEventListener('resize', debounce(render, 150));
+})();
+
+/* =================================================================
+   section 2 — redundancy vs irrelevance
+   ================================================================= */
+(function () {
+  var cv = $('s2Cv'), scaleBtn = $('s2Scale');
+  var log = true;
+  var items = [
+    { label: 'wav (CD)', kbps: 1411.2, color: COLOR.dim },
+    { label: 'flac', kbps: 800, color: COLOR.teal },
+    { label: 'mp3', kbps: 128, color: COLOR.accent },
+    { label: 'opus', kbps: 64, color: COLOR.teal2 },
+    { label: 'opus (voice)', kbps: 24, color: COLOR.purple },
+    { label: 'neural (EnCodec-class)', kbps: 3, color: COLOR.amber }
+  ];
+  function render() {
+    VIZ.bitrateScale(cv, items, { log: log });
+  }
+  scaleBtn.addEventListener('click', function () {
+    log = !log;
+    scaleBtn.textContent = 'scale: ' + (log ? 'log' : 'linear');
+    render();
+  });
+  render();
+  window.addEventListener('resize', debounce(render, 150));
+})();
+
+/* =================================================================
+   section 3 — STFT / "store the recipe"
+   ================================================================= */
+(function () {
+  var specCv = $('s3Spec'), specgramCv = $('s3Specgram'), info = $('s3Info');
+  var toneBtn = $('s3Tone'), noiseBtn = $('s3Noise'), clearBtn = $('s3Clear');
+  var state = { partials: [], freqs: null };
+
+  function computeAndDraw() {
+    if (!work.x) return;
+    var sr = work.sr;
+    var N = 2048, hop = 512;
+    var S = CODEC.stft(work.x, N, hop);
+    var frames = stftMagDbFrames(S);
+    var freqs = CODEC.binFreqs(S.N, sr);
+    state.freqs = freqs;
+
+    var nb = freqs.length, nf = frames.length;
+    var lin = new Float64Array(nb);
+    for (var i = 0; i < nf; i++) { var f = frames[i]; for (var k = 0; k < nb; k++) lin[k] += Math.pow(10, f[k] / 20); }
+    var avgDb = new Float32Array(nb);
+    for (var k2 = 0; k2 < nb; k2++) avgDb[k2] = 20 * Math.log10(Math.max(lin[k2] / Math.max(1, nf), 1e-12));
+
+    // the raw STFT here is unnormalised (magnitudes sum over the analysis
+    // window and can land well above 0 dB) — display it relative to this
+    // window's own loudest bin so the -100..0 axis never clips into a flat
+    // plateau and the peak structure the section is about stays visible.
+    var peakDb = -Infinity;
+    for (var pk = 0; pk < avgDb.length; pk++) if (avgDb[pk] > peakDb) peakDb = avgDb[pk];
+    if (!isFinite(peakDb)) peakDb = 0;
+    var normDb = new Float32Array(nb);
+    for (var nk = 0; nk < nb; nk++) normDb[nk] = clamp(avgDb[nk] - peakDb, -100, 0);
+
+    var last = state.partials.length ? state.partials[state.partials.length - 1] : null;
+    var marker = last ? { hz: last.hz, db: clamp(last.db - peakDb, -100, 0), label: '+partial' } : null;
+    VIZ.spectrum(specCv, normDb, freqs, { yMin: -100, yMax: 0, logX: true, marker: marker });
+    VIZ.spectrogram(specgramCv, frames, sr, { maxHz: sr / 2, logY: true, playhead: null });
+
+    var thresh = -40, above = 0;
+    for (var i2 = 0; i2 < normDb.length; i2++) if (normDb[i2] > thresh) above++;
+    var pct = Math.round(100 * above / normDb.length);
+    info.innerHTML = pct + '% of frequency bins carry meaningful energy right now.' +
+      (state.partials.length ? ('  your recipe: ' + state.partials.map(function (p) { return Math.round(p.hz) + 'Hz'; }).join(', ')) : '');
+  }
+
+  function pxToFreq(px, w, fMin, fMax) {
+    var t = clamp(px / w, 0, 1);
+    return fMin * Math.pow(fMax / fMin, t);
+  }
+  function pxToDb(py, h, yMin, yMax) {
+    var t = clamp(py / h, 0, 1);
+    return yMax - t * (yMax - yMin);
+  }
+
+  function rebuildPartialSynth() {
+    var sr = work.sr, seconds = 1.5;
+    var n = Math.round(seconds * sr);
+    var y = new Float32Array(n);
+    var fadeN = Math.max(1, Math.round(0.005 * sr));
+    state.partials.forEach(function (p) {
+      var amp = dbToAmp(p.db);
+      for (var i = 0; i < n; i++) {
+        var g = 1;
+        if (i < fadeN) g = i / fadeN; else if (i > n - fadeN) g = (n - i) / fadeN;
+        y[i] += amp * g * Math.sin(2 * Math.PI * p.hz * i / sr);
+      }
+    });
+    y = CODEC.normalize(y, 0.85);
+    playBuffer(y, state.partials.length + '-partial recipe', { sr: sr });
+  }
+
+  specCv.addEventListener('click', function (ev) {
+    if (!work.x) return;
+    var r = specCv.getBoundingClientRect();
+    var px = ev.clientX - r.left, py = ev.clientY - r.top;
+    var hz = pxToFreq(px, r.width, 20, work.sr / 2);
+    var db = Math.min(pxToDb(py, r.height, -100, 0), -6);
+    state.partials.push({ hz: hz, db: db });
+    if (state.partials.length > 8) state.partials.shift();
+    computeAndDraw();
+    rebuildPartialSynth();
+  });
+
+  clearBtn.addEventListener('click', function () { state.partials = []; computeAndDraw(); });
+  toneBtn.addEventListener('click', function () {
+    var s = findSource('tone'); if (s) setWorkingSource(s.make(WORK_SR, 3), WORK_SR, s.label || 'tone');
+  });
+  noiseBtn.addEventListener('click', function () {
+    var s = findSource('noise'); if (s) setWorkingSource(s.make(WORK_SR, 3), WORK_SR, s.label || 'noise');
+  });
+
+  onSourceChangedHandlers.push(function () { state.partials = []; computeAndDraw(); });
+  window.addEventListener('resize', debounce(computeAndDraw, 150));
+})();
+
+/* =================================================================
+   section 4 — masking (hero) + A/B blind test
+   ================================================================= */
+(function () {
+  var mf = $('s4Mf'), mfOut = $('s4MfOut'), ml = $('s4Ml'), mlOut = $('s4MlOut');
+  var pf = $('s4Pf'), pfOut = $('s4PfOut'), pl = $('s4Pl'), plOut = $('s4PlOut');
+  var cv = $('s4Cv'), readout = $('s4Readout'), ath30 = $('s4Ath30');
+  var playMasker = $('s4PlayMasker'), playBoth = $('s4PlayBoth');
+  var abA = $('s4AbA'), abB = $('s4AbB'), abPickA = $('s4AbPickA'), abPickB = $('s4AbPickB'), abNew = $('s4AbNew');
+  var abStatus = $('s4AbStatus'), abResult = $('s4AbResult');
+
+  var last = { audible: false };
+  var N = 2048;
+
+  function render() {
+    var sr = WORK_SR;
+    var freqs = CODEC.binFreqs(N, sr);
+    var maskerHz = +mf.value, maskerDb = +ml.value;
+    var probeHz = +pf.value, probeDb = +pl.value;
+    mfOut.textContent = maskerHz + ' Hz'; mlOut.textContent = maskerDb + ' dB';
+    pfOut.textContent = probeHz + ' Hz'; plOut.textContent = probeDb + ' dB';
+
+    var magDb = new Float32Array(freqs.length);
+    for (var i = 0; i < magDb.length; i++) magDb[i] = -100;
+    magDb[nearestBinIndex(freqs, maskerHz)] = maskerDb;
+
+    var thresh = CODEC.maskingThreshold(magDb, freqs, { tonality: 0.9, spreadDownDbPerBark: 27, spreadUpDbPerBark: 15 });
+    var athArr = new Float32Array(freqs.length);
+    for (var k = 0; k < freqs.length; k++) athArr[k] = CODEC.athDb(freqs[k]);
+
+    var pb = nearestBinIndex(freqs, probeHz);
+    var thAtProbe = thresh[pb];
+    var audible = probeDb > thAtProbe;
+    last.audible = audible;
+
+    VIZ.maskingScene(cv, {
+      freqs: freqs, athDb: athArr, threshDb: thresh,
+      maskerHz: maskerHz, maskerDb: maskerDb,
+      probeHz: probeHz, probeDb: probeDb, audible: audible
+    }, {});
+
+    readout.innerHTML = 'masking threshold at the probe frequency: <b class="mono">' + thAtProbe.toFixed(1) + ' dB</b> · probe is at <b class="mono">' + probeDb.toFixed(1) + ' dB</b> → ' +
+      (audible ? '<b style="color:var(--teal2)">above threshold — should be audible</b>' : '<b style="color:var(--dim)">buried under the masker\'s skirt — should be inaudible</b>');
+    ath30.textContent = 'e.g. the absolute threshold of hearing at 30 Hz is about ' + CODEC.athDb(30).toFixed(0) + ' dB — a 40 dB tone there is below it: you cannot hear it at all, masker or no masker.';
+  }
+
+  [mf, ml, pf, pl].forEach(function (el) { el.addEventListener('input', render); });
+
+  playMasker.addEventListener('click', function () {
+    playBuffer(synthTone(+mf.value, +ml.value, WORK_SR, 1.2), 'masker only', { sr: WORK_SR });
+  });
+  playBoth.addEventListener('click', function () {
+    var m = synthTone(+mf.value, +ml.value, WORK_SR, 1.2);
+    var p = synthTone(+pf.value, +pl.value, WORK_SR, 1.2);
+    var mix = new Float32Array(m.length);
+    for (var i = 0; i < mix.length; i++) mix[i] = m[i] + p[i];
+    playBuffer(mix, 'masker + probe', { sr: WORK_SR });
+  });
+
+  var ab = { order: null, score: { correct: 0, total: 0 } };
+  function abBuffer(which) {
+    var m = synthTone(+mf.value, +ml.value, WORK_SR, 1.2);
+    if (which === 'maskerOnly') return m;
+    var p = synthTone(+pf.value, +pl.value, WORK_SR, 1.2);
+    var mix = new Float32Array(m.length);
+    for (var i = 0; i < mix.length; i++) mix[i] = m[i] + p[i];
+    return mix;
+  }
+  function abStart() {
+    ab.order = Math.random() < 0.5 ? ['maskerOnly', 'both'] : ['both', 'maskerOnly'];
+    abResult.textContent = '';
+    abStatus.textContent = 'clip A and clip B — one has the probe hidden in it. listen, then guess.';
+  }
+  abA.addEventListener('click', function () { playBuffer(abBuffer(ab.order[0]), 'A', { sr: WORK_SR }); });
+  abB.addEventListener('click', function () { playBuffer(abBuffer(ab.order[1]), 'B', { sr: WORK_SR }); });
+  function abGuess(which) {
+    var correctLetter = ab.order.indexOf('both') === 0 ? 'A' : 'B';
+    var correct = which === correctLetter;
+    ab.score.total++; if (correct) ab.score.correct++;
+    abResult.innerHTML = (correct ? '<b style="color:var(--teal2)">correct</b>' : '<b style="color:var(--red)">nope</b>') +
+      ' — the probe was in <b>' + correctLetter + '</b>. the threshold model predicted it should be ' + (last.audible ? 'audible.' : 'buried.') +
+      ' score: <b class="mono">' + ab.score.correct + '/' + ab.score.total + '</b>';
+    abStart();
+  }
+  abPickA.addEventListener('click', function () { if (ab.order) abGuess('A'); });
+  abPickB.addEventListener('click', function () { if (ab.order) abGuess('B'); });
+  abNew.addEventListener('click', abStart);
+
+  render();
+  abStart();
+  window.addEventListener('resize', debounce(render, 150));
+})();
+
+/* =================================================================
+   section 5 — spending the bits (the other heart of the page)
+   ================================================================= */
+(function () {
+  var BR_STEPS = [320, 256, 192, 160, 128, 96, 64, 48, 32, 24, 16, 8];
+  var brSlider = $('s5Br'), brOut = $('s5BrOut'), useMasking = $('s5UseMasking');
+  var status = $('s5Status'), bandCv = $('s5Band'), specCv = $('s5Spec'), stats = $('s5Stats');
+  var playOrig = $('s5PlayOrig'), playEnc = $('s5PlayEnc'), playRes = $('s5PlayResidual');
+
+  var s5 = { result: null, busy: false };
+  var ENC_N = 2048;
+
+  brSlider.addEventListener('input', function () { brOut.textContent = BR_STEPS[+brSlider.value] + ' kbps'; });
+  brOut.textContent = BR_STEPS[+brSlider.value] + ' kbps';
+
+  function encode() {
+    if (!work.x || s5.busy) return;
+    s5.busy = true;
+    status.textContent = 'computing…';
+    setControlsDisabled(true);
+    deferHeavy(function () {
+      var t0 = performance.now();
+      var kbps = BR_STEPS[+brSlider.value];
+      var res = CODEC.encode(work.x, work.sr, { bitrateKbps: kbps, useMasking: useMasking.checked });
+      s5.result = res;
+      s5.busy = false;
+      status.textContent = 'encoded in ' + Math.round(performance.now() - t0) + ' ms';
+      setControlsDisabled(false);
+      render();
+    });
+  }
+
+  function setControlsDisabled(v) {
+    playEnc.disabled = v; playRes.disabled = v;
+  }
+
+  function render() {
+    var res = s5.result; if (!res) return;
+    VIZ.bandBits(bandCv, res.stats.bandBits, res.stats.bandFreqs, {});
+    var frames = res.frames;
+    var fr = frames && frames[Math.floor(frames.length * 0.4)];
+    if (fr) {
+      var freqs = CODEC.binFreqs(ENC_N, work.sr);
+      VIZ.spectrum(specCv, fr.magDb, freqs, { threshDb: fr.threshDb, kept: fr.kept, yMin: -100, yMax: 0, logX: true });
+    }
+    var pct = Math.round(100 * res.stats.keptBins / res.stats.totalBins);
+    stats.innerHTML = '<b class="mono">' + res.stats.bitrateKbps.toFixed(1) + ' kbps</b> actual · ' +
+      '<b class="mono">' + res.stats.keptBins + ' / ' + res.stats.totalBins + '</b> bins kept (' + pct + '%) · cutoff ≈ <b class="mono">' + Math.round(res.stats.cutoffHz) + ' Hz</b>';
+  }
+
+  playOrig.addEventListener('click', function () { playBuffer(work.x, 'original', { sr: work.sr }); });
+  playEnc.addEventListener('click', function () {
+    if (s5.result) playBuffer(s5.result.audio, 'encoded @ ' + s5.result.stats.bitrateKbps.toFixed(0) + ' kbps', { sr: work.sr });
+  });
+  playRes.addEventListener('click', function () {
+    if (!s5.result) return;
+    var boosted = CODEC.normalize(s5.result.residual, 0.85);
+    playBuffer(boosted, 'residual — everything the codec threw away', { sr: work.sr });
+  });
+
+  brSlider.addEventListener('change', encode);
+  useMasking.addEventListener('change', encode);
+  onSourceChangedHandlers.push(encode);
+  window.addEventListener('resize', debounce(render, 150));
+})();
+
+/* =================================================================
+   section 6 — artifact gallery
+   ================================================================= */
+(function () {
+  var cv = $('s6Cv'), info = $('s6Info'), status = $('s6Status');
+  var buttons = {
+    preecho: $('s6PreEcho'), birdies: $('s6Birdies'),
+    lowpass: $('s6Lowpass'), overquant: $('s6Overquant')
+  };
+
+  // each preset: compute the artifact and paint cv/info, returning the
+  // audio buffer to play (or null). kept separate from playback so the
+  // page can render the first preset's picture on load without any sound.
+  var PRESETS = {
+    preecho: function () {
+      var s = findSource('castanets'); if (!s) return null;
+      var x = s.make(WORK_SR, 3);
+      var res = CODEC.encode(x, WORK_SR, { bitrateKbps: 32 });
+      VIZ.spectrogram(cv, res.frames.map(function (f) { return f.magDb; }), WORK_SR, { maxHz: WORK_SR / 2, logY: true });
+      info.textContent = 'pre-echo: a sharp click forces the whole analysis window to spend bits on it, so quantization noise smears backward in time, before the click actually happens. sharp transients are the worst case for any block-based codec.';
+      return { audio: res.audio, label: 'pre-echo torture test (castanets @ 32 kbps)' };
+    },
+    birdies: function () {
+      var s = findSource('noise'); if (!s) return null;
+      var x = s.make(WORK_SR, 3);
+      var res = CODEC.encode(x, WORK_SR, { bitrateKbps: 24 });
+      VIZ.spectrogram(cv, res.frames.map(function (f) { return f.magDb; }), WORK_SR, { maxHz: WORK_SR / 2, logY: true });
+      info.textContent = 'birdies: at very low bitrate, which bins survive flickers from frame to frame as the bit-budget chases a moving target. static images barely show it — your ears hear it as a warbling, chirping noise floor.';
+      return { audio: res.audio, label: 'birdies / warble (pink noise @ 24 kbps)' };
+    },
+    lowpass: function () {
+      var s = findSource('melody'); if (!s) return null;
+      var x = s.make(WORK_SR, 3);
+      var res = CODEC.encode(x, WORK_SR, { bitrateKbps: 64 });
+      var frames = res.frames, fr = frames[Math.floor(frames.length * 0.5)];
+      var freqs = CODEC.binFreqs(2048, WORK_SR);
+      if (fr) VIZ.spectrum(cv, fr.magDb, freqs, {
+        threshDb: fr.threshDb, kept: fr.kept, yMin: -100, yMax: 0, logX: true,
+        marker: { hz: res.stats.cutoffHz, db: -4, label: 'cutoff ≈ ' + Math.round(res.stats.cutoffHz) + ' Hz' }
+      });
+      info.textContent = 'lowpass cliff: at 64 kbps the bit budget simply can\'t afford the top octaves, so the encoder drops them outright rather than degrade them gently — a hard-edged cutoff instead of a gradual roll-off.';
+      return { audio: res.audio, label: 'the lowpass cliff (melody @ 64 kbps)' };
+    },
+    overquant: function () {
+      var s = findSource('tone'); if (!s) return null;
+      var x = s.make(WORK_SR, 1.5);
+      var q = CODEC.quantize(x, 3, { dither: false });
+      var t0 = Math.floor(x.length * 0.3);
+      var t1 = Math.min(x.length, t0 + Math.round(WORK_SR * 0.01));
+      VIZ.staircase(cv, x, q.y, { levels: q.levels, t0: t0, t1: t1, label: '3-bit, no dither' });
+      info.textContent = 'over-quantized: only ' + q.levels + ' levels for the entire waveform. the sine turns into visible stairs, and the stairs are exactly the noise you hear — correlated with the signal, so it sounds like distortion, not hiss.';
+      return { audio: q.y, label: 'over-quantized tone (3-bit)' };
+    }
+  };
+
+  function selectPreset(id) {
+    Object.keys(buttons).forEach(function (k) { buttons[k].classList.toggle('sel', k === id); });
+  }
+
+  function run(id, withAudio) {
+    selectPreset(id);
+    status.textContent = 'computing…';
+    deferHeavy(function () {
+      var out = PRESETS[id]();
+      status.textContent = '';
+      if (out && withAudio) playBuffer(out.audio, out.label, { sr: WORK_SR });
+    });
+  }
+
+  buttons.preecho.addEventListener('click', function () { run('preecho', true); });
+  buttons.birdies.addEventListener('click', function () { run('birdies', true); });
+  buttons.lowpass.addEventListener('click', function () { run('lowpass', true); });
+  buttons.overquant.addEventListener('click', function () { run('overquant', true); });
+
+  // draw something the moment the page loads — never leave an unexplained
+  // empty canvas — but no audio until an actual click (no sound before a
+  // gesture)
+  run('preecho', false);
+})();
+
+/* =================================================================
+   section 7 — beyond mp3: neural tokens via RVQ
+   ================================================================= */
+(function () {
+  var stageSlider = $('s7Stage'), stageOut = $('s7StageOut'), cv = $('s7Cv'), info = $('s7Info');
+  var s7 = { rvq: null, range: null, busy: false };
+  var CODEBOOK = 16, STAGES = 4;
+
+  // fixed plot extent, taken once from stage 0's own cloud (the widest one)
+  // and reused for every later stage — that is what makes the residual
+  // cloud visibly shrink toward the origin instead of auto-fitting fresh at
+  // every stage and looking identically "full" each time.
+  function rangeOf(points, padFrac) {
+    var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (var i = 0; i < points.length; i++) {
+      var px = points[i][0], py = points[i][1];
+      if (px < x0) x0 = px; if (px > x1) x1 = px;
+      if (py < y0) y0 = py; if (py > y1) y1 = py;
+    }
+    if (!isFinite(x0)) { x0 = -1; x1 = 1; y0 = -1; y1 = 1; }
+    var padX = Math.max((x1 - x0) * padFrac, 1e-6);
+    var padY = Math.max((y1 - y0) * padFrac, 1e-6);
+    return { x0: x0 - padX, x1: x1 + padX, y0: y0 - padY, y1: y1 + padY };
+  }
+
+  function compute() {
+    if (!work.x || s7.busy) return;
+    s7.busy = true;
+    info.textContent = 'computing tokens…';
+    deferHeavy(function () {
+      var points = CODEC.embed2d(work.x, work.sr, {});
+      var rvq = CODEC.rvq(points, { codebookSize: CODEBOOK, stages: STAGES, seed: 1 });
+      s7.rvq = rvq;
+      s7.range = rangeOf(rvq.stages[0].points, 0.12);
+      s7.busy = false;
+      var maxStage = rvq.stages.length;
+      stageSlider.max = String(maxStage);
+      if (+stageSlider.value > maxStage) stageSlider.value = String(maxStage);
+      render();
+    });
+  }
+
+  function render() {
+    if (!s7.rvq) return;
+    var idx = clamp(+stageSlider.value, 1, s7.rvq.stages.length) - 1;
+    stageOut.textContent = String(idx + 1);
+    var st = s7.rvq.stages[idx];
+    // each stage quantizes what the PREVIOUS stage got wrong: st.points is
+    // that stage's own residual cloud, not the original embedding, so the
+    // picture shows the actual shrink-toward-zero rather than a fixed cloud
+    // with converging centroids drawn on top of it.
+    VIZ.vq(cv, st.points, st.centroids, st.assign, {
+      stage: idx + 1, showLines: idx > 0,
+      title: 'stage ' + (idx + 1) + ' of ' + s7.rvq.stages.length,
+      range: s7.range
+    });
+    var bitsSoFar = Math.round((idx + 1) * Math.log2(CODEBOOK));
+    var shrinkNote = idx === 0
+      ? 'this is the full embedding, before any codebook has touched it.'
+      : 'this cloud is what stage ' + idx + ' got wrong — the leftovers, not the original signal.';
+    info.innerHTML = 'stage ' + (idx + 1) + ' mse: <b class="mono">' + st.mse.toExponential(2) + '</b> · bits/vector so far: <b class="mono">' + bitsSoFar + '</b> · full codebook: <b class="mono">' + s7.rvq.bitsPerVector.toFixed(1) + ' bits/vector</b><br>' +
+      shrinkNote + ' each stage buys ' + Math.round(Math.log2(CODEBOOK)) + ' more bits, and the residual mse drops roughly an order of magnitude — watch the cloud collapse toward the centre as you move the slider. that shrinking residual, coded stage by stage, is what "sound becomes tokens" means: not one lossy snapshot, but a short list of small corrections.';
+  }
+
+  stageSlider.addEventListener('input', render);
+  onSourceChangedHandlers.push(compute);
+  window.addEventListener('resize', debounce(render, 150));
+})();
+
+/* =================================================================
+   bootstrap: load a default source (no audio touched — just data +
+   drawing, so this never violates "no sound before a click")
+   ================================================================= */
+(function () {
+  var s = findSource('melody');
+  if (s) {
+    var x = s.make(WORK_SR, 3.0);
+    setWorkingSource(x, WORK_SR, s.label || 'melody');
+    var firstPill = srcPicker.querySelector('.pill');
+    if (firstPill) firstPill.classList.add('sel');
+  }
+})();
+
+})();
+</script>
+</body>
+</html>
