@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>lab · Corentin Bel</title>
-<meta name="description" content="Experiments hub — one painted dreamscape where every corner is a door: foils, flight, space, brains, money.">
+<meta name="description" content="Experiments hub — one painted dreamscape where every corner is a door: foils, flight, space, brains, money, carbon, statistics.">
 <style>
   :root {
     --bg:#07080c; --panel:#0a0e14; --fg:#e8e6df; --dim:#8a8fa3;
@@ -106,7 +106,18 @@
   #redGlow { opacity:.3; transition:opacity .5s; }
   .zone-red:hover #redGlow, .zone-red:focus #redGlow { opacity:.85; }
 
+  /* numbers district: chimney smoke + scatter billboard */
+  .puff { opacity:0; }
+  @keyframes puffUp { 0% { opacity:0; transform:translate(0,0) scale(.6); }
+    20% { opacity:.35; } 100% { opacity:0; transform:translate(14px,-40px) scale(2.2); } }
+  #smoke .puff { animation:puffUp 4.5s ease-out infinite; transform-box:fill-box; transform-origin:center; }
+  #smoke .puff:nth-child(2) { animation-delay:1.5s; } #smoke .puff:nth-child(3) { animation-delay:3s; }
+  .zone-city:hover #smoke .puff, .zone-city:focus #smoke .puff { animation-duration:2s; }
+  #corrLine { opacity:.35; transition:opacity .5s; }
+  .zone-city:hover #corrLine, .zone-city:focus #corrLine { opacity:1; }
+
   @media (prefers-reduced-motion: reduce) {
+    #smoke .puff { animation:none; opacity:.2; }
     .zone-city:hover .coin, .zone-city:focus .coin { animation:none; opacity:.8; }
     #scope { transition:none; }
     .win { transition:none; }
@@ -140,6 +151,7 @@
     font-size:.8rem; color:var(--dim); font-weight:500;
     text-transform:uppercase; letter-spacing:.12em; margin-bottom:.6rem;
   }
+  #fallback h3 { font-size:.85rem; font-weight:600; color:var(--fg); margin:1.3rem 0 .55rem; }
   #fallback ul {
     list-style:none; display:grid; gap:.7rem;
     grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
@@ -249,9 +261,9 @@
     <rect class="hit" x="205" y="115" width="150" height="150"/>
   </a>
 
-  <!-- ===== city skyline / the money district → invest/ + economy/ ===== -->
+  <!-- ===== city skyline / the numbers district → invest/ economy/ tokens/ correlation/ ===== -->
   <g class="zone zone-city" data-zone="city" tabindex="0" role="button"
-     aria-haspopup="true" aria-label="the money district: three sisters (invest) and orders of magnitude (economy)">
+     aria-haspopup="true" aria-label="the numbers district: token footprint, what r looks like, three sisters (invest) and orders of magnitude (economy)">
     <g id="blds" fill="#0f1420" stroke="#1a2130" stroke-width="1">
       <rect class="bld" x="100" y="430" width="40" height="90"/>
       <rect class="bld" x="150" y="370" width="56" height="150"/>
@@ -268,6 +280,19 @@
     <circle class="coin" cx="250" cy="345" r="4"/>
     <circle class="coin" cx="330" cy="308" r="3.5"/>
     <circle class="coin" cx="440" cy="335" r="4"/>
+    <!-- datacenter chimney → tokens/ -->
+    <rect x="552" y="368" width="10" height="27" fill="#0f1420" stroke="#1a2130"/>
+    <g id="smoke" fill="#8a8fa3">
+      <circle class="puff" cx="557" cy="360" r="4"/>
+      <circle class="puff" cx="557" cy="360" r="4"/>
+      <circle class="puff" cx="557" cy="360" r="4"/>
+    </g>
+    <!-- scatter billboard → correlation/ -->
+    <g id="corrBoard">
+      <rect x="152" y="342" width="52" height="24" rx="2" fill="#0b1018" stroke="#232b3a"/>
+      <g fill="#6ea8ff"><circle cx="158" cy="361" r="1.3"/><circle cx="163" cy="358" r="1.3"/><circle cx="168" cy="359" r="1.3"/><circle cx="172" cy="355" r="1.3"/><circle cx="177" cy="356" r="1.3"/><circle cx="182" cy="352" r="1.3"/><circle cx="187" cy="351" r="1.3"/><circle cx="192" cy="348" r="1.3"/><circle cx="197" cy="347" r="1.3"/></g>
+      <line id="corrLine" x1="156" y1="362" x2="200" y2="346" stroke="#8ceedd" stroke-width="1"/>
+    </g>
     <rect class="hit" x="70" y="330" width="530" height="195"/>
   </g>
 
@@ -481,7 +506,8 @@
 
 <!-- plain fallback: also the no-JS and reduced-motion path -->
 <section id="fallback">
-  <h2>all the doors</h2>
+  <h2 class="top">all the doors</h2>
+  <h3>sea &amp; sky</h3>
   <ul>
     <li><a href="foil-designer/">
       <div class="t">🪽 foil designer</div>
@@ -499,34 +525,54 @@
       <div class="t">🌌 space</div>
       <div class="s">zoom from your hand to the observable universe</div>
     </a></li>
-    <li><a href="glass-brain/">
-      <div class="t">🧠 glass brain</div>
-      <div class="s">a brain of light — click to stimulate</div>
+  </ul>
+  <h3>explainers — numbers, sound, scale</h3>
+  <ul>
+    <li><a href="tokens/">
+      <div class="t">🏭 token footprint</div>
+      <div class="s">what an LLM prompt costs the planet — chips to inference, with a calculator</div>
     </a></li>
-    <li><a href="invest/">
-      <div class="t">📈 three sisters</div>
-      <div class="s">how investing grows — three sisters, three paths</div>
+    <li><a href="correlation/">
+      <div class="t">🔗 what does r look like?</div>
+      <div class="s">correlation as two coloured vectors — up to a glass brain and today's best brain decoders</div>
     </a></li>
     <li><a href="economy/">
       <div class="t">💶 orders of magnitude</div>
       <div class="s">french public money, to scale</div>
     </a></li>
-    <li><a href="mindblown/">
-      <div class="t">🧠 mind, blown</div>
-      <div class="s">a quiz of things you probably believe that aren't quite true</div>
-    </a></li>
-    <li><a href="mycelium/">
-      <div class="t">🍄 mycelium</div>
-      <div class="s">grow a glowing fungal network, then some facts that'll mess with you</div>
-    </a></li>
-    <li><a href="redacted/">
-      <div class="t">📰 redacted</div>
-      <div class="s">a wikipedia page, blacked out — type words to un-redact it</div>
+    <li><a href="invest/">
+      <div class="t">📈 three sisters</div>
+      <div class="s">how investing grows — three sisters, three paths</div>
     </a></li>
     <li><a href="codec/">
       <div class="t">🎚️ codec</div>
       <div class="s">how sound gets squeezed — sampling, masking, and the bits your ear never misses</div>
     </a></li>
+  </ul>
+  <h3>minds</h3>
+  <ul>
+    <li><a href="glass-brain/">
+      <div class="t">🧠 glass brain</div>
+      <div class="s">a brain of light — click to stimulate</div>
+    </a></li>
+    <li><a href="mindblown/">
+      <div class="t">🧠 mind, blown</div>
+      <div class="s">a quiz of things you probably believe that aren't quite true</div>
+    </a></li>
+  </ul>
+  <h3>play &amp; grow</h3>
+  <ul>
+    <li><a href="redacted/">
+      <div class="t">📰 redacted</div>
+      <div class="s">a wikipedia page, blacked out — type words to un-redact it</div>
+    </a></li>
+    <li><a href="mycelium/">
+      <div class="t">🍄 mycelium</div>
+      <div class="s">grow a glowing fungal network, then some facts that'll mess with you</div>
+    </a></li>
+  </ul>
+  <h3>soon</h3>
+  <ul>
     <li class="soon"><div>
       <div class="t">🎬 movie → brain</div>
       <div class="s">à la TRIBE — soon</div>
@@ -568,9 +614,13 @@ var ZONES = {
              { href: 'foil-rl/', title: '🏄 foil pilot',
                desc: 'a stickman learns to wing foil' }
            ] },
-  city:  { title: '🏙️ the money district',
-           desc: 'two doors — click to choose',
+  city:  { title: '🏙️ the numbers district',
+           desc: 'four doors — money, carbon, statistics. click to choose',
            links: [
+             { href: 'tokens/', title: '🏭 token footprint',
+               desc: 'what an LLM prompt costs the planet — chips to inference, with a calculator' },
+             { href: 'correlation/', title: '🔗 what does r look like?',
+               desc: 'correlation as two coloured vectors — up to a glass brain and today's best brain decoders' },
              { href: 'invest/', title: '📈 three sisters',
                desc: 'how investing grows — three sisters, three paths' },
              { href: 'economy/', title: '💶 orders of magnitude',

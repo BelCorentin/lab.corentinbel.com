@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>what does r look like? · lab · Corentin Bel</title>
+<meta name="description" content="pearson r as two coloured vectors — from r = 0 to 0.99, on a glass brain, and why r = 0.1 per voxel is enough to decode what someone heard.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔗</text></svg>">
+<style>
+  :root {
+    --bg:#07080c; --panel:#0d1014; --panel2:#11151c; --fg:#e8e6df; --dim:#8a8fa3; --mute:#5b6072;
+    --accent:#6ea8ff; --teal:#38a3a5; --teal2:#8ceedd; --amber:#ffd27a; --border:#232b3a; --radius:14px;
+    --fmri:#3987e5; --meg:#d95926; --eeg:#199e70; --ieeg:#c98500;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--fg); font-family:ui-sans-serif,system-ui,sans-serif; line-height:1.55; }
+  a { color:var(--teal2); }
+  .mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-variant-numeric:tabular-nums; }
+  header { display:flex; justify-content:space-between; align-items:baseline; padding:1.4rem 2rem; flex-wrap:wrap; gap:.4rem; }
+  header .links { display:flex; gap:1.1rem; }
+  header a { color:var(--dim); text-decoration:none; font-size:.9rem; }
+  header a:hover { color:var(--teal2); }
+  h1 { font-weight:300; font-size:1.3rem; letter-spacing:.04em; }
+  h1 b { font-weight:600; }
+  main { max-width:1080px; margin:0 auto; padding:0 1.2rem 5rem; }
+  .hero { text-align:center; padding:.2rem 0 1.4rem; }
+  .hero h2 { font-size:1.7rem; font-weight:600; margin-bottom:.5rem; }
+  .hero p { color:var(--dim); font-size:.97rem; max-width:46em; margin:0 auto; }
+  section { margin-top:3.4rem; }
+  section > h3 { font-size:1.15rem; font-weight:600; margin-bottom:.3rem; }
+  section > h3 .num { color:var(--mute); font-weight:400; margin-right:.4rem; }
+  section > p.lede { color:var(--dim); font-size:.93rem; max-width:50em; margin-bottom:1.1rem; }
+  .panel { background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:1.1rem 1.2rem; }
+  .note { font-size:.76rem; color:var(--mute); margin-top:.4rem; }
+  .seg { display:flex; flex-wrap:wrap; gap:.3rem; }
+  .seg button, .btn {
+    background:var(--panel2); color:var(--fg); border:1px solid var(--border); border-radius:999px;
+    padding:.32rem .75rem; font-size:.8rem; cursor:pointer;
+  }
+  .seg button.on { border-color:var(--teal2); color:var(--teal2); }
+  .seg button:hover, .btn:hover { border-color:var(--dim); }
+  label.sl { display:flex; justify-content:space-between; font-size:.8rem; color:var(--dim); margin:.6rem 0 .15rem; }
+  label.sl output { color:var(--fg); }
+  input[type=range] { width:100%; accent-color:var(--teal2); }
+
+  /* ---------- brain ---------- */
+  .brainGrid { display:grid; grid-template-columns:1fr 300px; gap:1rem; }
+  @media (max-width:860px) { .brainGrid { grid-template-columns:1fr; } }
+  #brainWrap { position:relative; background:radial-gradient(ellipse at 50% 45%, #111a26, #07080c 72%); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+  #brain { width:100%; height:520px; display:block; cursor:grab; touch-action:none; }
+  #brain:active { cursor:grabbing; }
+  .cbar { position:absolute; left:1rem; bottom:.9rem; font-size:.72rem; color:var(--dim); }
+  .cbar .ramp { width:180px; height:8px; border-radius:4px; margin:.25rem 0; }
+  .cbar .ticks { display:flex; justify-content:space-between; width:180px; }
+  .bhint { position:absolute; right:1rem; bottom:.9rem; font-size:.72rem; color:var(--mute); }
+  .bside .panel { margin-bottom:.8rem; }
+  #probeTitle { font-size:.9rem; font-weight:600; }
+  #probeR { font-size:1.7rem; font-weight:650; }
+  #probe { width:100%; height:120px; display:block; margin-top:.4rem; }
+  .lg { display:flex; gap:.9rem; font-size:.72rem; color:var(--dim); margin-top:.3rem; }
+  .sw { display:inline-block; width:12px; height:3px; border-radius:2px; vertical-align:middle; margin-right:.3rem; }
+
+  /* ---------- two vectors ---------- */
+  .tv { display:grid; grid-template-columns:auto auto auto auto auto; gap:.5rem; align-items:center; justify-content:center; }
+  .tv .mat { text-align:center; }
+  .tv canvas { display:block; border-radius:6px; border:1px solid var(--border); image-rendering:pixelated; cursor:crosshair; }
+  .tv .cap { font-size:.75rem; color:var(--dim); margin-top:.3rem; }
+  .tv .op { color:var(--mute); font-size:1.2rem; }
+  @media (max-width:760px) { .tv { grid-template-columns:1fr; } .tv .op { transform:rotate(90deg); } }
+  .tvBelow { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1rem; }
+  @media (max-width:760px) { .tvBelow { grid-template-columns:1fr; } }
+  .tvBelow canvas { width:100%; height:150px; display:block; }
+  .k { font-size:.8rem; color:var(--dim); }
+  .k b { color:var(--fg); font-weight:600; }
+
+  /* ---------- retrieval ---------- */
+  .ret { display:grid; grid-template-columns:300px 1fr; gap:1rem; }
+  @media (max-width:860px) { .ret { grid-template-columns:1fr; } }
+  #retPlot { width:100%; height:300px; display:block; }
+  .bigv { font-size:2.2rem; font-weight:650; line-height:1.1; }
+
+  /* ---------- ceiling ---------- */
+  #ceil { width:100%; height:120px; display:block; }
+
+  /* ---------- sota ---------- */
+  .sotaTabs { margin-bottom:.8rem; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:.75rem; }
+  .card { background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--c); border-radius:12px; padding:.8rem .9rem; }
+  .card .mod { font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--dim); }
+  .card h4 { font-size:.93rem; margin:.15rem 0 .2rem; }
+  .card .val { font-size:1.35rem; font-weight:650; }
+  .card .vs { font-size:.76rem; color:var(--dim); }
+  .card p { font-size:.8rem; color:var(--dim); margin-top:.3rem; }
+  .card .src { font-size:.72rem; margin-top:.4rem; }
+  #ladder { width:100%; height:auto; display:block; }
+  .tip { position:fixed; pointer-events:none; background:#0b0f15; border:1px solid var(--border); border-radius:8px; padding:.35rem .55rem; font-size:.78rem; z-index:10; display:none; max-width:280px; }
+  ul.take li { margin:.35rem 0 .35rem 1.1rem; font-size:.92rem; }
+  ul.take li b { color:var(--teal2); font-weight:600; }
+  table.src { width:100%; border-collapse:collapse; font-size:.78rem; color:var(--dim); }
+  table.src td { padding:.3rem .4rem; border-top:1px solid var(--border); vertical-align:top; }
+  table.src td:first-child { color:var(--fg); white-space:nowrap; }
+
+  /* ---------- vector strips ---------- */
+  .pairRow { display:grid; grid-template-columns:86px 1fr; gap:.6rem; align-items:center; }
+  .pairLab { font-size:.75rem; color:var(--dim); line-height:1.25; }
+  .pairLab b { display:block; color:var(--fg); font-size:.95rem; font-family:ui-monospace,monospace; }
+  canvas.pair { width:100%; display:block; cursor:crosshair; }
+  .stripKey { display:flex; justify-content:space-between; font-size:.72rem; color:var(--mute); margin-top:.35rem; }
+  .ladder { display:flex; flex-direction:column; gap:.55rem; }
+  .bigR { font-size:2.6rem; font-weight:650; line-height:1; }
+  .readouts { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:.6rem; margin-top:.9rem; }
+  .ro { background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:.55rem .7rem; }
+  .ro .t { font-size:.72rem; color:var(--dim); } .ro .v { font-size:1.15rem; font-weight:600; }
+  .sotaList { display:flex; flex-direction:column; gap:.1rem; margin-top:.9rem; }
+  .sr { display:grid; grid-template-columns:70px 1fr 200px; gap:.7rem; font-size:.82rem; padding:.45rem 0; border-top:1px solid var(--border); align-items:baseline; }
+  .sr .m { font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; }
+  .sr .v { font-family:ui-monospace,monospace; color:var(--fg); }
+  .sr .d { color:var(--dim); font-size:.76rem; }
+  @media (max-width:700px) { .sr { grid-template-columns:1fr; gap:.1rem; } }
+</style>
+</head>
+<body>
+<header>
+  <h1><b>r</b> · what does it look like?</h1>
+  <div class="links"><a href="../">← lab</a><a href="https://corentinbel.com">home</a></div>
+</header>
+
+<main>
+<div class="hero">
+  <h2>a correlation is two vectors that agree</h2>
+  <p>papers say "r = 0.1" as if anyone could picture it. here it is as colours: two rows of numbers, blue for low, amber for high. when the rows rhyme, r is high. then we put it on a brain — where an AI's predictions meet real recordings, and r = 0.1 turns out to be a lot.</p>
+</div>
+
+<!-- ============ 1. two vectors ============ -->
+<section style="margin-top:1rem">
+  <h3><span class="num">01</span>two vectors</h3>
+  <p class="lede">each cell is one measurement. top row: what a model predicts. bottom row: what was measured. the dot cloud is the same 48 pairs, one dot per column — hover a column to find its dot.</p>
+  <div class="panel">
+    <canvas class="pair" id="mainPair"></canvas>
+    <div class="stripKey"><span>▲ predicted · ▼ measured</span><span><i class="sw" style="background:#6ea8ff;height:8px;width:8px"></i>low · <i class="sw" style="background:#2a2e3a;height:8px;width:8px"></i>average · <i class="sw" style="background:#ffd27a;height:8px;width:8px"></i>high</span></div>
+    <label class="sl">correlation r <output id="o_r" class="mono"></output></label>
+    <input type="range" id="r" min="-100" max="100" value="50">
+    <div class="readouts">
+      <div class="ro"><div class="t">variance explained (r²)</div><div class="v mono" id="ro1"></div></div>
+      <div class="ro"><div class="t">pick two columns: the higher prediction is also the higher measurement</div><div class="v mono" id="ro2"></div></div>
+      <div class="ro"><div class="t">guessing error shrinks by</div><div class="v mono" id="ro3"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2. ladder ============ -->
+<section>
+  <h3><span class="num">02</span>the ladder</h3>
+  <p class="lede">same predicted row every time; only the agreement changes. below ~0.3 your eye finds nothing. at 0.5 the colours start to rhyme. you need ~0.9 before the rows look alike.</p>
+  <div class="panel ladder" id="ladderRows"></div>
+</section>
+
+<!-- ============ 3. glass brain ============ -->
+<section>
+  <h3><span class="num">03</span>now put it on a brain</h3>
+  <p class="lede">an encoding model reads the story a person hears, turns every word into an LLM embedding, and predicts the response at each point of the cortex. every point gets its own pair of vectors — predicted vs measured over time — and so its own r. paint all of them and you get a map. hover the cortex.</p>
+  <div class="brainGrid">
+    <div id="brainWrap">
+      <canvas id="brain" aria-label="rotatable 3D cortex coloured by encoding correlation"></canvas>
+      <div class="cbar"><span>r (predicted vs measured)</span>
+        <div class="ramp" id="ramp"></div>
+        <div class="ticks mono"><span id="cbLo">0</span><span id="cbHi">0.5</span></div></div>
+      <div class="bhint">drag to rotate · scroll to zoom</div>
+    </div>
+    <div class="bside">
+      <div class="panel">
+        <div class="k">recording</div>
+        <div class="seg" id="modSeg" style="margin:.3rem 0 .5rem"></div>
+        <div class="k">surface</div>
+        <div class="seg" id="surfSeg" style="margin:.3rem 0 .5rem"></div>
+        <div class="k">look</div>
+        <div class="seg" id="lookSeg" style="margin:.3rem 0 .2rem"></div>
+        <label class="sl">hide r below <output id="o_thr" class="mono"></output></label>
+        <input type="range" id="thr" min="0" max="100" value="28">
+      </div>
+      <div class="panel">
+        <div id="probeTitle">hover a spot on the cortex</div>
+        <div class="mono" id="probeR">r = –</div>
+        <canvas class="pair" id="probe" style="margin-top:.4rem"></canvas>
+        <div class="stripKey"><span>▲ predicted from the LLM · ▼ measured</span></div>
+      </div>
+      <div class="note" id="mapNote"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4. adds up ============ -->
+<section>
+  <h3><span class="num">04</span>why r = 0.1 is a lot</h3>
+  <p class="lede">one spot at r = 0.1 can't tell you which sentence someone heard. but a decoder doesn't look at one spot — it compares the whole brain pattern against every candidate. each of D independent dimensions adds a little evidence, and the right answer pulls ahead like <span class="mono">r·√D</span>.</p>
+  <div class="ret">
+    <div class="panel">
+      <label class="sl">r per dimension <output id="o_rr" class="mono"></output></label>
+      <input type="range" id="rr" min="1" max="60" value="10">
+      <label class="sl">independent dimensions D <output id="o_dd" class="mono"></output></label>
+      <input type="range" id="dd" min="0" max="100" value="70">
+      <label class="sl">candidates <output id="o_kk" class="mono"></output></label>
+      <input type="range" id="kk" min="0" max="100" value="75">
+      <div style="margin-top:1rem" class="k">picks the right one</div>
+      <div class="bigv mono" id="accV">–</div>
+      <div class="k" id="accX"></div>
+      <div class="note">assumes independent dimensions. neighbouring voxels and sensors are correlated, so the real "effective D" is far smaller than the count.</div>
+    </div>
+    <div class="panel"><canvas id="retPlot" aria-label="accuracy versus number of dimensions"></canvas></div>
+  </div>
+</section>
+
+<!-- ============ 5. sota ============ -->
+<section>
+  <h3><span class="num">05</span>where the best systems stand</h3>
+  <p class="lede">encoding (AI → brain) is reported as r; decoding (brain → meaning) as accuracy against chance. a few landmarks, checked against the papers.</p>
+  <div class="panel">
+    <div class="k" style="margin-bottom:.4rem">decoding, in multiples of chance (log scale) — grows with the number of options, so it's a measure of surprise, not a ranking</div>
+    <svg id="ladder" viewBox="0 0 1000 300" role="img" aria-label="decoding results as multiples of chance"></svg>
+    <div class="sotaList" id="sotaList"></div>
+  </div>
+</section>
+
+<section>
+  <h3>sources &amp; small print</h3>
+  <div class="panel"><table class="src" id="srcTable"></table>
+  <div class="note">the brain maps are <b>schematic</b>: shaped after published LLM-encoding maps (strongest along the superior temporal sulcus, then inferior frontal and angular gyri, left &gt; right), with illustrative values, on the real fsaverage cortex. all vectors are simulated so that their correlation is exactly the r shown.</div></div>
+</section>
+</main>
+<div class="tip" id="tip"></div>
+
+<script src="mesh.js"></script>
+<script src="sota.js"></script>
+<script>
+(function () {
+'use strict';
+var $ = function (id) { return document.getElementById(id); };
+var tip = $('tip');
+function showTip(e, h) { tip.innerHTML = h; tip.style.display = 'block';
+  tip.style.left = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; }
+function hideTip() { tip.style.display = 'none'; }
+
+/* ---------- seeded rng ---------- */
+function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function gauss(rng) { var u = 0, v = 0; while (u === 0) u = rng(); v = rng(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.2831853 * v); }
+function pearson(a, b) { var n = a.length, ma = 0, mb = 0, i; for (i = 0; i < n; i++) { ma += a[i]; mb += b[i]; } ma /= n; mb /= n;
+  var sab = 0, saa = 0, sbb = 0; for (i = 0; i < n; i++) { var x = a[i] - ma, y = b[i] - mb; sab += x * y; saa += x * x; sbb += y * y; }
+  return sab / Math.sqrt(saa * sbb + 1e-12); }
+function zs(a) { var n = a.length, m = 0, s = 0, i; for (i = 0; i < n; i++) m += a[i]; m /= n; for (i = 0; i < n; i++) s += (a[i] - m) * (a[i] - m);
+  s = Math.sqrt(s / n) || 1; var o = new Float32Array(n); for (i = 0; i < n; i++) o[i] = (a[i] - m) / s; return o; }
+/* make y with sample corr exactly r against x (both length n) */
+function withR(x, r, rng) {
+  var zx = zs(x), n = x.length, e = new Float32Array(n), i;
+  for (i = 0; i < n; i++) e[i] = gauss(rng);
+  for (var k = 0; k < 2; k++) for (i = 1; i < n; i++) e[i] = 0.55 * e[i] + 0.45 * e[i - 1]; // a little autocorrelation
+  var b = 0; for (i = 0; i < n; i++) b += e[i] * zx[i]; b /= n;
+  for (i = 0; i < n; i++) e[i] -= b * zx[i];
+  e = zs(e); var y = new Float32Array(n), q = Math.sqrt(Math.max(0, 1 - r * r));
+  for (i = 0; i < n; i++) y[i] = r * zx[i] + q * e[i];
+  return y;
+}
+/* sequential colour ramp: one hue (teal), dark → bright */
+var RAMP = [[14, 40, 48], [26, 92, 98], [56, 163, 165], [140, 238, 221], [232, 255, 248]];
+function ramp(t) { t = Math.max(0, Math.min(1, t)) * (RAMP.length - 1); var i = Math.min(RAMP.length - 2, Math.floor(t)), f = t - i;
+  return [0, 1, 2].map(function (k) { return RAMP[i][k] + (RAMP[i + 1][k] - RAMP[i][k]) * f; }); }
+$('ramp').style.background = 'linear-gradient(90deg,' + RAMP.map(function (c) { return 'rgb(' + c + ')'; }).join(',') + ')';
+/* diverging (for matrices): blue ← grey → amber */
+function div(t) { t = Math.max(-1, Math.min(1, t)); var g = [42, 46, 58], a = t > 0 ? [255, 210, 122] : [110, 168, 255], f = Math.abs(t);
+  return [g[0] + (a[0] - g[0]) * f, g[1] + (a[1] - g[1]) * f, g[2] + (a[2] - g[2]) * f]; }
+function fitCanvas(cv, h) { var d = Math.min(devicePixelRatio || 1, 2), w = cv.clientWidth; h = h || cv.clientHeight;
+  cv.width = w * d; cv.height = h * d; var c = cv.getContext('2d'); c.setTransform(d, 0, 0, d, 0, 0); return { c:c, w:w, h:h }; }
+
+
+/* =====================================================================
+   pair of vectors: two colour strips + a dot cloud
+   ===================================================================== */
+function pairViz(cv, a, b, o) {
+  o = o || {};
+  var g = fitCanvas(cv, o.h || 110), c = g.c, n = a.length, S = o.scatter === false ? 0 : g.h, gap = S ? 16 : 0;
+  var sw = g.w - S - gap, cw = sw / n, rh = (g.h - 8) / 2, za = zs(a), zb = zs(b);
+  for (var i = 0; i < n; i++) {
+    var ca = div(za[i] / 2.2), cb = div(zb[i] / 2.2);
+    c.fillStyle = 'rgb(' + ca.map(Math.round) + ')'; c.fillRect(i * cw + .5, 0, Math.max(1, cw - 1), rh);
+    c.fillStyle = 'rgb(' + cb.map(Math.round) + ')'; c.fillRect(i * cw + .5, rh + 8, Math.max(1, cw - 1), rh);
+  }
+  if (o.hl != null) { c.strokeStyle = '#e8e6df'; c.lineWidth = 1.5; c.strokeRect(o.hl * cw + .5, .5, cw - 1, g.h - 1); }
+  if (!S) return { cw:cw };
+  var x0 = sw + gap, pad = 6;
+  c.fillStyle = '#0b0e13'; c.fillRect(x0, 0, S, S); c.strokeStyle = '#232b3a'; c.lineWidth = 1; c.strokeRect(x0 + .5, .5, S - 1, S - 1);
+  var R = 2.8;
+  function px(v) { return x0 + pad + (Math.max(-R, Math.min(R, v)) + R) / (2 * R) * (S - 2 * pad); }
+  function py(v) { return S - pad - (Math.max(-R, Math.min(R, v)) + R) / (2 * R) * (S - 2 * pad); }
+  var r = pearson(a, b);
+  c.strokeStyle = 'rgba(140,238,221,.7)'; c.beginPath(); c.moveTo(px(-R), py(-R * r)); c.lineTo(px(R), py(R * r)); c.stroke();
+  for (i = 0; i < n; i++) {
+    var col = div(za[i] / 2.2);
+    c.fillStyle = 'rgb(' + col.map(Math.round) + ')'; c.beginPath(); c.arc(px(za[i]), py(zb[i]), o.hl === i ? 4.5 : 2.6, 0, 6.283); c.fill();
+    if (o.hl === i) { c.strokeStyle = '#e8e6df'; c.lineWidth = 1.5; c.stroke(); }
+  }
+  return { cw:cw };
+}
+
+/* ---------- 01 · two vectors ---------- */
+var BASE = (function () { var rng = mulberry(3), n = 48, x = new Float32Array(n), v = 0; for (var i = 0; i < n; i++) { v = 0.3 * v + gauss(rng); x[i] = v; } return x; })();
+var NOISE_SEED = 41, mainHL = null;
+function renderMain() {
+  var r = +$('r').value / 100; $('o_r').textContent = r.toFixed(2);
+  var b = withR(BASE, Math.max(-.999, Math.min(.999, r)), mulberry(NOISE_SEED));
+  pairViz($('mainPair'), BASE, b, { h:150, hl:mainHL });
+  $('ro1').textContent = Math.round(r * r * 100) + ' %';
+  $('ro2').textContent = (50 + Math.asin(r) / Math.PI * 100).toFixed(0) + ' % of the time';
+  $('ro3').textContent = Math.round((1 - Math.sqrt(1 - r * r)) * 100) + ' %';
+}
+$('r').addEventListener('input', renderMain);
+$('mainPair').addEventListener('mousemove', function (e) {
+  var rc = e.target.getBoundingClientRect(), sw = rc.width - rc.height - 16, i = Math.floor((e.clientX - rc.left) / (sw / BASE.length));
+  mainHL = (i >= 0 && i < BASE.length) ? i : null; renderMain(); });
+$('mainPair').addEventListener('mouseleave', function () { mainHL = null; renderMain(); });
+renderMain();
+
+/* ---------- 02 · ladder ---------- */
+var STEPS = [[0, 'nothing'], [0.05, 'still nothing'], [0.1, 'a typical single brain voxel or sensor'], [0.3, 'a "typical published effect"'],
+             [0.5, 'the colours start to rhyme'], [0.7, 'clearly related'], [0.9, 'almost the same row'], [0.99, 'a copy with fuzz'], [-0.7, 'mirror image (negative)']];
+var ladderCvs = [];
+STEPS.forEach(function (s, i) {
+  var row = document.createElement('div'); row.className = 'pairRow';
+  row.innerHTML = '<div class="pairLab"><b>r = ' + (s[0] < 0 ? '−' + (-s[0]).toFixed(2).slice(1) : s[0].toFixed(2).replace(/^0/, '')) + '</b>' + s[1] + '</div><canvas class="pair"></canvas>';
+  $('ladderRows').appendChild(row); ladderCvs.push(row.querySelector('canvas'));
+});
+function renderLadder() { STEPS.forEach(function (s, i) { pairViz(ladderCvs[i], BASE, withR(BASE, s[0], mulberry(NOISE_SEED)), { h:64 }); }); }
+renderLadder();
+addEventListener('resize', function () { renderMain(); renderLadder(); drawProbe(); });
+
+/* =====================================================================
+   01 · glass brain (WebGL)
+   ===================================================================== */
+var M = window.BRAIN_MESH;
+function b64(s, T) { var bin = atob(s), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return new T(u.buffer); }
+var NV = M.n, H = M.hemis.map(function (h) {
+  return { h:h.h, pial:b64(h.pial, Int16Array), infl:b64(h.infl, Int16Array), sulc:b64(h.sulc, Uint8Array), lab:b64(h.lab, Uint8Array), tri:b64(h.tri, Uint16Array) };
+});
+var NAMES = M.names;
+var PRETTY = { superiortemporal:'superior temporal gyrus', bankssts:'superior temporal sulcus', middletemporal:'middle temporal gyrus',
+  transversetemporal:'primary auditory cortex (Heschl)', supramarginal:'supramarginal gyrus', inferiorparietal:'angular / inferior parietal',
+  parstriangularis:'Broca — pars triangularis', parsopercularis:'Broca — pars opercularis', parsorbitalis:'inferior frontal, pars orbitalis',
+  temporalpole:'temporal pole', precuneus:'precuneus', posteriorcingulate:'posterior cingulate', isthmuscingulate:'retrosplenial / isthmus cingulate',
+  medialorbitofrontal:'medial orbitofrontal', superiorfrontal:'superior frontal (dmPFC)', rostralmiddlefrontal:'rostral middle frontal',
+  caudalmiddlefrontal:'caudal middle frontal', precentral:'motor cortex', postcentral:'somatosensory cortex', inferiortemporal:'inferior temporal gyrus',
+  fusiform:'fusiform gyrus', insula:'insula', lateraloccipital:'lateral occipital (visual)', pericalcarine:'primary visual cortex',
+  lingual:'lingual gyrus', cuneus:'cuneus', superiorparietal:'superior parietal', paracentral:'paracentral lobule', frontalpole:'frontal pole',
+  lateralorbitofrontal:'lateral orbitofrontal', parahippocampal:'parahippocampal gyrus', entorhinal:'entorhinal cortex',
+  caudalanteriorcingulate:'anterior cingulate', rostralanteriorcingulate:'anterior cingulate', unknown:'medial wall', corpuscallosum:'medial wall' };
+
+/* schematic weights per region (left hemisphere; right scaled down) */
+var W_FMRI = { superiortemporal:.46, bankssts:.48, middletemporal:.38, transversetemporal:.30, supramarginal:.24, inferiorparietal:.30,
+  parstriangularis:.30, parsopercularis:.27, parsorbitalis:.24, temporalpole:.22, precuneus:.18, posteriorcingulate:.14, isthmuscingulate:.17,
+  medialorbitofrontal:.12, superiorfrontal:.15, rostralmiddlefrontal:.10, caudalmiddlefrontal:.13, precentral:.11, inferiortemporal:.16,
+  fusiform:.08, insula:.10, frontalpole:.08, lateralorbitofrontal:.12 };
+var W_MEG = { superiortemporal:.13, bankssts:.12, middletemporal:.09, transversetemporal:.14, supramarginal:.08, inferiorparietal:.06,
+  parstriangularis:.06, parsopercularis:.07, parsorbitalis:.05, temporalpole:.07, precentral:.06, postcentral:.05, insula:.06, inferiortemporal:.05,
+  caudalmiddlefrontal:.04 };
+var MODS = {
+  fmri: { name:'fMRI', w:W_FMRI, base:.035, right:.72, smooth:6, noise:.05, hi:.5,
+          note:'fMRI: millimetre detail, but blood flow lags ~5 s. peak-region r ≈0.2–0.3 is typical (60 % of the ceiling in Caucheteux 2023); the best single voxels reach ~0.8 with 20 h of data per person (Antonello 2023). near 0 in visual cortex for audio stories.' },
+  meg:  { name:'MEG (source)', w:W_MEG, base:.015, right:.85, smooth:28, noise:.012, hi:.16,
+          note:'MEG source estimate: millisecond timing but centimetre blur — the map is smeared and values are smaller (≈0.05–0.15) because each sample is a single noisy moment, not a 2-second average.' }
+};
+
+/* adjacency for smoothing */
+function adjacency(tri) { var nb = []; for (var i = 0; i < NV; i++) nb.push([]);
+  for (var t = 0; t < tri.length; t += 3) { var a = tri[t], b = tri[t + 1], c = tri[t + 2];
+    nb[a].push(b, c); nb[b].push(a, c); nb[c].push(a, b); } return nb; }
+H.forEach(function (h) { h.nb = adjacency(h.tri); });
+function smooth(h, v, it) { var o = new Float32Array(v); for (var k = 0; k < it; k++) { var n = new Float32Array(NV);
+  for (var i = 0; i < NV; i++) { var s = o[i] * 2, nb = h.nb[i]; for (var j = 0; j < nb.length; j++) s += o[nb[j]]; n[i] = s / (2 + nb.length); } o = n; } return o; }
+function buildMap(key) {
+  var m = MODS[key], rng = mulberry(key === 'fmri' ? 11 : 23);
+  H.forEach(function (h, hi) {
+    var v = new Float32Array(NV), nz = new Float32Array(NV);
+    for (var i = 0; i < NV; i++) { var nm = NAMES[h.lab[i]]; v[i] = (m.w[nm] || m.base) * (hi === 1 ? m.right : 1); nz[i] = gauss(rng); }
+    var rs = NV / 10242; v = smooth(h, v, Math.round(m.smooth * rs)); nz = smooth(h, nz, Math.round(3 * rs));
+    var sd = 0; for (i = 0; i < NV; i++) sd += nz[i] * nz[i]; sd = Math.sqrt(sd / NV);
+    for (i = 0; i < NV; i++) v[i] = Math.max(-0.02, v[i] + m.noise * nz[i] / sd * (0.4 + v[i] / m.hi));
+        for (i = 0; i < NV; i++) { var nmx = NAMES[h.lab[i]]; if (nmx === 'unknown' || nmx === 'corpuscallosum') v[i] = 0; }
+    h['r_' + key] = v;
+  });
+}
+buildMap('fmri'); buildMap('meg');
+
+/* normals */
+function normals(pos, tri) { var n = new Float32Array(NV * 3);
+  for (var t = 0; t < tri.length; t += 3) { var a = tri[t] * 3, b = tri[t + 1] * 3, c = tri[t + 2] * 3;
+    var ux = pos[b] - pos[a], uy = pos[b + 1] - pos[a + 1], uz = pos[b + 2] - pos[a + 2];
+    var vx = pos[c] - pos[a], vy = pos[c + 1] - pos[a + 1], vz = pos[c + 2] - pos[a + 2];
+    var nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    [a, b, c].forEach(function (k) { n[k] += nx; n[k + 1] += ny; n[k + 2] += nz; }); }
+  for (var i = 0; i < NV * 3; i += 3) { var l = Math.hypot(n[i], n[i + 1], n[i + 2]) || 1; n[i] /= l; n[i + 1] /= l; n[i + 2] /= l; } return n; }
+H.forEach(function (h) {
+  h.P = new Float32Array(NV * 3); h.I = new Float32Array(NV * 3);
+  for (var i = 0; i < NV * 3; i++) { h.P[i] = h.pial[i] / 32000; h.I[i] = h.infl[i] / 32000; }
+  h.NP = normals(h.P, h.tri); h.NI = normals(h.I, h.tri);
+});
+
+var cv = $('brain'), gl = cv.getContext('webgl', { antialias:true, alpha:true, premultipliedAlpha:false, preserveDrawingBuffer:true });
+var view = { yaw:Math.PI, pitch:0.18, dist:3.1, morph:0, morphT:0, mod:'fmri', look:'solid', thr:0.06, auto:true };
+var probe = { h:-1, i:-1 };
+
+if (!gl) { $('brainWrap').insertAdjacentHTML('beforeend', '<p style="padding:2rem;color:#8a8fa3">WebGL is unavailable — the rest of the page still works.</p>'); }
+else {
+var VS = 'attribute vec3 aP;attribute vec3 aI;attribute vec3 aNP;attribute vec3 aNI;attribute float aS;attribute float aR;' +
+  'uniform mat4 uM;uniform float uMorph;varying vec3 vN;varying float vS;varying float vR;varying vec3 vV;' +
+  'void main(){vec3 p=mix(aP,aI,uMorph);vec3 n=normalize(mix(aNP,aNI,uMorph));vec4 q=uM*vec4(p,1.0);' +
+  'gl_Position=q;vN=n;vS=aS;vR=aR;vV=p;}';
+var FS = 'precision mediump float;varying vec3 vN;varying float vS;varying float vR;varying vec3 vV;uniform vec3 uEye;uniform float uThr;' +
+  'uniform float uHi;uniform float uGlass;uniform vec3 uC0;uniform vec3 uC1;uniform vec3 uC2;uniform vec3 uC3;uniform vec3 uC4;uniform float uPick;' +
+  'vec3 rmp(float t){t=clamp(t,0.0,1.0)*4.0;if(t<1.0)return mix(uC0,uC1,t);if(t<2.0)return mix(uC1,uC2,t-1.0);if(t<3.0)return mix(uC2,uC3,t-2.0);return mix(uC3,uC4,t-3.0);}' +
+  'void main(){vec3 n=normalize(vN);vec3 v=normalize(uEye-vV);float nd=dot(n,v);if(uGlass<0.5&&nd<0.0)n=-n;' +
+  'vec3 L=normalize(vec3(0.4,0.6,0.9));float lam=0.35+0.65*max(dot(n,L),0.0);' +
+  'vec3 base=mix(vec3(0.42,0.44,0.5),vec3(0.18,0.2,0.25),vS);' +
+  'float on=step(uThr,vR);float tt=clamp((vR-uThr)/max(uHi-uThr,0.01),0.0,1.0);vec3 col=mix(base,rmp(0.3+0.7*tt),on);' +
+  'float fr=pow(1.0-abs(nd),2.2);' +
+  'if(uGlass>0.5){float a=0.05+0.55*fr+on*0.55*clamp(vR/uHi,0.15,1.0);gl_FragColor=vec4(mix(vec3(0.55,0.62,0.75)*fr*1.6,rmp(0.3+0.7*tt),on)*a,a);}' +
+  'else{vec3 c=col*lam+vec3(0.55,0.7,0.85)*fr*0.25;gl_FragColor=vec4(c,1.0);}}';
+function sh(t, s) { var o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(o)); return o; }
+var prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog); gl.useProgram(prog);
+var A = {}; ['aP', 'aI', 'aNP', 'aNI', 'aS', 'aR'].forEach(function (k) { A[k] = gl.getAttribLocation(prog, k); });
+var U = {}; ['uM', 'uMorph', 'uEye', 'uThr', 'uHi', 'uGlass', 'uC0', 'uC1', 'uC2', 'uC3', 'uC4', 'uPick'].forEach(function (k) { U[k] = gl.getUniformLocation(prog, k); });
+RAMP.forEach(function (c, i) { gl.uniform3f(U['uC' + i], c[0] / 255, c[1] / 255, c[2] / 255); });
+function buf(data) { var b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW); return b; }
+H.forEach(function (h) {
+  h.bP = buf(h.P); h.bI = buf(h.I); h.bNP = buf(h.NP); h.bNI = buf(h.NI);
+  var s = new Float32Array(NV); for (var i = 0; i < NV; i++) s[i] = h.sulc[i] / 255; h.bS = buf(s);
+  h.bR = gl.createBuffer();
+  h.bT = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, h.bT); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, h.tri, gl.STATIC_DRAW);
+});
+function uploadR() { H.forEach(function (h) { gl.bindBuffer(gl.ARRAY_BUFFER, h.bR); gl.bufferData(gl.ARRAY_BUFFER, h['r_' + view.mod], gl.STATIC_DRAW); }); }
+uploadR();
+}
+
+/* minimal matrix math */
+function persp(f, a, n, fa) { var t = 1 / Math.tan(f / 2); return [t / a, 0, 0, 0, 0, t, 0, 0, 0, 0, (fa + n) / (n - fa), -1, 0, 0, 2 * fa * n / (n - fa), 0]; }
+function mul(a, b) { var o = new Array(16); for (var i = 0; i < 4; i++) for (var j = 0; j < 4; j++) { var s = 0; for (var k = 0; k < 4; k++) s += a[k * 4 + j] * b[i * 4 + k]; o[i * 4 + j] = s; } return o; }
+function lookAt(e, c, u) { var z = norm3([e[0] - c[0], e[1] - c[1], e[2] - c[2]]), x = norm3(cross(u, z)), y = cross(z, x);
+  return [x[0], y[0], z[0], 0, x[1], y[1], z[1], 0, x[2], y[2], z[2], 0, -dot3(x, e), -dot3(y, e), -dot3(z, e), 1]; }
+function norm3(v) { var l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; }
+function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+function dot3(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+function eye() { var cp = Math.cos(view.pitch); return [view.dist * cp * Math.cos(view.yaw), view.dist * cp * Math.sin(view.yaw), view.dist * Math.sin(view.pitch)]; }
+var MVP = null;
+function sizeBrain() { var d = Math.min(devicePixelRatio || 1, 2); cv.width = cv.clientWidth * d; cv.height = cv.clientHeight * d; }
+addEventListener('resize', sizeBrain); sizeBrain();
+
+function draw() {
+  if (!gl) return;
+  view.morph += (view.morphT - view.morph) * 0.12;
+  if (view.auto) view.yaw += 0.0025;
+  if (pendingPick && MVP) { pick(pendingPick); pendingPick = null; }
+  gl.viewport(0, 0, cv.width, cv.height);
+  gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  var e = eye();
+  MVP = mul(persp(0.75, cv.width / cv.height, 0.1, 20), lookAt(e, [0, 0, 0], [0, 0, 1]));
+  gl.uniformMatrix4fv(U.uM, false, MVP); gl.uniform1f(U.uMorph, view.morph); gl.uniform3f(U.uEye, e[0], e[1], e[2]);
+  gl.uniform1f(U.uThr, view.thr); gl.uniform1f(U.uHi, MODS[view.mod].hi); var glass = view.look === 'glass';
+  gl.uniform1f(U.uGlass, glass ? 1 : 0);
+  if (glass) { gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); }
+  else { gl.enable(gl.DEPTH_TEST); gl.disable(gl.BLEND); }
+  H.forEach(function (h) {
+    [['aP', h.bP, 3], ['aI', h.bI, 3], ['aNP', h.bNP, 3], ['aNI', h.bNI, 3], ['aS', h.bS, 1], ['aR', h.bR, 1]].forEach(function (x) {
+      gl.bindBuffer(gl.ARRAY_BUFFER, x[1]); gl.enableVertexAttribArray(A[x[0]]); gl.vertexAttribPointer(A[x[0]], x[2], gl.FLOAT, false, 0, 0); });
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, h.bT); gl.drawElements(gl.TRIANGLES, h.tri.length, gl.UNSIGNED_SHORT, 0);
+  });
+  if (!draw.once) requestAnimationFrame(draw);
+}
+draw.once = true; draw(); draw.once = false;
+requestAnimationFrame(draw);
+
+/* interaction */
+var drag = null;
+cv.addEventListener('pointerdown', function (e) { drag = { x:e.clientX, y:e.clientY }; view.auto = false; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointerup', function () { drag = null; });
+cv.addEventListener('pointermove', function (e) {
+  if (drag) { view.yaw -= (e.clientX - drag.x) * 0.008; view.pitch = Math.max(-1.4, Math.min(1.4, view.pitch + (e.clientY - drag.y) * 0.008));
+    drag.x = e.clientX; drag.y = e.clientY; return; }
+  pendingPick = e;
+});
+var pendingPick = null;
+cv.addEventListener('wheel', function (e) { e.preventDefault(); view.dist = Math.max(1.6, Math.min(6, view.dist * (1 + e.deltaY * 0.001))); }, { passive:false });
+
+function pick(e) {
+  if (!MVP) return;
+  var r = cv.getBoundingClientRect(), mx = (e.clientX - r.left) / r.width * 2 - 1, my = 1 - (e.clientY - r.top) / r.height * 2;
+  var best = 1e9, bh = -1, bi = -1, bz = 1e9, ey = eye(), m = view.morph;
+  H.forEach(function (h, hi) {
+    for (var i = 0; i < NV; i++) {
+      var k = i * 3, x = h.P[k] + (h.I[k] - h.P[k]) * m, y = h.P[k + 1] + (h.I[k + 1] - h.P[k + 1]) * m, z = h.P[k + 2] + (h.I[k + 2] - h.P[k + 2]) * m;
+      var cw = MVP[3] * x + MVP[7] * y + MVP[11] * z + MVP[15];
+      var sx = (MVP[0] * x + MVP[4] * y + MVP[8] * z + MVP[12]) / cw, sy = (MVP[1] * x + MVP[5] * y + MVP[9] * z + MVP[13]) / cw;
+      var d2 = (sx - mx) * (sx - mx) + (sy - my) * (sy - my);
+      if (d2 < 0.0004) { if (cw < bz) { bz = cw; bh = hi; bi = i; best = d2; } }
+    }
+  });
+  if (bh < 0) return;
+  if (bh === probe.h && bi === probe.i) return;
+  probe.h = bh; probe.i = bi; drawProbe();
+}
+
+/* probe: the spot's two vectors (predicted vs measured over the story) */
+var story = (function () { var rng = mulberry(5), n = 48, x = new Float32Array(n), v = 0;
+  for (var i = 0; i < n; i++) { v = 0.6 * v + gauss(rng); x[i] = v; } return x; })();
+function drawProbe() {
+  if (probe.h < 0) return;
+  var h = H[probe.h], r = h['r_' + view.mod][probe.i], nm = NAMES[h.lab[probe.i]];
+  $('probeTitle').textContent = (h.h === 'lh' ? 'left ' : 'right ') + (PRETTY[nm] || nm);
+  $('probeR').textContent = 'r = ' + r.toFixed(2);
+  var pred = zs(story), meas = withR(story, Math.max(-.99, Math.min(.99, r)), mulberry(probe.i * 7 + probe.h));
+  pairViz($('probe'), pred, meas, { h:96 });
+}
+
+/* controls */
+function segs(id, opts, get, set) { var el = $(id); el.innerHTML = '';
+  opts.forEach(function (o) { var b = document.createElement('button'); b.textContent = o[1]; b.onclick = function () { set(o[0]); refresh(); };
+    b.dataset.k = o[0]; el.appendChild(b); });
+  return function () { Array.prototype.forEach.call(el.children, function (b) { b.classList.toggle('on', b.dataset.k === get()); }); }; }
+var r1 = segs('modSeg', [['fmri', 'fMRI'], ['meg', 'MEG source']], function () { return view.mod; }, function (k) { view.mod = k; if (gl) uploadR(); });
+var r2 = segs('surfSeg', [['0', 'folded'], ['1', 'inflated']], function () { return String(view.morphT); }, function (k) { view.morphT = +k; });
+var r3 = segs('lookSeg', [['solid', 'solid'], ['glass', 'glass']], function () { return view.look; }, function (k) { view.look = k; });
+$('thr').addEventListener('input', refresh);
+function refresh() {
+  r1(); r2(); r3();
+  var m = MODS[view.mod]; view.thr = +$('thr').value / 100 * m.hi * 0.8;
+  $('o_thr').textContent = view.thr.toFixed(3);
+  $('cbHi').textContent = m.hi.toFixed(2); $('cbLo').textContent = view.thr.toFixed(2); $('mapNote').textContent = m.note;
+  drawProbe();
+}
+refresh();
+/* pick a nice default probe: best left STS vertex */
+(function () { var h = H[0], v = h.r_fmri, bi = 0; for (var i = 0; i < NV; i++) if (v[i] > v[bi]) bi = i; probe.h = 0; probe.i = bi; drawProbe(); })();
+
+
+/* =====================================================================
+   03 · retrieval: acc = ∫ φ(x − r√D) Φ(x)^(K−1) dx
+   ===================================================================== */
+function Phi(x) { var t = 1 / (1 + 0.2316419 * Math.abs(x)), d = 0.3989423 * Math.exp(-x * x / 2),
+  p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return x > 0 ? 1 - p : p; }
+function acc(dp, K) { var s = 0, dx = 0.02; for (var x = dp - 7; x < dp + 7; x += dx) s += Math.exp(-(x - dp) * (x - dp) / 2) * 0.3989423 * Math.pow(Phi(x), K - 1) * dx; return Math.min(1, s); }
+var RR = { d:[1, 20000], k:[2, 10000] };
+function lm(v, lo, hi) { return Math.round(Math.exp(Math.log(lo) + (Math.log(hi) - Math.log(lo)) * v / 100)); }
+function renderRet() {
+  var r = +$('rr').value / 100, D = lm(+$('dd').value, RR.d[0], RR.d[1]), K = lm(+$('kk').value, RR.k[0], RR.k[1]);
+  $('o_rr').textContent = r.toFixed(2); $('o_dd').textContent = D.toLocaleString('en'); $('o_kk').textContent = K.toLocaleString('en');
+  var a = acc(r * Math.sqrt(D), K);
+  $('accV').textContent = (a * 100).toFixed(a < 0.1 ? 1 : 0) + ' %';
+  $('accX').textContent = 'chance = ' + (100 / K).toPrecision(2) + ' % · ' + (a * K).toFixed(a * K < 10 ? 1 : 0) + '× chance';
+  var g = fitCanvas($('retPlot'), 300), c = g.c, L = 44, R = 14, Tt = 14, B = 34, W = g.w - L - R, Hh = g.h - Tt - B;
+  c.strokeStyle = '#1c2230'; c.fillStyle = '#5b6072'; c.font = '11px ui-monospace,monospace'; c.lineWidth = 1;
+  for (var e = 0; e <= 4; e++) { var gx = L + e / 4 * W * (Math.log10(20000) - 0) / Math.log10(20000); }
+  [1, 10, 100, 1000, 10000].forEach(function (d) { var x = L + Math.log10(d) / Math.log10(20000) * W; c.beginPath(); c.moveTo(x, Tt); c.lineTo(x, Tt + Hh); c.stroke(); c.fillText(d >= 1000 ? d / 1000 + 'k' : d, x - 8, Tt + Hh + 16); });
+  [0, .25, .5, .75, 1].forEach(function (y) { var yy = Tt + Hh - y * Hh; c.beginPath(); c.moveTo(L, yy); c.lineTo(L + W, yy); c.stroke(); c.fillText(Math.round(y * 100) + '%', 6, yy + 4); });
+  c.fillText('independent dimensions D (log)', L + W / 2 - 90, g.h - 4);
+  [[0.05, '#3987e5'], [0.1, '#8ceedd'], [0.2, '#d95926']].concat([[r, '#ffd27a']]).forEach(function (cfg, idx) {
+    c.strokeStyle = cfg[1]; c.lineWidth = idx === 3 ? 2.4 : 1.4; c.setLineDash(idx === 3 ? [] : [4, 3]); c.beginPath();
+    for (var p = 0; p <= 120; p++) { var d = Math.pow(10, p / 120 * Math.log10(20000)), y = acc(cfg[0] * Math.sqrt(d), K), x = L + p / 120 * W, yy = Tt + Hh - y * Hh; p ? c.lineTo(x, yy) : c.moveTo(x, yy); }
+    c.stroke(); c.setLineDash([]);
+    if (idx < 3) { c.fillStyle = '#8a8fa3'; var lx = L + W * 0.02; c.fillText('r=' + cfg[0], L + W - 46, Tt + 14 + idx * 14); c.fillStyle = cfg[1]; c.fillRect(L + W - 60, Tt + 9 + idx * 14, 10, 2); }
+  });
+  var xd = L + Math.log10(D) / Math.log10(20000) * W, yd = Tt + Hh - a * Hh;
+  c.fillStyle = '#ffd27a'; c.beginPath(); c.arc(xd, yd, 5, 0, 6.283); c.fill(); c.strokeStyle = '#0d1014'; c.lineWidth = 2; c.stroke();
+  c.fillStyle = '#e8e6df'; c.fillText('you: r=' + r.toFixed(2), Math.min(xd + 8, L + W - 80), Math.max(yd - 8, Tt + 10));
+  c.fillStyle = '#5b6072'; c.fillText('chance', L + 4, Tt + Hh - (1 / K) * Hh - 4);
+}
+['rr', 'dd', 'kk'].forEach(function (id) { $(id).addEventListener('input', renderRet); });
+renderRet();
+
+
+/* ---------- 05 · state of the art ---------- */
+var S = window.SOTA || { items:[], sources:[] };
+var HEX = { fMRI:'#3987e5', MEG:'#d95926', EEG:'#199e70', iEEG:'#c98500' };
+(function () {
+  var L = S.items.filter(function (x) { return x.xchance; }).sort(function (a, b) { return a.xchance - b.xchance; });
+  var svg = $('ladder'), x0 = 250, x1 = 960, maxL = 3, rowH = 26, out = '';
+  svg.setAttribute('viewBox', '0 0 1000 ' + (30 + L.length * rowH + 24));
+  [1, 10, 100, 1000].forEach(function (v) { var x = x0 + Math.log10(v) / maxL * (x1 - x0);
+    out += '<line x1="' + x + '" y1="16" x2="' + x + '" y2="' + (24 + L.length * rowH) + '" stroke="#1c2230"/><text x="' + x + '" y="' + (40 + L.length * rowH) +
+      '" fill="#5b6072" font-size="12" text-anchor="middle" font-family="ui-monospace,monospace">' + v + '×</text>'; });
+  L.forEach(function (x, i) { var y = 26 + i * rowH, xx = x0 + Math.log10(x.xchance) / maxL * (x1 - x0);
+    out += '<g class="lrow" data-i="' + S.items.indexOf(x) + '"><rect x="0" y="' + (y - 10) + '" width="1000" height="' + rowH + '" fill="transparent"/>' +
+      '<text x="' + (x0 - 12) + '" y="' + (y + 4) + '" fill="#8a8fa3" font-size="12.5" text-anchor="end">' + x.short + '</text>' +
+      '<line x1="' + x0 + '" y1="' + y + '" x2="' + xx + '" y2="' + y + '" stroke="' + HEX[x.mod] + '" stroke-width="2" stroke-opacity=".5"/>' +
+      '<circle cx="' + xx + '" cy="' + y + '" r="6" fill="' + HEX[x.mod] + '" stroke="#0d1014" stroke-width="2"/>' +
+      '<text x="' + (xx + 11) + '" y="' + (y + 4) + '" fill="#e8e6df" font-size="12" font-family="ui-monospace,monospace">' + (x.xchance >= 10 ? Math.round(x.xchance) : x.xchance.toFixed(1)) + '×</text></g>'; });
+  var lgx = x0; ['fMRI', 'MEG', 'EEG', 'iEEG'].forEach(function (m) { out += '<circle cx="' + lgx + '" cy="6" r="4" fill="' + HEX[m] + '"/><text x="' + (lgx + 8) + '" y="10" fill="#8a8fa3" font-size="11">' + m + '</text>'; lgx += 70; });
+  svg.innerHTML = out;
+  Array.prototype.forEach.call(svg.querySelectorAll('.lrow'), function (g) {
+    g.addEventListener('mousemove', function (e) { var x = S.items[+g.dataset.i]; showTip(e, '<b>' + x.title + '</b><br>' + x.value + ' · ' + x.vs); });
+    g.addEventListener('mouseleave', hideTip); });
+  $('sotaList').innerHTML = S.items.map(function (x) {
+    return '<div class="sr"><span class="m" style="color:' + HEX[x.mod] + '">' + x.mod + ' · ' + x.kind.slice(0, 3) + '</span>' +
+      '<span><span class="v">' + x.value + '</span> — ' + x.title + '<div class="d">' + x.vs + '</div></span>' +
+      '<span class="d"><a href="' + x.url + '" target="_blank" rel="noopener">' + x.cite + '</a></span></div>'; }).join('');
+  $('srcTable').innerHTML = S.sources.map(function (s) { return '<tr><td>' + s[0] + '</td><td>' + s[1] + '</td></tr>'; }).join('');
+})();
+})();
+</script>
+</body>
+</html>
