@@ -24,7 +24,7 @@ var DRUGS = [
   { id:'ketamine', n:tr('ketamine','kétamine'), lg:'I', m:[15,13,2],  n7:[2.00,1.54,1.69], sr:38, cap:null, uk:'B' },
   { id:'methadone',n:tr('methadone','méthadone'), lg:'R', m:[14,11.5,2.5], n7:[1.86,2.08,1.87], sr:20,   cap:null, uk:'A' },
   { id:'meph',     n:tr('mephedrone','méphédrone'), lg:'I', m:[13,12,0.5], n7:null,             sr:null, cap:null, uk:'B' },
-  { id:'butane',   n:'butane',             lg:'L', m:[11,10,0.5], n7:[1.28,1.01,1.52], sr:null, cap:3.7,  capc:tr('inhalants','solvants inhalés'), uk:'legal', n7name:tr('solvents','solvants') },
+  { id:'butane',   n:'butane',             lg:'L', m:[11,10,0.5], n7:[1.28,1.01,1.52], sr:null, cap:3.7,  capc:tr('inhalants','solvants'), uk:'legal', n7name:tr('solvents','solvants') },
   { id:'khat',     n:'khat',               lg:'I', m:[9,8.5,0.5], n7:[0.50,1.04,0.85], sr:null, cap:null, uk:'C' },
   { id:'steroids', n:tr('anabolic steroids','stéroïdes anabolisants'), lg:'R', m:[10,8.5,1],  n7:[1.45,0.88,1.13], sr:null, cap:null, uk:'C' },
   { id:'mdma',     n:'ecstasy (MDMA)',     lg:'I', m:[9,8.5,0.5], n7:[1.05,1.13,1.09], sr:16,   cap:null, uk:'A' },
@@ -43,19 +43,19 @@ var EXTRA07 = [
 var SAFETY = [
   { n:tr('heroin (injected)','héroïne (injectée)'), v:6, lg:'I' },
   { n:'GHB', v:8, lg:'I' },
-  { n:tr('alcohol','alcool'), v:10, lg:'L', note:tr('330 g of alcohol vs a 33 g effective dose','330 g d’alcool contre une dose efficace de 33 g') },
+  { n:tr('alcohol','alcool'), v:10, lg:'L', note:tr('330 g of alcohol vs a 33 g effective dose','330 g d’alcool pur, contre 33 g pour l’effet recherché') },
   { n:tr('methamphetamine','méthamphétamine'), v:10, lg:'I' },
   { n:tr('cocaine (snorted)','cocaïne (sniffée)'), v:15, lg:'I' },
   { n:'MDMA', v:16, lg:'I' },
   { n:tr('codeine','codéine'), v:20, lg:'R' },
   { n:tr('methadone','méthadone'), v:20, lg:'R' },
-  { n:tr('mescaline','mescaline'), v:24, lg:'I', note:tr('marked uncertain in the source','marqué incertain dans la source') },
-  { n:tr('ketamine (snorted)','kétamine (sniffée)'), v:38, lg:'I', note:tr('marked uncertain in the source','marqué incertain dans la source') },
+  { n:tr('mescaline','mescaline'), v:24, lg:'I', note:tr('marked uncertain in the source','valeur jugée incertaine par l’auteur') },
+  { n:tr('ketamine (snorted)','kétamine (sniffée)'), v:38, lg:'I', note:tr('marked uncertain in the source','valeur jugée incertaine par l’auteur') },
   { n:tr('fluoxetine (Prozac)','fluoxétine (Prozac)'), v:100, lg:'R', note:tr('an antidepressant, for comparison','un antidépresseur, pour comparaison') },
   { n:tr('nitrous oxide','protoxyde d’azote'), v:150, lg:'L', note:tr('>150 in the source','>150 dans la source') },
-  { n:'LSD', v:1000, lg:'I', note:tr('extrapolated: no well-documented human lethal dose','extrapolé : aucune dose létale humaine bien documentée') },
+  { n:'LSD', v:1000, lg:'I', note:tr('extrapolated: no well-documented human lethal dose','extrapolé : aucune dose mortelle bien documentée chez l’humain') },
   { n:tr('psilocybin','psilocybine'), v:1000, lg:'I', note:tr('extrapolated','extrapolé') },
-  { n:'cannabis', v:1000, gt:true, lg:'I', note:tr('no lethal dose established; ratio shown as >1000','aucune dose létale établie ; ratio affiché >1000') }
+  { n:'cannabis', v:1000, gt:true, lg:'I', note:tr('no lethal dose established; ratio shown as >1000','aucune dose mortelle établie ; affiché comme >1000') }
 ];
 // Anthony, Warner & Kessler 1994 — % of ever-users who developed dependence
 var CAPTURE = [
@@ -63,7 +63,7 @@ var CAPTURE = [
   { n:tr('alcohol','alcool'), v:15.4, lg:'L' }, { n:'stimulants', v:11.2, lg:'I', s:tr('other than cocaine','hors cocaïne') },
   { n:tr('anxiolytics','anxiolytiques'), v:9.2, lg:'R', s:tr('sedatives, hypnotics','sédatifs, somnifères') }, { n:'cannabis', v:9.1, lg:'I' },
   { n:tr('analgesics','antalgiques'), v:7.5, lg:'R', s:tr('opioid painkillers','antidouleurs opioïdes') }, { n:tr('psychedelics','psychédéliques'), v:4.9, lg:'I' },
-  { n:tr('inhalants','solvants inhalés'), v:3.7, lg:'L' }
+  { n:tr('inhalants','solvants'), v:3.7, lg:'L' }
 ];
 // Lopez-Quintero et al. 2011 — lifetime cumulative probability of dependence
 var LIFETIME = [
@@ -72,10 +72,10 @@ var LIFETIME = [
 ];
 // users worldwide, millions
 var USERS = [
-  { n:tr('alcohol (current drinkers)','alcool (buveurs actuels)'), v:2500, lg:'L', src:'s-whoalc' },
+  { n:tr('alcohol (current drinkers)','alcool (buveurs)'), v:2500, lg:'L', src:'s-whoalc' },
   { n:tr('tobacco','tabac'), v:1200, lg:'L', src:'s-whotob' },
   { n:'cannabis',                   v:256,  lg:'I', src:'s-unodc' },
-  { n:tr('opioids (incl. non-medical use of painkillers)','opioïdes (y c. usage non médical d’antidouleurs)'), v:63, lg:'I', src:'s-unodc' },
+  { n:tr('opioids (incl. non-medical use of painkillers)','opioïdes (y compris antidouleurs détournés)'), v:63, lg:'I', src:'s-unodc' },
   { n:tr('amphetamines','amphétamines'), v:32,   lg:'I', src:'s-unodc' },
   { n:tr('cocaine','cocaïne'), v:25,   lg:'I', src:'s-unodc' },
   { n:'ecstasy',                    v:21,   lg:'I', src:'s-unodc' }
@@ -83,10 +83,10 @@ var USERS = [
 // deaths per year
 var DEATHS = {
   world: { items:[ { n:tr('tobacco','tabac'), v:7000000, lg:'L' }, { n:tr('alcohol','alcool'), v:2600000, lg:'L' },
-                   { n:tr('all illegal drugs','toutes drogues illicites'), v:600000, lg:'I' } ],
+                   { n:tr('all illegal drugs','drogues illicites'), v:600000, lg:'I' } ],
            note:FR ? 'OMS : tabac &gt;7 millions de morts par an, dont &gt;1,6 million de non-fumeurs exposés au tabagisme passif<sup class="ref"><a href="#s-whotob">8</a></sup> ; alcool 2,6 millions et drogues 0,6 million en 2019<sup class="ref"><a href="#s-whoalc">9</a></sup>. Près de 80 % des décès liés aux drogues concernent les opioïdes, en comptant le VIH, l’hépatite C et les maladies du foie autant que les ≈125 000 overdoses<sup class="ref"><a href="#s-whoop">21</a></sup>.' : 'WHO: tobacco &gt;7 million a year, of which &gt;1.6 million are non-smokers exposed to second-hand smoke<sup class="ref"><a href="#s-whotob">8</a></sup>; alcohol 2.6 million and drug use 0.6 million in 2019<sup class="ref"><a href="#s-whoalc">9</a></sup>. Close to 80 % of drug deaths are opioid-related, counting HIV, hepatitis C and liver disease as well as ≈125,000 overdoses<sup class="ref"><a href="#s-whoop">21</a></sup>.' },
   fr:    { items:[ { n:tr('tobacco','tabac'), v:75000, lg:'L' }, { n:tr('alcohol','alcool'), v:41000, lg:'L' },
-                   { n:tr('drug-induced deaths (2022)','décès induits par les drogues (2022)'), v:638, lg:'I' } ],
+                   { n:tr('drug-induced deaths (2022)','décès par overdose (2022)'), v:638, lg:'I' } ],
            note:FR ? 'Santé publique France : 75 320 décès attribuables au tabac et ≈41 000 à l’alcool (estimations 2015)<sup class="ref"><a href="#s-spf">11</a></sup>. 638 décès en 2022 directement causés par des drogues illicites ou des médicaments détournés, avec des opioïdes dans 78 % des cas ; ce comptage toxicologique (DRAMES/DTA) en manque une partie, et Kopp attribue ≈1 230 décès par an aux drogues illicites<sup class="ref"><a href="#s-ofdt">17</a></sup><sup class="ref"><a href="#s-kopp">16</a></sup>.' : 'Santé publique France: 75,320 tobacco and ≈41,000 alcohol-attributable deaths (2015 estimates)<sup class="ref"><a href="#s-spf">11</a></sup>. 638 deaths in 2022 directly caused by illicit drugs or misused medicines, opioids involved in 78 %; this toxicology-based count (DRAMES/DTA) misses some cases, and Kopp attributes ≈1,230 deaths a year to illicit drugs<sup class="ref"><a href="#s-ofdt">17</a></sup><sup class="ref"><a href="#s-kopp">16</a></sup>.' },
   us:    { items:[ { n:tr('tobacco','tabac'), v:480000, lg:'L' }, { n:tr('alcohol','alcool'), v:178000, lg:'L' },
                    { n:tr('drug overdoses (2023)','overdoses (2023)'), v:105007, lg:'I' } ],
@@ -158,7 +158,7 @@ var SRC = [
 var NS = 'http://www.w3.org/2000/svg';
 var COL = { L:'#ffb454', I:'#b48ce8', R:'#8ceedd' };
 var COL2 = { L:'#ffd98a', I:'#e0c3fc', R:'#c8fff4' };
-var LGNAME = { L:tr('legal','légal'), I:tr('controlled','illicite / classé'), R:tr('prescription medicine','médicament sur ordonnance') };
+var LGNAME = { L:tr('legal','légal'), I:tr('controlled','illégal'), R:tr('prescription medicine','médicament sur ordonnance') };
 var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function el(tag, attrs, parent, text) {
@@ -228,7 +228,7 @@ function onVisible(node, fn) {
     var h = d.m[0] / 72 * 100;
     var r = el('rect', { x:i * bw + 2, y:110, width:bw - 4, height:0, rx:2, fill:COL[d.lg] }, s);
     r.style.transition = 'y .9s cubic-bezier(.2,.8,.2,1) ' + (i * 40) + 'ms, height .9s cubic-bezier(.2,.8,.2,1) ' + (i * 40) + 'ms';
-    hoverable(r, function () { return '<b>' + d.n + '</b><span class="d">' + tr('overall harm ', 'nocivité globale ') + d.m[0] + '/100 · ' + LGNAME[d.lg] + '</span>'; });
+    hoverable(r, function () { return '<b>' + d.n + '</b><span class="d">' + tr('overall harm ', 'nocivité totale : ') + d.m[0] + '/100 · ' + LGNAME[d.lg] + '</span>'; });
     var go = function () { r.setAttribute('y', 110 - h); r.setAttribute('height', h); };
     if (reduced) go(); else requestAnimationFrame(function () { requestAnimationFrame(go); });
   });
@@ -255,8 +255,8 @@ function onVisible(node, fn) {
     var o = el('rect', { class:'bar', x:L, y:4, height:rowH - 8, width:0, rx:2, fill:COL[d.lg], opacity:.35 }, g);
     var t = el('text', { x:L, y:rowH / 2 + 4, class:'small' }, g, '');
     hoverable(g, function () {
-      return '<b>' + d.n + '</b>' + tr('total ', 'total ') + d.m[0] + ' / 100<br><span class="d">' + tr('to the user ', 'pour l’usager ') + nf(d.m[1]) +
-             tr(' · to others ', ' · pour autrui ') + nf(d.m[2]) + '<br>' + LGNAME[d.lg] + (d.uk !== 'legal' ? tr(' · UK class ', ' · classe britannique ') + d.uk : '') + '</span>';
+      return '<b>' + d.n + '</b>' + tr('total ', 'total : ') + d.m[0] + ' / 100<br><span class="d">' + tr('to the user ', 'pour l’usager : ') + nf(d.m[1]) +
+             tr(' · to others ', ' · pour les autres : ') + nf(d.m[2]) + '<br>' + LGNAME[d.lg] + (d.uk !== 'legal' ? tr(' · UK class ', ' · Royaume-Uni : classe ') + d.uk : '') + '</span>';
     });
     rows[d.id] = { g:g, u:u, o:o, t:t, d:d };
   });
@@ -324,8 +324,8 @@ function onVisible(node, fn) {
     var dx = Math.abs(o[0]) >= 10 ? (o[0] > 0 ? 1 : -1) * (r + 4) : o[0];
     el('text', { x:xs(p.v[0]) + dx, y:ys(p.v[1]) + o[1], class:'lbl', 'text-anchor':o[2] || 'start', fill:COL2[p.lg] }, g, p.n);
     hoverable(g, function () {
-      return '<b>' + p.n + '</b>' + tr('physical harm ', 'dommages physiques ') + nf(p.v[0], 2) + '<br>' + tr('dependence ', 'dépendance ') + nf(p.v[1], 2) +
-             '<br>' + tr('social harm ', 'dommages sociaux ') + nf(p.v[2], 2) + '<br><span class="d">' + LGNAME[p.lg] + '</span>';
+      return '<b>' + p.n + '</b>' + tr('physical harm ', 'dommages physiques : ') + nf(p.v[0], 2) + '<br>' + tr('dependence ', 'dépendance : ') + nf(p.v[1], 2) +
+             '<br>' + tr('social harm ', 'dommages sociaux : ') + nf(p.v[2], 2) + '<br><span class="d">' + LGNAME[p.lg] + '</span>';
     });
     gs.push([c, r]);
   });
@@ -344,11 +344,11 @@ function onVisible(node, fn) {
   var AX = [
     { n:tr('physical harm', 'dommages physiques'), f:function (d) { return d.n7 ? d.n7[0] / 3 : null; }, raw:function (d) { return d.n7 && nf(d.n7[0], 2) + ' / 3'; } },
     { n:tr('dependence', 'dépendance'), f:function (d) { return d.n7 ? d.n7[1] / 3 : null; }, raw:function (d) { return d.n7 && nf(d.n7[1], 2) + ' / 3'; } },
-    { n:tr('gets hooked', 'devient dépendant'), f:function (d) { return d.cap != null ? d.cap / maxC : null; }, raw:function (d) { return d.cap != null && nf(d.cap) + ' %' + (d.capc ? ' (' + d.capc + ')' : ''); } },
-    { n:tr('acute toxicity', 'toxicité aiguë'), f:function (d) { return d.sr ? 1 - Math.log10(d.sr) / 3 : null; }, raw:function (d) { return d.sr && tr('safety ratio ', 'marge de sécurité ') + d.sr; } },
-    { n:tr('harm to others', 'dommages à autrui'), f:function (d) { return d.m[2] / maxO; }, raw:function (d) { return nf(d.m[2]) + ' / 100'; } },
+    { n:tr('gets hooked', 'risque de dépendance'), f:function (d) { return d.cap != null ? d.cap / maxC : null; }, raw:function (d) { return d.cap != null && nf(d.cap) + ' %' + (d.capc ? ' (' + d.capc + ')' : ''); } },
+    { n:tr('acute toxicity', 'toxicité aiguë'), f:function (d) { return d.sr ? 1 - Math.log10(d.sr) / 3 : null; }, raw:function (d) { return d.sr && tr('safety ratio ', 'marge de sécurité : ') + d.sr; } },
+    { n:tr('harm to others', 'dommages pour les autres'), f:function (d) { return d.m[2] / maxO; }, raw:function (d) { return nf(d.m[2]) + ' / 100'; } },
     { n:tr('social harm', 'dommages sociaux'), f:function (d) { return d.n7 ? d.n7[2] / 3 : null; }, raw:function (d) { return d.n7 && nf(d.n7[2], 2) + ' / 3'; } },
-    { n:tr('harm to the user', 'dommages à l’usager'), f:function (d) { return d.m[1] / maxU; }, raw:function (d) { return nf(d.m[1]) + ' / 100'; } }
+    { n:tr('harm to the user', 'dommages pour l’usager'), f:function (d) { return d.m[1] / maxU; }, raw:function (d) { return nf(d.m[1]) + ' / 100'; } }
   ];
   var cx = 430, cy = 265, R = 200;
   var PAL = ['#ffb454', '#b48ce8', '#8ceedd', '#ff6b6b', '#6ea8ff'];
@@ -436,7 +436,7 @@ function onVisible(node, fn) {
     var c = el('circle', { cx:xs(1), cy:y, r:7, fill:COL[d.lg] }, g);
     var t = el('text', { x:xs(1), y:y + 4, class:'small', opacity:0 }, g, (d.gt ? '>' : '×') + d.v);
     hoverable(g, function () {
-      return '<b>' + d.n + '</b>' + tr('a lethal dose ≈ ', 'dose létale ≈ ') + d.v + tr('× the usual effective dose', '× la dose efficace habituelle') +
+      return '<b>' + d.n + '</b>' + tr('a lethal dose ≈ ', 'dose mortelle ≈ ') + d.v + tr('× the usual effective dose', ' fois la dose habituelle') +
              (d.note ? '<br><span class="d">' + d.note + '</span>' : '') + '<br><span class="d">' + LGNAME[d.lg] + '</span>';
     });
     items.push({ d:d, ln:ln, c:c, t:t });
@@ -454,7 +454,7 @@ function onVisible(node, fn) {
     })(t0);
   }
   onVisible(s, grow);
-  el('text', { x:L + 6, y:T + rowH * SAFETY.length + 22, class:'small', fill:'#ff6b6b' }, s, tr('← closer to the edge', '← plus près du bord'));
+  el('text', { x:L + 6, y:T + rowH * SAFETY.length + 22, class:'small', fill:'#ff6b6b' }, s, tr('← closer to the edge', '← marge plus étroite'));
 })();
 
 /* =====================================================================
@@ -541,8 +541,8 @@ function onVisible(node, fn) {
   var tob = 7000000 / 1200e6 * 1e3, alc = 2600000 / 2500e6 * 1e3, drg = 600000 / 331e6 * 1e3,
       opi = 0.8 * 600000 / 63e6 * 1e3;
   document.getElementById('perUser').innerHTML =
-    FR ? '<b class="lg">' + nf(tob, 1) + '</b> décès par an pour 1 000 consommateurs de tabac, <b class="lg">' + nf(alc, 1) +
-    '</b> pour 1 000 buveurs et <b class="il">' + nf(drg, 1) + '</b> pour 1 000 personnes ayant consommé une drogue illicite dans l’année. Pour les seuls opioïdes, environ <b class="il">' + nf(opi, 1) + '</b> pour 1 000 usagers'
+    FR ? '<b class="lg">' + nf(tob, 1) + '</b> morts par an pour 1 000 fumeurs, <b class="lg">' + nf(alc, 1) +
+    '</b> pour 1 000 buveurs et <b class="il">' + nf(drg, 1) + '</b> pour 1 000 consommateurs de drogues illicites. Pour les opioïdes seuls, on monte à environ <b class="il">' + nf(opi, 1) + '</b> pour 1 000 usagers'
     : '<b class="lg">' + tob.toFixed(1) + '</b> deaths per 1,000 tobacco users per year, <b class="lg">' + alc.toFixed(1) +
     '</b> per 1,000 drinkers and <b class="il">' + drg.toFixed(1) + '</b> per 1,000 people who used an illegal drug in the past year. For opioids alone it is about <b class="il">' + opi.toFixed(1) + '</b> per 1,000 users';
 
@@ -564,8 +564,8 @@ function onVisible(node, fn) {
       el('text', { x:cx, y:cy + r + 22, 'text-anchor':'middle', class:'lbl', fill:COL2[d.lg] }, g, d.n);
       el('text', { x:cx, y:cy + r + 40, 'text-anchor':'middle', class:'small' }, g, fmt(d.v));
       hoverable(g, function () {
-        return '<b>' + d.n + '</b>≈ ' + fmt(d.v) + tr(' deaths a year', ' décès par an') + '<br><span class="d">' +
-               (d === D.items[0] ? tr('reference', 'référence') : nf(D.items[0].v / d.v, d.v * 10 > D.items[0].v ? 1 : 0) + tr('× fewer than ', '× moins que ') + D.items[0].n) + '</span>';
+        return '<b>' + d.n + '</b>≈ ' + fmt(d.v) + tr(' deaths a year', ' morts par an') + '<br><span class="d">' +
+               (d === D.items[0] ? tr('reference', 'référence') : nf(D.items[0].v / d.v, d.v * 10 > D.items[0].v ? 1 : 0) + tr('× fewer than ', ' fois moins que le ') + D.items[0].n) + '</span>';
       });
       x = cx + Math.max(r, 40) + 50;
     });
@@ -592,9 +592,9 @@ function onVisible(node, fn) {
   var Lx = 300, Rx = 560, T = 30, rowH = 28;
   var order = DRUGS.slice().sort(function (a, b) { return b.m[0] - a.m[0]; });
   var CLASSES = ['A', 'B', 'C', 'legal'];
-  var CLABEL = { A:tr('Class A', 'Classe A'), B:tr('Class B', 'Classe B'), C:tr('Class C', 'Classe C'), legal:tr('not controlled', 'non classé') };
-  var CDESC = FR ? { A:'max : perpétuité pour trafic; 7 ans pour détention', B:'max : 14 ans pour trafic; 5 ans pour détention',
-                C:'max : 14 ans pour trafic; 2 ans pour détention', legal:'vente légale (limites d’âge)' }
+  var CLABEL = { A:tr('Class A', 'Classe A'), B:tr('Class B', 'Classe B'), C:tr('Class C', 'Classe C'), legal:tr('not controlled', 'légal') };
+  var CDESC = FR ? { A:'trafic : jusqu’à la perpétuité; détention : jusqu’à 7 ans', B:'trafic : jusqu’à 14 ans; détention : jusqu’à 5 ans',
+                C:'trafic : jusqu’à 14 ans; détention : jusqu’à 2 ans', legal:'en vente libre (avec limite d’âge)' }
               : { A:'max: life for supply; 7 years for possession', B:'max: 14 years for supply; 5 years for possession',
                 C:'max: 14 years for supply; 2 years for possession', legal:'sold legally (age limits)' };
   // right side: groups of each class, stacked
@@ -605,7 +605,7 @@ function onVisible(node, fn) {
     members.forEach(function (d, i) { rightY[d.id] = y + i * rowH * 0.92 + rowH / 2; });
     y += members.length * rowH * 0.92 + 22;
   });
-  el('text', { x:Lx, y:T - 12, 'text-anchor':'end', class:'ax' }, s, tr('more harmful ↑ (rank)', 'plus nocif ↑ (rang)'));
+  el('text', { x:Lx, y:T - 12, 'text-anchor':'end', class:'ax' }, s, tr('more harmful ↑ (rank)', 'plus nocif ↑ (classement)'));
   el('text', { x:Rx, y:T - 12, class:'ax' }, s, tr('UK legal status', 'statut légal au Royaume-Uni'));
   CLASSES.forEach(function (c) {
     var gr = groups[c];
@@ -631,8 +631,8 @@ function onVisible(node, fn) {
     el('circle', { cx:Rx, cy:yr, r:3, fill:COL[d.lg] }, g);
     el('text', { x:Rx + 12, y:yr + 4, class:'small', fill:COL2[d.lg] }, g, d.n);
     hoverable(g, function () {
-      return '<b>' + d.n + '</b>' + tr('harm rank ', 'rang de nocivité ') + (i + 1) + tr(' of 20 (score ', ' sur 20 (score ') + d.m[0] + tr(')<br>UK: ', ')<br>R.-U. : ') + CLABEL[d.uk] +
-             (mismatch ? '<br><span class="d">' + (d.uk === 'legal' ? tr('among the most harmful, freely sold', 'parmi les plus nocifs, en vente libre') : tr('among the least harmful, in the strictest class', 'parmi les moins nocifs, dans la classe la plus sévère')) + '</span>' : '');
+      return '<b>' + d.n + '</b>' + tr('harm rank ', 'nocivité : ') + (FR ? (i === 0 ? '1er' : (i + 1) + 'e') : (i + 1)) + tr(' of 20 (score ', ' sur 20 (note ') + d.m[0] + tr(')<br>UK: ', ')<br>R.-U. : ') + CLABEL[d.uk] +
+             (mismatch ? '<br><span class="d">' + (d.uk === 'legal' ? tr('among the most harmful, freely sold', 'parmi les plus nocifs, et en vente libre') : tr('among the least harmful, in the strictest class', 'parmi les moins nocifs, mais dans la classe la plus sévère')) + '</span>' : '');
     });
     var len = 900;
     p.setAttribute('stroke-dasharray', len); p.setAttribute('stroke-dashoffset', len);
@@ -673,9 +673,9 @@ function onVisible(node, fn) {
     });
   });
   document.getElementById('moneyNote').innerHTML = FR ?
-    'Coût social annuel (barres) et recettes fiscales (fines barres turquoise), France, 2019. Kopp 2023, OFDT<sup class="ref"><a href="#s-kopp">16</a></sup>. ' +
-    'Les taxes couvrent environ 8 % du coût social du tabac et 4 % de celui de l’alcool. Kopp prévient que les trois totaux ne doivent pas être additionnés (doubles comptes partiels). ' +
-    'Sa précédente estimation, pour 2010, plaçait l’alcool et le tabac à égalité, autour de 120 Md€ chacun.' :
+    'Coût social annuel (barres épaisses) et recettes fiscales (barres fines, en turquoise), France, 2019. Kopp 2023, OFDT<sup class="ref"><a href="#s-kopp">16</a></sup>. ' +
+    'Les taxes couvrent environ 8 % du coût social du tabac et 4 % de celui de l’alcool. Kopp précise qu’il ne faut pas additionner les trois totaux, qui se recoupent en partie. ' +
+    'Dans son estimation précédente, portant sur 2010, l’alcool et le tabac étaient à égalité, à environ 120 Md€ chacun.' :
     'Social cost per year (bars) vs tax revenue (thin teal bars), France, 2019. Kopp 2023, OFDT<sup class="ref"><a href="#s-kopp">16</a></sup>. ' +
     'Taxes cover about 8 % of tobacco\'s social cost and 4 % of alcohol\'s. Kopp warns the three totals should not be added up (they partly double-count). ' +
     'His earlier estimate for 2010 had alcohol and tobacco level at about €120bn each.';
@@ -687,76 +687,76 @@ function onVisible(node, fn) {
    ===================================================================== */
 (function () {
   var s = document.getElementById('ripple');
-  var COLS = FR ? ['violences & conjugales', 'violences sexuelles', 'morts sur la route', 'enfant à naître', 'enfants du foyer',
-              'psychose & santé mentale', 'suicide', 'violence du marché']
+  var COLS = FR ? ['violences, dont conjugales', 'violences sexuelles', 'morts sur la route', 'grossesse', 'enfants exposés',
+              'santé mentale', 'suicide', 'violence du trafic']
             : ['violence & partner abuse', 'sexual violence', 'road deaths', 'unborn child', 'children at home',
               'psychosis & mind', 'suicide', 'market violence'];
-  var LV = FR ? ['peu de preuves d’un effet important, ou peu étudié', 'preuves partielles ou contradictoires', 'preuves concordantes', 'preuves solides, grande échelle']
+  var LV = FR ? ['effet faible ou peu étudié', 'données partielles ou contradictoires', 'données concordantes', 'données solides, effet massif']
               : ['little evidence of a large effect, or barely studied', 'some or mixed evidence', 'consistent evidence', 'strong evidence, large scale'];
   // levels 0..3 per column, plus per-cell basis text where it matters
   var ROWS = [
     { n:tr('alcohol','alcool'), lg:'L', v:[3,3,3,3,3,1,3,0], t:FR ? {
-        0:'25 % des auteurs de féminicides conjugaux en France sous l’emprise de l’alcool (2024) ; ≈18 % des morts violentes dans le monde ; OR 1,4 pour les violences conjugales masculines',
-        1:'≈la moitié des agressions sexuelles impliquent de l’alcool (auteur, victime ou les deux) ; principal vecteur de la soumission chimique',
-        2:'28,9 % des morts sur les routes françaises ; ≈27 % dans le monde', 3:'TSAF : 7,7 enfants sur 1 000 dans le monde, 19,8 en Europe',
-        4:'1 enfant américain sur 10 vit avec un parent ayant un trouble de l’usage d’alcool', 5:'les lésions cérébrales et psychoses alcooliques existent mais ne sont pas chiffrées par les sources de cette page',
-        6:'jusqu’à 18 % des suicides dans le monde', 7:'marché légal : peu de violence systémique aujourd’hui (contrairement à la Prohibition américaine, 1920–33)' } : {
+        0:'25 % des auteurs d’homicides conjugaux en France avaient bu (2024) ; ≈18 % des morts par violence dans le monde ; risque ×1,4 de violences conjugales chez les hommes',
+        1:'de l’alcool dans environ la moitié des agressions sexuelles (auteur, victime ou les deux) ; boisson la plus utilisée pour la soumission chimique',
+        2:'28,9 % des morts sur les routes françaises ; ≈27 % dans le monde', 3:'troubles causés par l’alcoolisation fœtale : 7,7 enfants sur 1 000 dans le monde, 19,8 en Europe',
+        4:'1 enfant américain sur 10 vit avec un parent dépendant à l’alcool', 5:'atteintes cérébrales et psychoses liées à l’alcool : réelles, mais non chiffrées dans les sources de cette page',
+        6:'jusqu’à 18 % des suicides dans le monde', 7:'marché légal : peu de violence liée au commerce aujourd’hui (contrairement à la Prohibition américaine, 1920–1933)' } : {
         0:'25 % of French partner-killers drunk (2024); ≈18 % of violent deaths worldwide; OR 1.4 for male partner violence',
         1:'≈half of sexual assaults involve alcohol (perpetrator, victim or both); main vehicle for drugging',
         2:'28.9 % of French road deaths; ≈27 % worldwide', 3:'FASD 7.7 per 1,000 children worldwide, 19.8 in Europe',
         4:'1 in 10 US children live with a parent with an alcohol use disorder', 5:'alcohol-related brain damage and psychosis exist but are not quantified by the sources on this page',
         6:'up to 18 % of suicides worldwide', 7:'legal market: little systemic violence today (unlike US Prohibition, 1920–33)' } },
     { n:tr('tobacco','tabac'), lg:'L', v:[0,0,0,3,2,0,0,1], t:FR ? {
-        3:'tabac pendant la grossesse : petit poids de naissance, prématurité ; 12,2 % des Françaises fument au 3e trimestre',
-        4:'le tabagisme passif nuit aux enfants du foyer ; >1,6 M de décès par tabagisme passif par an dans le monde',
-        7:'le trafic de tabac existe ; sa taille est contestée (17,7 % contre 41 % en France)' } : {
+        3:'tabac pendant la grossesse : petit poids de naissance, prématurité ; 12,2 % des femmes enceintes fument encore au 3e trimestre en France',
+        4:'le tabagisme passif nuit aux enfants ; il tue plus de 1,6 million de personnes par an dans le monde',
+        7:'la contrebande de tabac existe ; son ampleur est discutée (17,7 % ou 41 % en France)' } : {
         3:'smoking in pregnancy: low birth weight, prematurity; 12.2 % of French women smoke in the third trimester',
         4:'second-hand smoke harms children at home; >1.6 M second-hand-smoke deaths a year worldwide',
         7:'illicit tobacco trade exists; its size is disputed (17.7 % vs 41 % in France)' } },
     { n:'cannabis', lg:'I', v:[1,1,2,1,1,3,1,3], t:FR ? {
-        0:'contradictoire : certaines méta-analyses trouvent un lien avec les violences conjugales, d’autres aucune différence selon la drogue',
-        1:'deuxième substance (après l’alcool) dans les cas de « vulnérabilité chimique » en France',
-        2:'risque d’accident ≈1,3–1,65× ; l’essentiel des 19,6 % de morts routières avec test positif aux drogues, souvent avec de l’alcool',
-        5:'usage quotidien de cannabis très dosé : risque de psychose ×4,8 (causalité débattue)',
-        7:'la drogue illicite la plus consommée (256 M d’usagers dans le monde) ; la France compte ≈3 000 points de deal' } : {
+        0:'résultats contradictoires : certaines méta-analyses trouvent un lien avec les violences conjugales, d’autres non',
+        1:'deuxième produit, après l’alcool, dans les cas de « vulnérabilité chimique » en France',
+        2:'risque d’accident ×1,3 à ×1,65 ; la plupart des 19,6 % de morts sur la route avec stupéfiants, souvent associés à l’alcool',
+        5:'cannabis fortement dosé tous les jours : risque de psychose ×4,8 (causalité discutée)',
+        7:'la drogue illégale la plus consommée (256 millions d’usagers dans le monde) ; environ 3 000 points de deal en France' } : {
         0:'mixed: some meta-analyses find a link with partner violence, others no drug-type difference',
         1:'second most common substance (after alcohol) in "chemical vulnerability" cases in France',
         2:'driver crash risk ≈1.3–1.65×; most of the 19.6 % drug-positive French road deaths, often with alcohol',
         5:'daily high-potency use: psychosis odds ×4.8 (causality debated)',
         7:'the most used illegal drug (256 M users worldwide); France has ≈3,000 street dealing points' } },
-    { n:tr('cocaine & crack','cocaïne & crack'), lg:'I', v:[2,1,1,1,2,1,1,3], t:FR ? {
-        0:'meilleur prédicteur des violences conjugales parmi les drogues dans une méta-analyse de 96 études ; délinquance d’acquisition avec le crack',
-        5:'paranoïa, psychose aux stimulants ; risque d’infarctus ×24 dans l’heure qui suit',
-        7:'alimente la violence des Andes à l’Équateur, Anvers, Rotterdam et Marseille' } : {
+    { n:tr('cocaine & crack','cocaïne et crack'), lg:'I', v:[2,1,1,1,2,1,1,3], t:FR ? {
+        0:'la drogue la plus associée aux violences conjugales dans une méta-analyse de 96 études ; délinquance pour financer le crack',
+        5:'paranoïa, psychoses ; risque d’infarctus ×24 dans l’heure qui suit la prise',
+        7:'alimente la violence des Andes jusqu’à Guayaquil, Anvers, Rotterdam et Marseille' } : {
         0:'strongest drug predictor of partner violence in a 96-study meta-analysis; economic-compulsive crime with crack',
         5:'paranoia, stimulant psychosis; heart-attack risk ×24 in the hour after use',
         7:'drives the violence from the Andes to Ecuador, Antwerp, Rotterdam and Marseille' } },
     { n:tr('opioids','opioïdes'), lg:'I', v:[1,1,1,3,3,1,1,3], t:FR ? {
-        3:'syndrome de sevrage néonatal aux opioïdes : 7,3 naissances sur 1 000 aux États-Unis (2017), 53,5 en Virginie-Occidentale',
-        4:'la consommation parentale de drogues intervient dans un tiers des placements en famille d’accueil aux États-Unis',
-        7:'fentanyl : cartels mexicains, précurseurs venus de Chine et d’Inde ; économies de l’opium afghane et birmane' } : {
+        3:'sevrage du nouveau-né : 7,3 naissances sur 1 000 aux États-Unis (2017), 53,5 en Virginie-Occidentale',
+        4:'la drogue chez les parents intervient dans un tiers des placements d’enfants aux États-Unis',
+        7:'fentanyl : cartels mexicains, précurseurs chinois et indiens ; économies de l’opium en Afghanistan et en Birmanie' } : {
         3:'neonatal opioid withdrawal: 7.3 per 1,000 US births (2017), 53.5 in West Virginia',
         4:'parental drug use is a factor in a third of US foster-care placements',
         7:'fentanyl: Mexican cartels, precursors from China and India; Afghan and Myanmar opium economies' } },
-    { n:tr('meth & amphetamines','méth & amphétamines'), lg:'I', v:[2,1,1,1,2,3,1,2], t:FR ? {
-        0:'usage de stimulants lié aux violences conjugales ; l’usage problématique compte plus que le type de drogue',
-        5:'36,5 % de psychoses induites dans des échantillons poolés (surtout cliniques) d’usagers',
-        7:'le Captagon (une amphétamine) a financé le régime Assad : jusqu’à 1,8 Md$ par an pour des acteurs liés à la Syrie' } : {
+    { n:tr('meth & amphetamines','méth et amphétamines'), lg:'I', v:[2,1,1,1,2,3,1,2], t:FR ? {
+        0:'stimulants associés aux violences conjugales ; la consommation problématique compte plus que le produit',
+        5:'36,5 % des consommateurs étudiés (surtout à l’hôpital) ont fait une psychose',
+        7:'le Captagon, une amphétamine, a financé le régime Assad : jusqu’à 1,8 milliard de dollars par an' } : {
         0:'stimulant use linked to partner violence; problem use matters more than drug type',
         5:'36.5 % drug-induced psychosis in pooled (mostly clinical) samples of people who use it',
         7:'Captagon (an amphetamine) financed the Assad regime: up to $1.8 bn a year to Syria-linked actors' } },
     { n:tr('sedatives (benzos, GHB)','sédatifs (benzos, GHB)'), lg:'R', v:[1,3,1,1,1,1,1,1], t:FR ? {
-        1:'les médicaments sédatifs représentent 59,6 % des substances dans les soumissions chimiques en France ; lorazépam dans l’affaire de Mazan' } : {
+        1:'les médicaments sédatifs représentent 59,6 % des produits de soumission chimique en France ; du lorazépam dans l’affaire de Mazan' } : {
         1:'sedative medicines are 59.6 % of substances in French drug-facilitated assaults; lorazepam in the Mazan case' } },
     { n:'MDMA', lg:'I', v:[0,2,1,0,0,1,0,2], t:FR ? {
-        1:'principale drogue illicite de soumission chimique en France, pour la quatrième année consécutive',
-        7:'laboratoires de drogues de synthèse aux Pays-Bas et en Belgique ; déversements de déchets chimiques' } : {
+        1:'principale drogue illégale utilisée pour la soumission chimique en France, quatre années de suite',
+        7:'laboratoires clandestins aux Pays-Bas et en Belgique ; déchets chimiques abandonnés dans la nature' } : {
         1:'the main illicit drug used for drug-facilitated assault in France, four years running',
         7:'synthetic-drug labs in the Netherlands and Belgium; chemical waste dumping' } },
     { n:tr('psychedelics','psychédéliques'), lg:'I', v:[1,0,0,0,0,2,1,0], t:FR ? {
-        0:'2,6 % des personnes décrivant leur pire expérience de psilocybine avaient été violentes',
-        5:'bad trips ; 7,6 % ont consulté pour des symptômes durables après leur pire trip ; HPPD 4,2 % dans une enquête ; rares psychoses durables',
-        6:'3 tentatives de suicide sur 1 993 récits de pire trip', 7:'petit marché, peu violent' } : {
+        0:'2,6 % des personnes racontant leur pire expérience avec des champignons avaient été violentes',
+        5:'bad trips ; 7,6 % ont consulté pour des troubles persistants ; HPPD chez 4,2 % dans une enquête ; rares psychoses durables',
+        6:'3 tentatives de suicide parmi 1 993 récits de bad trip', 7:'petit marché, peu violent' } : {
         0:'2.6 % of people describing their worst psilocybin trip had been violent',
         5:'bad trips; 7.6 % sought help for lasting symptoms after their worst trip; HPPD 4.2 % in one survey; rare lasting psychosis',
         6:'3 suicide attempts among 1,993 worst-trip reports', 7:'small, mostly non-violent market' } }
@@ -788,7 +788,7 @@ function onVisible(node, fn) {
   var lg = document.getElementById('rippleLegend');
   lg.innerHTML = LV.map(function (t, k) {
     return '<span style="--c:rgba(232,230,223,' + [0.15, 0.35, 0.65, 0.95][k] + ')">' + t + '</span>';
-  }).join('') + '<span style="--c:#ff6b6b">' + tr('market violence column (red)', 'colonne violence du marché (rouge)') + '</span>';
+  }).join('') + '<span style="--c:#ff6b6b">' + tr('market violence column (red)', 'violence du trafic (en rouge)') + '</span>';
 })();
 
 /* ANSM drug-facilitated assault bars */
@@ -796,7 +796,7 @@ function onVisible(node, fn) {
   var s = document.getElementById('ansm');
   var BARS = [
     { n:tr('suspected cases (1,377)', 'cas suspects (1 377)'), parts:[[905, tr('possible drugging', 'soumission possible'), '#b48ce8'], [140, tr('probable', 'probable'), '#ff6b6b'], [332, tr('chemical vulnerability', 'vulnérabilité chimique'), '#6a7090']] },
-    { n:tr('substances mentioned', 'substances citées'), parts:[[59.6, tr('sedative medicines', 'médicaments sédatifs'), '#8ceedd'], [40.4 * 0.513, 'stimulants', '#b48ce8'], [40.4 * 0.487, tr('other illicit', 'autres illicites'), '#6a7090']] },
+    { n:tr('substances mentioned', 'substances citées'), parts:[[59.6, tr('sedative medicines', 'médicaments sédatifs'), '#8ceedd'], [40.4 * 0.513, 'stimulants', '#b48ce8'], [40.4 * 0.487, tr('other illicit', 'autres drogues'), '#6a7090']] },
     { n:tr('victims', 'victimes'), parts:[[85.5, tr('women', 'femmes'), '#ffb454'], [14.5, tr('men', 'hommes'), '#6a7090']] },
     { n:tr('perpetrators', 'auteurs'), parts:[[96.4, tr('men', 'hommes'), '#ff6b6b'], [3.6, tr('women', 'femmes'), '#6a7090']] }
   ];
@@ -821,7 +821,7 @@ function onVisible(node, fn) {
   var s = document.getElementById('road');
   // 3,193 deaths: alcohol 922, drugs 624, either 1,243 → both 303
   var K = [[62, '#ffb454', tr('alcohol only (619)', 'alcool seul (619)')], [30, '#ff6b6b', tr('alcohol + drugs (303)', 'alcool + drogues (303)')],
-           [32, '#b48ce8', tr('drugs only (321)', 'drogues seules (321)')], [195, '#1a2030', tr('neither (1,950)', 'ni l’un ni l’autre (1 950)')]];
+           [32, '#b48ce8', tr('drugs only (321)', 'drogues seules (321)')], [195, '#1a2030', tr('neither (1,950)', 'ni alcool ni drogue (1 950)')]];
   var cols = 40, sz = 13, L = 20, i = 0, cells = [];
   K.forEach(function (k) {
     for (var n = 0; n < k[0]; n++, i++) {
@@ -847,8 +847,8 @@ function onVisible(node, fn) {
   function P(lon, lat) { return [(lon + 180) / 360 * 1000, (84 - lat) / 360 * 1000]; }
   var DR = {
     coke: { n:tr('cocaine', 'cocaïne'), c:'#e8e6df' },
-    fent: { n:tr('fentanyl & precursors', 'fentanyl & précurseurs'), c:'#ff6b6b' },
-    opium:{ n:tr('opium & heroin', 'opium & héroïne'), c:'#ffb454' },
+    fent: { n:tr('fentanyl & precursors', 'fentanyl et précurseurs'), c:'#ff6b6b' },
+    opium:{ n:tr('opium & heroin', 'opium et héroïne'), c:'#ffb454' },
     capt: { n:'captagon', c:'#8ceedd' }
   };
   var ROUTES = [
@@ -915,19 +915,19 @@ function onVisible(node, fn) {
     { id:'ph', n:'Philippines', at:[122, 12.5], h:'Rodrigo Duterte\'s "war on drugs" (2016–2022): 6,252 killed according to police, up to 30,000 according to rights groups. Arrested for the International Criminal Court on 11 March 2025; charges of crimes against humanity confirmed in April 2026, trial due to open 30 November 2026.', r:'s-ph' }
   ];
   var SPOTS_FR = {
-    mx:['Mexique', '33 550 homicides en 2024 (25,8 pour 100 000). Aucune part officielle n’est attribuée aux cartels ; les estimations vont d’un tiers aux deux tiers (≈55 % en 2023 selon Lantia). Plus de 132 000 personnes sont enregistrées comme disparues. Les cartels de Sinaloa et de Jalisco (CJNG) fabriquent le fentanyl à partir de précurseurs chinois et indiens.'],
-    us:['États-Unis', 'Décès par overdose : 105 007 en 2023, 79 384 en 2024 et 69 973 en 2025 (provisoire), majoritairement liés au fentanyl. Les Afro-Américains avaient 3,64 fois plus de risques que les Blancs d’être arrêtés pour du cannabis, à consommation comparable.'],
+    mx:['Mexique', '33 550 homicides en 2024 (25,8 pour 100 000). Aucune part officielle n’est attribuée aux cartels ; les estimations vont d’un tiers aux deux tiers (≈55 % en 2023 selon Lantia). Plus de 132 000 personnes sont enregistrées comme disparues. Les cartels de Sinaloa et de Jalisco (CJNG) fabriquent le fentanyl avec des précurseurs chimiques importés de Chine et d’Inde.'],
+    us:['États-Unis', 'Décès par overdose : 105 007 en 2023, 79 384 en 2024 et 69 973 en 2025 (provisoire), majoritairement liés au fentanyl. Un Noir avait 3,64 fois plus de risques qu’un Blanc d’être arrêté pour du cannabis, à consommation égale.'],
     co:['Colombie', '253 000 ha de coca en 2023, un record. Les dissidences des FARC, l’ELN et le Clan del Golfo se financent par la cocaïne, l’orpaillage illégal et l’extorsion. En janvier 2025, des combats pour la coca dans le Catatumbo ont déplacé plus de 50 000 personnes. La coca est liée à 43–58 % de la déforestation dans deux régions.'],
     ec:['Équateur', 'Taux d’homicides : 5,7 pour 100 000 en 2018 → 45,1 en 2023 → 50,9 en 2025, le plus élevé d’Amérique latine. L’État a déclaré un « conflit armé interne » contre 22 gangs en janvier 2024. La cocaïne quitte Guayaquil cachée dans des conteneurs de bananes et de crevettes vers Anvers, Rotterdam et Valence ; seuls ≈8–10 % des conteneurs sont inspectés.'],
     br:['Brésil', '19,2 homicides pour 100 000 (InSight Crime, 2025). Une seule opération de police contre le Comando Vermelho à Rio (28 octobre 2025) a fait au moins 121 morts.'],
     be:['Belgique & Pays-Bas', 'Anvers a saisi ≈120 t de cocaïne au pic de 2023, 55 t en 2025 ; Rotterdam 11,5 t en 2025, une baisse que le parquet attribue au déplacement des trafiquants. Aux Pays-Bas, l’avocat Derk Wiersum (2019) et le journaliste Peter R. de Vries (2021) ont été assassinés ; au procès « Marengo », Ridouan Taghi a été condamné à la perpétuité (février 2024). Bruxelles a connu 92 fusillades et 9 morts en 2024, liées pour la plupart à la drogue.'],
-    se:['Suède', 'Les fusillades ont culminé en 2022 : 391, avec 62 morts ; 2024 : 270 fusillades, 44 morts. Chiffres de la police sur les fusillades liées aux gangs.'],
+    se:['Suède', 'Les fusillades ont culminé en 2022 : 391, avec 62 morts ; 2024 : 270 fusillades, 44 morts. Chiffres de la police sur les fusillades entre bandes criminelles.'],
     fr:['France', 'Violences liées au narcotrafic : 139 morts en 2023, 110 morts et 341 blessés en 2024 (ministère de l’Intérieur). Marseille a compté 49 assassinats en 2023. Environ 3 000 points de deal. Record de 84,3 t de cocaïne saisies en 2025. Les réseaux recrutent des mineurs : un tueur à gages de 14 ans a été condamné à 17 ans en 2026. Une loi de 2025 a créé un parquet national anticriminalité organisée et un délit de recrutement de mineurs.'],
-    sy:['Syrie', 'Le Captagon, une pilule d’amphétamine vendue surtout dans le Golfe : un marché pouvant atteindre 5,6 Md$ par an (2020–23), dont jusqu’à 1,8 Md$ par an pour des acteurs liés à la Syrie, environ deux fois les exportations légales du pays (Banque mondiale). Les sanctions américaines et britanniques visaient Maher el-Assad et la 4e division de l’armée. Depuis la chute du régime (décembre 2024), les autorités font état de 697 millions de pilules saisies.'],
+    sy:['Syrie', 'Le Captagon, un comprimé d’amphétamine écoulé surtout dans les pays du Golfe : un marché pouvant atteindre 5,6 Md$ par an (2020–23), dont jusqu’à 1,8 Md$ par an pour des acteurs liés à la Syrie, environ deux fois les exportations légales du pays (Banque mondiale). Washington et Londres ont sanctionné Maher el-Assad, frère du président, et la 4e division de l’armée. Depuis la chute du régime (décembre 2024), les autorités font état de 697 millions de pilules saisies.'],
     af:['Afghanistan', 'Après l’interdiction de l’opium par les talibans en avril 2022, la culture a chuté de 95 % en un an (233 000 → 10 800 ha) ; 10 200 ha en 2025. La Birmanie est devenue le premier producteur.'],
     mm:['Birmanie', 'Premier producteur mondial d’opium depuis 2023 : 1 010 t sur 53 100 ha en 2025, plus du double de l’Afghanistan, en pleine guerre civile depuis le coup d’État militaire de 2021.'],
     ir:['Iran', 'Au moins 955 exécutions pour des infractions liées aux drogues en 2025, la majeure partie du total mondial d’au moins 1 212 (Arabie saoudite 240, Singapour 15). Plus de 2 450 personnes sont dans le couloir de la mort pour drogues, dans 36 pays.'],
-    ph:['Philippines', '« Guerre contre la drogue » de Rodrigo Duterte (2016–2022) : 6 252 tués selon la police, jusqu’à 30 000 selon les ONG. Arrêté pour la Cour pénale internationale le 11 mars 2025 ; charges de crimes contre l’humanité confirmées en avril 2026, procès prévu à partir du 30 novembre 2026.']
+    ph:['Philippines', '« Guerre contre la drogue » de Rodrigo Duterte (2016–2022) : 6 252 tués selon la police, jusqu’à 30 000 selon les ONG. Arrêté sur mandat de la Cour pénale internationale le 11 mars 2025 ; les charges de crimes contre l’humanité ont été confirmées en avril 2026, et son procès doit s’ouvrir le 30 novembre 2026.']
   };
   var SPOTS = SPOTS_EN.map(function (sp) {
     if (FR) { sp.n = SPOTS_FR[sp.id][0]; sp.h = SPOTS_FR[sp.id][1]; }
