@@ -2,947 +2,818 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>lab · Corentin Bel</title>
-<meta name="description" content="Experiments hub — one painted dreamscape where every corner is a door: foils, flight, space, brains, money, carbon, statistics.">
+<meta name="description" content="The lab: a night greenhouse where every experiment grows on its own bench — foils, flight, space, brains, money, carbon, statistics, sound.">
+<meta name="theme-color" content="#0b1412">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400;1,9..144,600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg:#07080c; --panel:#0a0e14; --fg:#e8e6df; --dim:#8a8fa3;
-    --accent:#6ea8ff; --purple:#b48ce8; --teal:#38a3a5; --teal2:#8ceedd;
-    --border:#232b3a; --radius:12px;
-  }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body {
-    background:var(--bg); color:var(--fg);
-    font-family:ui-sans-serif,system-ui,sans-serif;
-  }
-  a { color:var(--accent); }
-  header {
-    display:flex; justify-content:space-between; align-items:baseline;
-    padding:1.4rem 2rem;
-  }
-  header a { color:var(--dim); text-decoration:none; font-size:.9rem; }
-  header a:hover { color:var(--accent); }
-  h1 { font-weight:300; font-size:1.4rem; letter-spacing:.06em; }
-  h1 b { font-weight:600; }
+  :root { --bg: #0b1412; --cream: #f1ead6; --dim: #a9b3a0; --ink: #0d1110; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: var(--bg); color: var(--cream); }
+  body { font-family: "Inter", ui-sans-serif, system-ui, sans-serif; overflow: hidden; -webkit-tap-highlight-color: transparent; }
 
-  /* ---------- painted scene ---------- */
-  #stage { max-width:1400px; margin:0 auto; padding:0 1rem; }
-  #scene { width:100%; height:auto; display:block; border-radius:var(--radius); }
-  #stage .hint {
-    color:#4a4f61; font-size:.8rem; text-align:center; margin:.6rem 0 0;
+  #stage { position: fixed; inset: 0; overflow: hidden; }
+  #scene { width: 100%; height: 100%; display: block; overflow: visible; }
+  @media (max-aspect-ratio: 6/5) {
+    #stage { overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+    #stage::-webkit-scrollbar { display: none; }
+    #scene { width: 165vh; height: 100%; }
+    .title h1 { font-size: 24px; }
+    .title p { font-size: 12px; background: rgba(11,20,18,.6); padding: 2px 6px; border-radius: 6px; margin-left: -6px; }
+    .hint .wide { display: none; }
+    .hint .narrow { display: inline; }
   }
-  .zone { cursor:pointer; outline:none; }
-  #wavef, #wavem, #waven, #bird, #shoot, #spray { pointer-events:none; }
-  .hit { fill:#fff; opacity:0; pointer-events:all; }
-  .zone:focus-visible .hit { opacity:.1; stroke:var(--accent); stroke-width:2; }
-  .zone:hover .hit { opacity:.04; }
+  .hint .narrow { display: none; }
 
-  /* streams (aero) — JS drives dashoffset; CSS handles intensity */
-  .stream { stroke:var(--accent); stroke-width:1.4; fill:none; opacity:.28;
-            stroke-dasharray:10 16; transition:opacity .4s; }
-  .zone-aero:hover .stream, .zone-aero:focus .stream { opacity:.85; }
+  .ink { stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+  .thin { stroke: var(--ink); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+  .door, .deco { cursor: pointer; outline: none; }
+  .door > g, .deco > g { transition: filter .25s, transform .25s; transform-box: fill-box; transform-origin: 50% 100%; }
+  .door:hover > g, .door:focus-visible > g { filter: drop-shadow(0 0 10px rgba(190, 255, 200, .7)) brightness(1.15); transform: translateY(-3px); }
+  .deco:hover > g, .deco:focus-visible > g { filter: drop-shadow(0 0 7px rgba(240, 255, 220, .5)) brightness(1.1); }
+  .tag text { font-family: "Fraunces", Georgia, serif; font-style: italic; font-size: 12px; font-weight: 600; fill: #23301f; }
+  .door:hover .tag rect { fill: #fffbe8; }
 
-  /* observatory telescope swing */
-  #scope { transform-box:fill-box; transform-origin:30% 85%;
-           transition:transform .9s ease; }
-  .zone-space:hover #scope, .zone-space:focus #scope { transform:rotate(-26deg); }
+  .sway { animation: sway 6s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 100%; }
+  .swayTop { animation: sway 5s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 0%; }
+  @keyframes sway { from { transform: rotate(-1.5deg); } to { transform: rotate(1.6deg); } }
+  .glow { animation: glow 3.2s ease-in-out infinite; }
+  @keyframes glow { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+  .twinkle { animation: glow 2.2s ease-in-out infinite; }
+  .puff { animation: puff 4s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes puff { 0% { transform: translate(0, 0) scale(.4); opacity: 0; } 15% { opacity: .85; } 100% { transform: translate(14px, -70px) scale(1.5); opacity: 0; } }
+  .note { animation: note 3.6s ease-out infinite; }
+  @keyframes note { 0% { transform: translate(0, 0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translate(-30px, -80px); opacity: 0; } }
+  .flow { stroke-dasharray: 14 10; animation: flow 1.2s linear infinite; }
+  @keyframes flow { to { stroke-dashoffset: -24; } }
+  .drop { animation: drop linear infinite; }
+  @keyframes drop { from { transform: translateY(-40px); opacity: 0; } 10% { opacity: .5; } to { transform: translateY(460px); opacity: 0; } }
+  .snap { transition: transform .18s ease-in; }
+  .deco.flytrap:hover .jawL { transform: rotate(24deg); }
+  .deco.flytrap:hover .jawR { transform: rotate(-24deg); }
 
-  /* city windows light up */
-  .win { fill:#39415c; opacity:.25; transition:opacity .6s, fill .6s; }
-  .zone-city:hover .win, .zone-city:focus .win { opacity:.95; fill:#ffd98a; }
-  .coin { fill:#ffd98a; opacity:0; }
-  .zone-city:hover .coin, .zone-city:focus .coin {
-    animation:glint 1.6s ease-in-out infinite alternate;
-  }
-  @keyframes glint { from { opacity:.05; } to { opacity:.9; } }
+  .title { position: fixed; left: clamp(14px, 2.4vw, 34px); top: clamp(12px, 2.2vw, 30px); z-index: 5; pointer-events: none; text-shadow: 0 2px 12px rgba(0,0,0,.8); }
+  .title a { pointer-events: auto; color: var(--dim); text-decoration: none; font-size: 13px; }
+  .title a:hover { color: var(--cream); }
+  .title h1 { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: clamp(26px, 3.4vw, 46px); line-height: 1; margin-top: 6px; }
+  .title p { margin-top: 8px; color: var(--dim); font-size: clamp(12px, 1.05vw, 15px); max-width: 32ch; line-height: 1.45; }
+  .title p em { font-family: "Fraunces", Georgia, serif; color: var(--cream); }
 
-  /* lighthouse lantern */
-  #lanternGlow { opacity:.5; transition:opacity .5s; }
-  .zone-brain:hover #lanternGlow, .zone-brain:focus #lanternGlow { opacity:1; }
-  .neu { fill:var(--teal2); }
-  .axon { stroke:var(--teal); stroke-width:.8; opacity:.4; }
+  #listBtn { position: fixed; right: clamp(12px, 2vw, 28px); top: clamp(12px, 2vw, 26px); z-index: 6; background: rgba(14,26,22,.78); color: var(--cream); border: 1px solid rgba(170,220,170,.4); border-radius: 999px; padding: 8px 14px; font: 600 13px "Inter", sans-serif; cursor: pointer; backdrop-filter: blur(6px); }
+  #listBtn:hover { border-color: #bfe8b0; }
+  #list { position: fixed; right: clamp(12px, 2vw, 28px); top: 62px; max-height: calc(100% - 80px); overflow-y: auto; z-index: 6; background: rgba(12,22,19,.95); border: 1px solid rgba(170,220,170,.3); border-radius: 14px; padding: 10px; display: none; width: min(340px, calc(100vw - 24px)); box-shadow: 0 18px 50px rgba(0,0,0,.6); }
+  #list.open { display: block; }
+  #list h3 { font: 600 11px "Inter", sans-serif; letter-spacing: .12em; text-transform: uppercase; color: #8fb38a; padding: 10px 12px 4px; }
+  #list a { display: block; padding: 8px 12px; border-radius: 9px; color: var(--cream); text-decoration: none; }
+  #list a:hover { background: rgba(170,220,170,.12); }
+  #list a small { display: block; color: var(--dim); font-size: 12px; margin-top: 2px; }
+  #list span.soon { display: block; padding: 8px 12px; color: var(--dim); }
 
-  /* floating oracle orb → mindblown/ */
-  @keyframes orbPulse { 0%, 100% { opacity:.45; } 50% { opacity:.85; } }
-  #quizGlow { animation:orbPulse 3.4s ease-in-out infinite; transform-box:fill-box; transform-origin:center; }
-  .zone-quiz:hover #quizGlow, .zone-quiz:focus #quizGlow { animation-duration:1.4s; }
-  .zone-quiz #quizSpark { opacity:.5; transition:opacity .4s; }
-  .zone-quiz:hover #quizSpark, .zone-quiz:focus #quizSpark { opacity:1; }
+  #tip { position: fixed; z-index: 7; pointer-events: none; background: rgba(12,22,19,.94); border: 1px solid rgba(170,220,170,.45); border-radius: 10px; padding: 7px 11px; font-size: 13px; opacity: 0; transform: translate(-50%, -130%); transition: opacity .15s; max-width: 320px; }
+  #tip b { font-family: "Fraunces", Georgia, serif; font-size: 15px; color: #d8f5b8; font-weight: 600; }
+  #tip span { color: var(--dim); display: block; margin-top: 2px; }
+  #tip.on { opacity: 1; }
 
-  /* mushroom ring → mycelium/ */
-  #mycThreads { transition:opacity .5s; }
-  .zone-myc:hover #mycThreads, .zone-myc:focus #mycThreads { opacity:.85; }
-  @keyframes capGlow {
-    0%, 100% { filter:drop-shadow(0 0 0px rgba(140,238,221,.5)); }
-    50% { filter:drop-shadow(0 0 4px rgba(140,238,221,.8)); }
-  }
-  #mycCaps { animation:capGlow 3.2s ease-in-out infinite; transform-box:fill-box; transform-origin:center; }
-  .zone-myc:hover #mycCaps, .zone-myc:focus #mycCaps { animation-duration:1.3s; }
-  #mycSpore { opacity:.4; transition:opacity .4s; }
-  .zone-myc:hover #mycSpore, .zone-myc:focus #mycSpore { opacity:1; }
+  #pane { position: fixed; z-index: 8; left: clamp(12px, 2.4vw, 34px); bottom: clamp(12px, 2.4vw, 34px); width: min(360px, calc(100vw - 24px)); background: linear-gradient(#18261f, #101a16); border: 1px solid rgba(170,220,170,.45); border-radius: 16px; padding: 16px 18px 18px; box-shadow: 0 24px 60px rgba(0,0,0,.65); transform: translateY(14px); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
+  #pane.open { opacity: 1; transform: none; pointer-events: auto; }
+  #pane h2 { font-family: "Fraunces", Georgia, serif; font-size: 22px; font-weight: 600; color: #d8f5b8; padding-right: 26px; }
+  #pane .latin { font-family: "Fraunces", Georgia, serif; font-style: italic; color: var(--dim); font-size: 14px; margin-top: 2px; }
+  #pane p { margin-top: 10px; font-size: 14px; line-height: 1.55; color: #e4e9d8; }
+  #pane .x { position: absolute; right: 12px; top: 10px; background: none; border: 0; color: var(--dim); font-size: 22px; cursor: pointer; }
 
-  /* beached radio → codec/ */
-  #codArcs { transition:opacity .5s; }
-  .zone-codec:hover #codArcs, .zone-codec:focus #codArcs { opacity:.1; }
-  #codBars { opacity:0; transition:opacity .5s; }
-  .zone-codec:hover #codBars, .zone-codec:focus #codBars { opacity:.95; }
-  #codDial { transform-box:fill-box; transform-origin:center;
-             transition:transform .9s ease; }
-  .zone-codec:hover #codDial, .zone-codec:focus #codDial { transform:rotate(160deg); }
-  #codLamp { opacity:.45; transition:opacity .5s; }
-  .zone-codec:hover #codLamp, .zone-codec:focus #codLamp { opacity:1; }
-
-  /* driftwood notice board → redacted/ */
-  #redBars rect {
-    transform-box:fill-box; transform-origin:left center;
-    transition:transform .55s cubic-bezier(.2,.8,.2,1);
-  }
-  .zone-red:hover #redBars rect, .zone-red:focus #redBars rect { transform:scaleX(.1); }
-  #redBars rect:nth-child(2) { transition-delay:.07s; }
-  #redBars rect:nth-child(3) { transition-delay:.14s; }
-  #redBars rect:nth-child(4) { transition-delay:.21s; }
-  #redBars rect:nth-child(5) { transition-delay:.28s; }
-  #redGlow { opacity:.3; transition:opacity .5s; }
-  .zone-red:hover #redGlow, .zone-red:focus #redGlow { opacity:.85; }
-
-  /* numbers district: chimney smoke + scatter billboard */
-  .puff { opacity:0; }
-  @keyframes puffUp { 0% { opacity:0; transform:translate(0,0) scale(.6); }
-    20% { opacity:.35; } 100% { opacity:0; transform:translate(14px,-40px) scale(2.2); } }
-  #smoke .puff { animation:puffUp 4.5s ease-out infinite; transform-box:fill-box; transform-origin:center; }
-  #smoke .puff:nth-child(2) { animation-delay:1.5s; } #smoke .puff:nth-child(3) { animation-delay:3s; }
-  .zone-city:hover #smoke .puff, .zone-city:focus #smoke .puff { animation-duration:2s; }
-  #corrLine { opacity:.35; transition:opacity .5s; }
-  .zone-city:hover #corrLine, .zone-city:focus #corrLine { opacity:1; }
-
-  @media (prefers-reduced-motion: reduce) {
-    #smoke .puff { animation:none; opacity:.2; }
-    .zone-city:hover .coin, .zone-city:focus .coin { animation:none; opacity:.8; }
-    #scope { transition:none; }
-    .win { transition:none; }
-    #quizGlow { animation:none; opacity:.6; }
-    #mycCaps { animation:none; }
-    #redBars rect { transition:none; }
-  }
-
-  /* ---------- floating label chip ---------- */
-  #chip {
-    position:fixed; z-index:10; max-width:280px;
-    background:rgba(13,16,24,.72); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
-    border:1px solid var(--border); border-radius:var(--radius);
-    padding:.7rem .85rem; pointer-events:none;
-  }
-  #chip.pinned { pointer-events:auto; }
-  #chip .ct { font-size:.95rem; font-weight:600; margin-bottom:.15rem; }
-  #chip .cd { font-size:.78rem; color:var(--dim); }
-  #chip .crow {
-    display:block; text-decoration:none; color:var(--fg);
-    border:1px solid var(--border); border-radius:8px;
-    padding:.5rem .6rem; margin-top:.5rem; transition:border-color .18s;
-  }
-  #chip .crow:hover, #chip .crow:focus { border-color:var(--teal2); }
-  #chip .crow b { display:block; font-size:.85rem; font-weight:600; }
-  #chip .crow span { display:block; font-size:.72rem; color:var(--dim); margin-top:.1rem; }
-
-  /* ---------- fallback list ---------- */
-  #fallback { max-width:1400px; margin:1.8rem auto 3rem; padding:0 1rem; }
-  #fallback h2 {
-    font-size:.8rem; color:var(--dim); font-weight:500;
-    text-transform:uppercase; letter-spacing:.12em; margin-bottom:.6rem;
-  }
-  #fallback h3 { font-size:.85rem; font-weight:600; color:var(--fg); margin:1.3rem 0 .55rem; }
-  #fallback ul {
-    list-style:none; display:grid; gap:.7rem;
-    grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
-  }
-  #fallback li a, #fallback li.soon > div {
-    display:block; text-decoration:none; color:var(--fg);
-    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
-    padding:.8rem .95rem; transition:border-color .18s, transform .18s;
-  }
-  #fallback li a:hover { border-color:var(--teal2); transform:translateY(-2px); }
-  #fallback .t { font-size:.95rem; font-weight:600; margin-bottom:.15rem; }
-  #fallback .s { font-size:.78rem; color:#5a5f73; }
-  #fallback li.soon { opacity:.55; }
+  .hint { position: fixed; right: clamp(12px, 2vw, 28px); bottom: clamp(10px, 1.6vw, 22px); z-index: 4; color: rgba(241,234,214,.5); font-size: 12px; pointer-events: none; }
+  @media (prefers-reduced-motion: reduce) { .sway, .swayTop, .glow, .twinkle, .puff, .note, .flow, .drop { animation: none; } }
 </style>
 </head>
 <body>
-<header>
-  <h1><b>lab</b>.corentinbel.com</h1>
-  <a href="https://corentinbel.com">&larr; home</a>
-</header>
 
-<main>
-<div id="stage">
-<svg id="scene" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet"
-     aria-label="A dusk dreamscape: a wingfoiler rides a teal sea, a paraglider drifts in the sky, a glowing city sits on the horizon, an observatory watches the stars, and a glass lighthouse pulses like a brain. Each region links to an experiment.">
-  <defs>
-    <linearGradient id="skyg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#07080c"/>
-      <stop offset="55%" stop-color="#0b1220"/>
-      <stop offset="100%" stop-color="#17293c"/>
-    </linearGradient>
-    <linearGradient id="seag" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#17394a"/>
-      <stop offset="100%" stop-color="#0b1a26"/>
-    </linearGradient>
-    <radialGradient id="moong">
-      <stop offset="0%" stop-color="rgba(223,230,245,.5)"/>
-      <stop offset="100%" stop-color="rgba(223,230,245,0)"/>
-    </radialGradient>
-    <radialGradient id="hglow">
-      <stop offset="0%" stop-color="rgba(110,168,255,.16)"/>
-      <stop offset="100%" stop-color="rgba(110,168,255,0)"/>
-    </radialGradient>
-    <radialGradient id="lampg">
-      <stop offset="0%" stop-color="rgba(140,238,221,.85)"/>
-      <stop offset="100%" stop-color="rgba(140,238,221,0)"/>
-    </radialGradient>
-    <linearGradient id="shootg" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="rgba(232,230,223,0)"/>
-      <stop offset="100%" stop-color="#e8e6df"/>
-    </linearGradient>
-    <radialGradient id="orbg">
-      <stop offset="0%" stop-color="rgba(180,140,232,.55)"/>
-      <stop offset="100%" stop-color="rgba(180,140,232,0)"/>
-    </radialGradient>
-  </defs>
-
-  <!-- sky + sea base -->
-  <rect x="0" y="0" width="1600" height="560" fill="url(#skyg)"/>
-  <rect x="0" y="520" width="1600" height="380" fill="url(#seag)"/>
-  <ellipse cx="800" cy="525" rx="950" ry="100" fill="url(#hglow)"/>
-
-  <!-- stars: static base (no-JS) + JS twinkle layer -->
-  <g id="starsStatic" fill="#cfd6ea">
-    <circle cx="120" cy="70" r="1.2" opacity=".7"/><circle cx="300" cy="140" r="1" opacity=".5"/>
-    <circle cx="470" cy="60" r="1.4" opacity=".8"/><circle cx="620" cy="120" r="1" opacity=".6"/>
-    <circle cx="760" cy="55" r="1.1" opacity=".7"/><circle cx="900" cy="150" r="1" opacity=".5"/>
-    <circle cx="1010" cy="80" r="1.3" opacity=".8"/><circle cx="1210" cy="200" r="1" opacity=".5"/>
-    <circle cx="1330" cy="90" r="1.2" opacity=".7"/><circle cx="1460" cy="160" r="1" opacity=".6"/>
-    <circle cx="220" cy="230" r="1" opacity=".5"/><circle cx="560" cy="250" r="1" opacity=".5"/>
-    <circle cx="1090" cy="260" r="1" opacity=".5"/><circle cx="1520" cy="60" r="1.3" opacity=".8"/>
-    <circle cx="60" cy="180" r="1" opacity=".5"/><circle cx="840" cy="240" r="1" opacity=".4"/>
-  </g>
-  <g id="stars" fill="#cfd6ea"></g>
-  <line id="shoot" x1="0" y1="0" x2="0" y2="0" stroke="url(#shootg)" stroke-width="2" opacity="0"/>
-
-  <!-- moon -->
-  <circle cx="1180" cy="105" r="52" fill="url(#moong)"/>
-  <circle cx="1180" cy="105" r="22" fill="#dfe6f5" opacity=".85"/>
-  <circle cx="1172" cy="99" r="5" fill="#c4cbe0" opacity=".5"/>
-  <circle cx="1188" cy="112" r="3.5" fill="#c4cbe0" opacity=".4"/>
-
-  <!-- drifting clouds -->
-  <g id="cloud1" opacity=".55" fill="#131a2a">
-    <ellipse cx="0" cy="0" rx="90" ry="18"/><ellipse cx="60" cy="-10" rx="60" ry="14"/><ellipse cx="-55" cy="-6" rx="50" ry="12"/>
-  </g>
-  <g id="cloud2" opacity=".45" fill="#111726">
-    <ellipse cx="0" cy="0" rx="110" ry="20"/><ellipse cx="70" cy="-12" rx="66" ry="15"/>
-  </g>
-  <g id="cloud3" opacity=".5" fill="#141b2c">
-    <ellipse cx="0" cy="0" rx="70" ry="14"/><ellipse cx="-45" cy="-8" rx="46" ry="11"/>
-  </g>
-
-  <!-- ===== oracle orb / a quiz that reconsiders you → mindblown/ ===== -->
-  <a class="zone zone-quiz" data-zone="quiz" href="mindblown/"
-     aria-label="a floating oracle orb — a quiz about things you probably believe that aren't quite true">
-    <circle id="quizGlow" cx="280" cy="190" r="60" fill="url(#orbg)"/>
-    <circle cx="280" cy="190" r="26" fill="rgba(180,140,232,.16)" stroke="#b48ce8" stroke-width="1.4"/>
-    <ellipse cx="280" cy="190" rx="15" ry="9" fill="#0e0f16" opacity=".8"/>
-    <circle cx="280" cy="190" r="4.2" fill="#e0c3fc"/>
-    <g id="quizSpark" fill="#e0c3fc">
-      <circle cx="248" cy="164" r="1.6"/>
-      <circle cx="312" cy="168" r="1.3"/>
-      <circle cx="300" cy="222" r="1.4"/>
-      <circle cx="254" cy="216" r="1.2"/>
-    </g>
-    <rect class="hit" x="205" y="115" width="150" height="150"/>
-  </a>
-
-  <!-- ===== city skyline / the numbers district → invest/ economy/ tokens/ correlation/ ===== -->
-  <g class="zone zone-city" data-zone="city" tabindex="0" role="button"
-     aria-haspopup="true" aria-label="the numbers district: token footprint, what r looks like, three sisters (invest) and orders of magnitude (economy)">
-    <g id="blds" fill="#0f1420" stroke="#1a2130" stroke-width="1">
-      <rect class="bld" x="100" y="430" width="40" height="90"/>
-      <rect class="bld" x="150" y="370" width="56" height="150"/>
-      <rect class="bld" x="216" y="410" width="44" height="110"/>
-      <rect class="bld" x="270" y="330" width="64" height="190"/>
-      <rect class="bld" x="344" y="390" width="48" height="130"/>
-      <rect class="bld" x="402" y="360" width="58" height="160"/>
-      <rect class="bld" x="470" y="425" width="40" height="95"/>
-      <rect class="bld" x="520" y="395" width="52" height="125"/>
-    </g>
-    <line x1="302" y1="330" x2="302" y2="302" stroke="#1a2130" stroke-width="2"/>
-    <circle cx="302" cy="300" r="2.5" fill="#6ea8ff" opacity=".8"/>
-    <g id="wins"></g>
-    <circle class="coin" cx="250" cy="345" r="4"/>
-    <circle class="coin" cx="330" cy="308" r="3.5"/>
-    <circle class="coin" cx="440" cy="335" r="4"/>
-    <!-- datacenter chimney → tokens/ -->
-    <rect x="552" y="368" width="10" height="27" fill="#0f1420" stroke="#1a2130"/>
-    <g id="smoke" fill="#8a8fa3">
-      <circle class="puff" cx="557" cy="360" r="4"/>
-      <circle class="puff" cx="557" cy="360" r="4"/>
-      <circle class="puff" cx="557" cy="360" r="4"/>
-    </g>
-    <!-- scatter billboard → correlation/ -->
-    <g id="corrBoard">
-      <rect x="152" y="342" width="52" height="24" rx="2" fill="#0b1018" stroke="#232b3a"/>
-      <g fill="#6ea8ff"><circle cx="158" cy="361" r="1.3"/><circle cx="163" cy="358" r="1.3"/><circle cx="168" cy="359" r="1.3"/><circle cx="172" cy="355" r="1.3"/><circle cx="177" cy="356" r="1.3"/><circle cx="182" cy="352" r="1.3"/><circle cx="187" cy="351" r="1.3"/><circle cx="192" cy="348" r="1.3"/><circle cx="197" cy="347" r="1.3"/></g>
-      <line id="corrLine" x1="156" y1="362" x2="200" y2="346" stroke="#8ceedd" stroke-width="1"/>
-    </g>
-    <rect class="hit" x="70" y="330" width="530" height="195"/>
-  </g>
-
-  <!-- ===== sky rider / paraglider → aero/ ===== -->
-  <a class="zone zone-aero" data-zone="aero" href="aero/"
-     aria-label="how things fly — planes, foils, stalls: a potential-flow playground">
-    <g id="streams">
-      <path class="stream" d="M470 150 Q700 128 1120 150"/>
-      <path class="stream" d="M500 202 Q760 178 1150 198"/>
-      <path class="stream" d="M470 252 Q740 234 1120 254"/>
-      <path class="stream" d="M520 302 Q780 288 1100 302"/>
-    </g>
-    <g id="pglider">
-      <path d="M-72 0 Q0 -38 72 0 Q0 -18 -72 0 Z" fill="#b48ce8" opacity=".9"/>
-      <path d="M-48 -14 L-40 -19 M-16 -25 L-10 -27 M18 -25 L24 -23 M46 -16 L52 -12"
-            stroke="#8f6cc2" stroke-width="1.2" fill="none" opacity=".8"/>
-      <line x1="-58" y1="-4" x2="-2" y2="42" stroke="#9aa3c0" stroke-width=".8" opacity=".7"/>
-      <line x1="-24" y1="-20" x2="-1" y2="42" stroke="#9aa3c0" stroke-width=".8" opacity=".7"/>
-      <line x1="24" y1="-20" x2="3" y2="42" stroke="#9aa3c0" stroke-width=".8" opacity=".7"/>
-      <line x1="58" y1="-4" x2="4" y2="42" stroke="#9aa3c0" stroke-width=".8" opacity=".7"/>
-      <circle cx="1" cy="46" r="4" fill="#e8e6df"/>
-      <rect x="-3" y="49" width="8" height="12" rx="3" fill="#232b3a" stroke="#8a8fa3" stroke-width=".6"/>
-    </g>
-    <rect class="hit" x="560" y="80" width="470" height="240"/>
-  </a>
-
-  <!-- ===== observatory hill → space/ ===== -->
-  <a class="zone zone-space" data-zone="space" href="space/"
-     aria-label="space — zoom from your hand to the observable universe">
-    <path d="M1080 900 Q1240 400 1600 430 L1600 900 Z" fill="#0b0f18"/>
-    <rect x="1362" y="428" width="56" height="26" fill="#10141f" stroke="#232b3a" stroke-width="1"/>
-    <path d="M1356 430 A34 34 0 0 1 1424 430 Z" fill="#171d2c" stroke="#232b3a" stroke-width="1"/>
-    <rect x="1386" y="398" width="9" height="34" fill="#0b0e16"/>
-    <line id="scope" x1="1391" y1="426" x2="1373" y2="388" stroke="#8ceedd" stroke-width="2.5" stroke-linecap="round"/>
-    <circle cx="1391" cy="446" r="2" fill="#ffd98a" opacity=".7"/>
-    <path d="M1200 620 l0 -18 M1194 610 l6 -8 6 8" stroke="#151b28" stroke-width="3" fill="none"/>
-    <path d="M1520 560 l0 -16 M1515 552 l5 -7 5 7" stroke="#151b28" stroke-width="3" fill="none"/>
-    <rect class="hit" x="1230" y="300" width="370" height="270"/>
-  </a>
-
-  <!-- waves (JS animates; static gentle curves otherwise) -->
-  <path id="wavef" d="M0 900 L0 560 Q400 552 800 560 T1600 560 L1600 900 Z" fill="#1c4a58" opacity=".85"/>
-  <path id="wavem" d="M0 900 L0 640 Q400 630 800 640 T1600 640 L1600 900 Z" fill="#266b74" opacity=".8"/>
-
-  <!-- ===== the foil break → foil-designer/ + foil-rl/ ===== -->
-  <g class="zone zone-foil" data-zone="foil" tabindex="0" role="button"
-     aria-haspopup="true" aria-label="the foil break: foil designer and foil pilot">
-    <g id="foiler" transform="translate(820,650)">
-      <g id="mastfoil" opacity="0">
-        <line x1="0" y1="2" x2="0" y2="28" stroke="#8a8fa3" stroke-width="2"/>
-        <path d="M-18 28 Q0 35 18 28 Q0 30 -18 28 Z" fill="#6ea8ff"/>
-        <line x1="0" y1="28" x2="10" y2="28" stroke="#8a8fa3" stroke-width="1.5"/>
-        <path d="M8 26 Q13 29 18 26" stroke="#6ea8ff" stroke-width="1.5" fill="none"/>
-      </g>
-      <rect x="-30" y="-5" width="60" height="7" rx="3.5" fill="#1b2233" stroke="#6ea8ff" stroke-width=".8"/>
-      <path d="M-7 -5 L0 -19 M7 -5 L0 -19" stroke="#e8e6df" stroke-width="2" stroke-linecap="round" fill="none"/>
-      <line x1="0" y1="-19" x2="2" y2="-32" stroke="#e8e6df" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="3.5" cy="-36" r="3.5" fill="#e8e6df"/>
-      <path d="M2 -30 L12 -40 M2 -27 L14 -33" stroke="#e8e6df" stroke-width="1.8" stroke-linecap="round"/>
-      <path d="M10 -62 Q30 -76 48 -54 Q32 -60 10 -44 Z" fill="#b48ce8" opacity=".92"/>
-      <line x1="13" y1="-41" x2="16" y2="-52" stroke="#9aa3c0" stroke-width="1"/>
-      <ellipse id="boardwash" cx="-2" cy="2" rx="36" ry="4" fill="#8ceedd" opacity=".25"/>
-    </g>
-    <g id="spray" fill="#bfeef0"></g>
-    <rect class="hit" x="650" y="555" width="330" height="210"/>
-  </g>
-
-  <path id="waven" d="M0 900 L0 730 Q400 720 800 730 T1600 730 L1600 900 Z" fill="#2f8b8d" opacity=".7"/>
-
-  <!-- beach -->
-  <path d="M0 900 L0 858 Q300 832 700 858 Q1000 874 1600 848 L1600 900 Z" fill="#131722"/>
-  <path d="M0 858 Q300 832 700 858 Q1000 874 1600 848" stroke="#232b3a" stroke-width="1" fill="none" opacity=".6"/>
-
-  <!-- ===== a radio on the sand → codec/ ===== -->
-  <a class="zone zone-codec" data-zone="codec" href="codec/"
-     aria-label="an old radio half-buried in the sand — how sound gets squeezed into a file">
-    <ellipse cx="786" cy="869" rx="58" ry="7" fill="#0e1119"/>
-    <g id="codArcs" stroke="#8ceedd" stroke-width="1.4" fill="none" opacity=".4">
-      <path d="M762.4 805.0 A26 26 0 0 1 809.6 805.0"/>
-      <path d="M751.6 799.9 A38 38 0 0 1 820.4 799.9"/>
-      <path d="M740.7 794.9 A50 50 0 0 1 831.3 794.9"/>
-    </g>
-    <g id="codBars" fill="#6ea8ff">
-      <rect x="748" y="810" width="8" height="6" rx="1"/>
-      <rect x="758" y="802" width="8" height="14" rx="1"/>
-      <rect x="768" y="794" width="8" height="22" rx="1"/>
-      <rect x="778" y="788" width="8" height="28" rx="1"/>
-      <rect x="788" y="792" width="8" height="24" rx="1"/>
-      <rect x="798" y="800" width="8" height="16" rx="1"/>
-      <rect x="808" y="806" width="8" height="10" rx="1"/>
-      <rect x="818" y="810" width="8" height="6" rx="1"/>
-    </g>
-    <line x1="824" y1="820" x2="850" y2="778" stroke="#8a8fa3" stroke-width="1.6"/>
-    <circle cx="850" cy="776" r="2.2" fill="#ffd98a" opacity=".8"/>
-    <rect x="740" y="818" width="92" height="48" rx="6"
-          fill="#171420" stroke="#8a8fa3" stroke-width="1.1"/>
-    <circle cx="766" cy="842" r="16" fill="#0e1119" stroke="#38a3a5" stroke-width="1"/>
-    <g fill="#38a3a5" opacity=".55">
-      <circle cx="760" cy="836" r="1.2"/><circle cx="766" cy="836" r="1.2"/><circle cx="772" cy="836" r="1.2"/>
-      <circle cx="760" cy="842" r="1.2"/><circle cx="766" cy="842" r="1.2"/><circle cx="772" cy="842" r="1.2"/>
-      <circle cx="760" cy="848" r="1.2"/><circle cx="766" cy="848" r="1.2"/><circle cx="772" cy="848" r="1.2"/>
-    </g>
-    <rect x="792" y="826" width="34" height="12" rx="2" fill="#0e1119" stroke="#232b3a" stroke-width=".8"/>
-    <rect id="codLamp" x="794" y="828" width="30" height="8" rx="1.5" fill="#ffd98a"/>
-    <circle id="codDial" cx="800" cy="852" r="7" fill="#0e1119" stroke="#b48ce8" stroke-width="1"/>
-    <line x1="800" y1="852" x2="800" y2="846" stroke="#b48ce8" stroke-width="1.4"/>
-    <circle cx="820" cy="852" r="4.5" fill="#0e1119" stroke="#8a8fa3" stroke-width=".9"/>
-    <rect class="hit" x="720" y="778" width="140" height="112"/>
-  </a>
-
-  <!-- ===== mushroom ring / mycelium patch → mycelium/ ===== -->
-  <a class="zone zone-myc" data-zone="myc" href="mycelium/"
-     aria-label="a ring of glowing mushrooms on the sand — grow a fungal network and read a few mycelium facts">
-    <g id="mycThreads" stroke="#8ceedd" stroke-width="1" fill="none" opacity=".3">
-      <path d="M505 862 Q478 838 465 810"/>
-      <path d="M505 862 Q525 830 548 806"/>
-      <path d="M505 862 Q498 826 484 796"/>
-      <path d="M505 862 Q515 822 534 792"/>
-      <path d="M505 862 Q490 840 468 828"/>
-    </g>
-    <g id="mycCaps">
-      <g transform="translate(465,808)">
-        <path d="M-8 0 Q0 -13 8 0 Z" fill="#b48ce8"/>
-        <rect x="-1.8" y="0" width="3.6" height="8" fill="#241a30"/>
-      </g>
-      <g transform="translate(505,850)">
-        <path d="M-11 0 Q0 -17 11 0 Z" fill="#8ceedd"/>
-        <rect x="-2.4" y="0" width="4.8" height="11" fill="#12241f"/>
-      </g>
-      <g transform="translate(538,798)">
-        <path d="M-7 0 Q0 -10 7 0 Z" fill="#ffd27a"/>
-        <rect x="-1.5" y="0" width="3" height="7" fill="#332a17"/>
-      </g>
-      <g transform="translate(486,824)">
-        <path d="M-6 0 Q0 -9 6 0 Z" fill="#8ceedd"/>
-        <rect x="-1.3" y="0" width="2.6" height="6" fill="#12241f"/>
-      </g>
-    </g>
-    <g id="mycSpore" fill="#e0c3fc">
-      <circle cx="470" cy="774" r="1.4"/>
-      <circle cx="528" cy="764" r="1.2"/>
-      <circle cx="500" cy="748" r="1.3"/>
-      <circle cx="452" cy="792" r="1.1"/>
-    </g>
-    <rect class="hit" x="430" y="740" width="150" height="145"/>
-  </a>
-
-  <!-- ===== driftwood notice board → redacted/ ===== -->
-  <a class="zone zone-red" data-zone="red" href="redacted/"
-     aria-label="a notice board on the sand, its lines blacked out — guess the hidden wikipedia page">
-    <g transform="translate(0,18)">
-    <ellipse id="redGlow" cx="1306" cy="792" rx="86" ry="66" fill="url(#hglow)"/>
-    <rect x="1302" y="826" width="8" height="46" fill="#2b2436"/>
-    <rect x="1288" y="866" width="36" height="5" rx="2.5" fill="#1b1f2c"/>
-    <g transform="rotate(-3 1306 786)">
-      <rect x="1246" y="738" width="120" height="92" rx="4" fill="#dcd8cd"/>
-      <rect x="1246" y="738" width="120" height="92" rx="4" fill="none" stroke="#8a8fa3" stroke-width=".8" opacity=".5"/>
-      <g fill="#38a3a5" opacity=".75">
-        <rect x="1256" y="750" width="66" height="6" rx="1.5"/>
-        <rect x="1256" y="766" width="98" height="5" rx="1.5"/>
-        <rect x="1256" y="779" width="86" height="5" rx="1.5"/>
-        <rect x="1256" y="792" width="100" height="5" rx="1.5"/>
-        <rect x="1256" y="805" width="58" height="5" rx="1.5"/>
-      </g>
-      <g id="redBars" fill="#14161f">
-        <rect x="1256" y="749" width="68" height="8" rx="2"/>
-        <rect x="1256" y="765" width="100" height="7" rx="2"/>
-        <rect x="1256" y="778" width="88" height="7" rx="2"/>
-        <rect x="1256" y="791" width="102" height="7" rx="2"/>
-        <rect x="1256" y="804" width="60" height="7" rx="2"/>
-      </g>
-    </g>
-    </g>
-    <rect class="hit" x="1230" y="743" width="160" height="155"/>
-  </a>
-
-  <!-- ===== glass lighthouse → glass-brain/ ===== -->
-  <a class="zone zone-brain" data-zone="brain" href="glass-brain/"
-     aria-label="glass brain — a brain of light in a glass tower, click to stimulate">
-    <path d="M282 852 L298 640 L326 640 L342 852 Z"
-          fill="rgba(140,238,221,.08)" stroke="#38a3a5" stroke-width="1.5"/>
-    <line x1="292" y1="712" x2="332" y2="712" stroke="#38a3a5" stroke-width=".8" opacity=".5"/>
-    <line x1="288" y1="782" x2="337" y2="782" stroke="#38a3a5" stroke-width=".8" opacity=".5"/>
-    <rect x="294" y="618" width="36" height="22" rx="3" fill="#101722" stroke="#38a3a5" stroke-width="1"/>
-    <circle id="lanternGlow" cx="312" cy="629" r="26" fill="url(#lampg)"/>
-    <circle cx="312" cy="629" r="6" fill="#8ceedd"/>
-    <path d="M296 618 L312 604 L328 618 Z" fill="#101722" stroke="#38a3a5" stroke-width="1"/>
-    <g id="neurons">
-      <line class="axon" x1="300" y1="670" x2="318" y2="700"/>
-      <line class="axon" x1="318" y1="700" x2="304" y2="738"/>
-      <line class="axon" x1="304" y1="738" x2="322" y2="770"/>
-      <line class="axon" x1="322" y1="770" x2="306" y2="808"/>
-      <line class="axon" x1="318" y1="700" x2="326" y2="742"/>
-      <circle class="neu" cx="300" cy="670" r="2.6"/>
-      <circle class="neu" cx="318" cy="700" r="3"/>
-      <circle class="neu" cx="304" cy="738" r="2.4"/>
-      <circle class="neu" cx="326" cy="742" r="2.2"/>
-      <circle class="neu" cx="322" cy="770" r="2.8"/>
-      <circle class="neu" cx="306" cy="808" r="2.4"/>
-    </g>
-    <ellipse cx="312" cy="856" rx="46" ry="6" fill="#0e1119"/>
-    <rect class="hit" x="240" y="590" width="150" height="280"/>
-  </a>
-
-  <!-- occasional bird -->
-  <path id="bird" d="M0 0 q5 -6 10 0 q5 -6 10 0" stroke="#9aa3c0" stroke-width="1.6"
-        fill="none" opacity="0"/>
-</svg>
-<p class="hint">every corner of the painting is a door — hover to peek, click to enter</p>
+<div class="title">
+  <a href="https://corentinbel.com">← corentinbel.com</a>
+  <h1>the lab</h1>
+  <p>A greenhouse of experiments. <em>Something new sprouts every few weeks.</em></p>
 </div>
 
-<!-- plain fallback: also the no-JS and reduced-motion path -->
-<section id="fallback">
-  <h2 class="top">all the doors</h2>
-  <h3>sea &amp; sky</h3>
-  <ul>
-    <li><a href="foil-designer/">
-      <div class="t">🪽 foil designer</div>
-      <div class="s">shape a front wing, get star ratings — speed, glide, carve</div>
-    </a></li>
-    <li><a href="foil-rl/">
-      <div class="t">🏄 foil pilot</div>
-      <div class="s">a stickman learns to wing foil</div>
-    </a></li>
-    <li><a href="aero/">
-      <div class="t">✈️ how things fly</div>
-      <div class="s">planes, foils, stalls — potential-flow playground</div>
-    </a></li>
-    <li><a href="space/">
-      <div class="t">🌌 space</div>
-      <div class="s">zoom from your hand to the observable universe</div>
-    </a></li>
-  </ul>
-  <h3>explainers — numbers, sound, scale</h3>
-  <ul>
-    <li><a href="tokens/">
-      <div class="t">🏭 token footprint</div>
-      <div class="s">what an LLM prompt costs the planet — chips to inference, with a calculator</div>
-    </a></li>
-    <li><a href="correlation/">
-      <div class="t">🔗 what does r look like?</div>
-      <div class="s">correlation as two coloured vectors — up to a glass brain and today's best brain decoders</div>
-    </a></li>
-    <li><a href="economy/">
-      <div class="t">💶 orders of magnitude</div>
-      <div class="s">french public money, to scale</div>
-    </a></li>
-    <li><a href="invest/">
-      <div class="t">📈 three sisters</div>
-      <div class="s">how investing grows — three sisters, three paths</div>
-    </a></li>
-    <li><a href="codec/">
-      <div class="t">🎚️ codec</div>
-      <div class="s">how sound gets squeezed — sampling, masking, and the bits your ear never misses</div>
-    </a></li>
-  </ul>
-  <h3>minds</h3>
-  <ul>
-    <li><a href="glass-brain/">
-      <div class="t">🧠 glass brain</div>
-      <div class="s">a brain of light — click to stimulate</div>
-    </a></li>
-    <li><a href="mindblown/">
-      <div class="t">🧠 mind, blown</div>
-      <div class="s">a quiz of things you probably believe that aren't quite true</div>
-    </a></li>
-  </ul>
-  <h3>play &amp; grow</h3>
-  <ul>
-    <li><a href="redacted/">
-      <div class="t">📰 redacted</div>
-      <div class="s">a wikipedia page, blacked out — type words to un-redact it</div>
-    </a></li>
-    <li><a href="mycelium/">
-      <div class="t">🍄 mycelium</div>
-      <div class="s">grow a glowing fungal network, then some facts that'll mess with you</div>
-    </a></li>
-  </ul>
-  <h3>soon</h3>
-  <ul>
-    <li class="soon"><div>
-      <div class="t">🎬 movie → brain</div>
-      <div class="s">à la TRIBE — soon</div>
-    </div></li>
-    <li class="soon"><div>
-      <div class="t">🐍 python in the browser</div>
-      <div class="s">numpy without the install — soon</div>
-    </div></li>
-  </ul>
-</section>
-</main>
+<button id="listBtn" aria-expanded="false" aria-controls="list">☰ plain list</button>
+<nav id="list" aria-label="All experiments"></nav>
 
-<div id="chip" hidden></div>
+<div id="stage">
+<svg id="scene" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid meet" role="img" aria-label="A Victorian greenhouse at night, full of plants; each experiment of the lab sits somewhere inside it">
+<defs>
+  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#060b1a"/><stop offset=".55" stop-color="#14254a"/><stop offset="1" stop-color="#2c4a5e"/>
+  </linearGradient>
+  <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#6b3a26"/><stop offset="1" stop-color="#2e1a12"/>
+  </linearGradient>
+  <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#8a6240"/><stop offset="1" stop-color="#5a3c24"/>
+  </linearGradient>
+  <linearGradient id="woodDark" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#3a2416"/><stop offset=".5" stop-color="#57361f"/><stop offset="1" stop-color="#301d11"/>
+  </linearGradient>
+  <linearGradient id="brass" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#f3cf7a"/><stop offset="1" stop-color="#b98a33"/>
+  </linearGradient>
+  <linearGradient id="brassTube" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#ffe3a0"/><stop offset=".4" stop-color="#d6a94f"/><stop offset="1" stop-color="#8a6420"/>
+  </linearGradient>
+  <linearGradient id="glass" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#d9f3ff" stop-opacity=".3"/><stop offset=".25" stop-color="#fff" stop-opacity=".07"/><stop offset=".8" stop-color="#d9f3ff" stop-opacity=".05"/><stop offset="1" stop-color="#d9f3ff" stop-opacity=".25"/>
+  </linearGradient>
+  <linearGradient id="terracotta" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#9b4a2c"/><stop offset=".45" stop-color="#c8693f"/><stop offset="1" stop-color="#8a3f25"/>
+  </linearGradient>
+  <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#5fc8d8"/><stop offset="1" stop-color="#1f6a80"/>
+  </linearGradient>
+  <linearGradient id="chalk" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#25352c"/><stop offset="1" stop-color="#1a2620"/>
+  </linearGradient>
+  <radialGradient id="lampGlow" cx=".5" cy=".5" r=".5">
+    <stop offset="0" stop-color="#ffd98a" stop-opacity=".55"/><stop offset="1" stop-color="#ffd98a" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="brainGlow" cx=".5" cy=".5" r=".5">
+    <stop offset="0" stop-color="#8fe0ff" stop-opacity=".55"/><stop offset="1" stop-color="#8fe0ff" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="shroomGlow" cx=".5" cy=".5" r=".5">
+    <stop offset="0" stop-color="#7dffcf" stop-opacity=".5"/><stop offset="1" stop-color="#7dffcf" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="vignette" cx=".5" cy=".45" r=".75">
+    <stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".6"/>
+  </radialGradient>
+  <filter id="blur6" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+  <filter id="blur2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2"/></filter>
+  <clipPath id="troughClip"><rect x="404" y="598" width="182" height="40"/></clipPath>
+</defs>
+
+<!-- ============ outside, behind the glass ============ -->
+<rect x="-1600" y="-1000" width="4800" height="1760" fill="url(#sky)"/>
+<g id="stars" fill="#fff"></g>
+<circle cx="1180" cy="170" r="80" fill="#f4f0d8" opacity=".08" filter="url(#blur6)"/>
+<circle cx="1180" cy="170" r="30" fill="#f4f0d8"/>
+<path d="M-1600 700 Q-200 600 200 640 Q520 600 800 650 Q1100 610 1400 640 Q1700 620 3200 660 V760 H-1600z" fill="#0f2024"/>
+<g id="outsideTrees" fill="#0b181b"></g>
+
+<!-- ============ greenhouse frame ============ -->
+<g id="frame"></g>
+<rect x="-1600" y="700" width="4800" height="62" fill="#5a2e22"/>
+<g id="bricks" stroke="#2e160f" stroke-width="2" opacity=".7"></g>
+<rect x="-1600" y="694" width="4800" height="10" fill="#e9e4d6" class="thin"/>
+<rect x="-1600" y="760" width="4800" height="1300" fill="url(#floor)"/>
+<g id="tiles" stroke="#2a150c" stroke-width="2" opacity=".65"></g>
+<g id="rain"></g>
+<g id="lights"></g>
+
+<!-- ============ back wall ============ -->
+
+<!-- correlation: chalkboard -->
+<a class="door" href="correlation/" data-label="what does r look like?" data-sub="correlation as two coloured vectors — up to a glass brain and today's best brain decoders">
+<g>
+  <rect x="1046" y="318" width="200" height="146" rx="4" fill="#6b4a2c" class="ink"/>
+  <rect x="1056" y="328" width="180" height="126" fill="url(#chalk)"/>
+  <g fill="none" stroke="#f1ead6" stroke-width="2.2" stroke-linecap="round" opacity=".9">
+    <path d="M1080 430 L1150 352"/><path d="M1150 352 l-12 2 m12 -2 l-2 12"/>
+    <path d="M1080 430 L1178 372" stroke="#ffb0c8"/><path d="M1178 372 l-12 -1 m12 1 l-6 10" stroke="#ffb0c8"/>
+    <path d="M1112 412 q8 -8 8 -16" stroke="#ffe08a"/>
+  </g>
+  <text x="1182" y="430" font-family="Fraunces, Georgia, serif" font-style="italic" font-size="20" fill="#ffe08a">r = .8</text>
+  <rect x="1150" y="452" width="40" height="6" rx="2" fill="#e9e4d6" class="thin"/>
+  <path d="M1110 318 l36 -26 l36 26" fill="none" stroke="#d9d2bf" stroke-width="1.4"/><g class="tag"><rect x="1094" y="282" width="104" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="1146" y="295" text-anchor="middle">correlation</text></g>
+</g>
+</a>
+
+<a class="deco" data-info="banana" tabindex="0" role="button" aria-label="Banana plant"><g id="banana"></g></a>
+
+<!-- substances: apothecary cabinet -->
+<a class="door" href="substances/" data-label="what's actually dangerous?" data-sub="drug harms, dependence, deaths, violence, trafficking and the law — EN / FR">
+<g>
+  <rect x="1312" y="300" width="196" height="462" rx="4" fill="url(#woodDark)" class="ink"/>
+  <rect x="1300" y="288" width="220" height="18" rx="3" fill="#6b4a2c" class="ink"/>
+  <rect x="1326" y="318" width="168" height="200" fill="#1a120c" class="thin"/>
+  <g id="bottles"></g>
+  <path d="M1326 384 h168 M1326 452 h168" stroke="#6b4a2c" stroke-width="6"/>
+  <rect x="1326" y="318" width="168" height="200" fill="url(#glass)" stroke="#d9f3ff" stroke-opacity=".35" stroke-width="2"/>
+  <path d="M1410 318 v200" stroke="#3a2416" stroke-width="4"/>
+  
+  <g id="drawers"></g>
+  <g class="tag"><rect x="1358" y="526" width="104" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="1410" y="539" text-anchor="middle">substances</text></g>
+</g>
+</a>
+
+<!-- tokens: a little GPU on top of the cabinet, puffing CO2 -->
+<a class="door" href="tokens/" data-label="token footprint" data-sub="what an LLM prompt costs the planet — chips to inference, with a calculator">
+<g>
+  <g id="smoke"></g>
+  <rect x="1338" y="246" width="78" height="42" rx="4" fill="#2d3a36" class="ink"/>
+  <g stroke="#c9a253" stroke-width="2.5"><path d="M1346 246 v-6 M1356 246 v-6 M1366 246 v-6 M1376 246 v-6 M1386 246 v-6 M1396 246 v-6 M1406 246 v-6"/></g>
+  <rect x="1352" y="254" width="50" height="26" rx="2" fill="#1b2420"/>
+  <text x="1377" y="272" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="#7dffb0">GPU</text>
+  <rect x="1424" y="214" width="18" height="74" fill="#7a3f2a" class="ink"/>
+  <rect x="1420" y="208" width="26" height="10" fill="#8a4a32" class="ink"/>
+  <g class="tag"><rect x="1330" y="210" width="80" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="1370" y="223" text-anchor="middle">tokens</text></g>
+</g>
+</a>
+
+<!-- foil designer: blueprint pinned on the glass + a wing model -->
+<a class="door" href="foil-designer/" data-label="foil designer" data-sub="shape a front wing, get star ratings — speed, glide, carve">
+<g>
+  <g transform="translate(44 0) rotate(-3 311 482)">
+    <rect x="236" y="430" width="150" height="104" fill="#2b5c9a" class="ink"/>
+    <g fill="none" stroke="#d9ecff" stroke-width="1.6">
+      <path d="M250 444 h122 M250 456 h122 M250 468 h122 M250 480 h122 M250 492 h122 M250 504 h122 M250 516 h122" stroke-opacity=".18"/>
+      <path d="M254 486 Q311 456 368 486 Q311 474 254 486z" stroke-width="2.2"/>
+      <path d="M311 470 v40 M300 510 h22" stroke-width="1.6"/>
+      <path d="M262 522 h40" stroke-dasharray="3 3"/>
+    </g>
+  </g>
+  <circle cx="290" cy="436" r="3.5" fill="#e04848" class="thin"/><circle cx="422" cy="430" r="3.5" fill="#e04848" class="thin"/>
+  <path d="M340 636 v-30" stroke="#3a3f48" stroke-width="4"/>
+  <rect x="322" y="632" width="36" height="8" rx="2" fill="#3a3f48" class="thin"/>
+  <path d="M290 606 Q340 584 390 606 Q386 612 380 610 Q340 596 300 610 Q294 612 290 606z" fill="#e2685a" class="ink"/>
+  <path d="M302 604 Q340 590 378 604" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="2"/>
+  <g class="tag"><rect x="306" y="546" width="104" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="358" y="559" text-anchor="middle">foil designer</text></g>
+</g>
+</a>
+
+<!-- ============ benches ============ -->
+<g id="benches"></g>
+
+<!-- foil pilot: water trough with a tiny wing-foiler -->
+<a class="door" href="foil-rl/" data-label="foil pilot" data-sub="a stickman learns to wing foil">
+<g>
+  <path d="M398 590 h196 l-8 50 h-180z" fill="#7a868f" class="ink"/>
+  <g clip-path="url(#troughClip)">
+    <rect x="400" y="606" width="190" height="40" fill="url(#water)"/>
+    <path id="troughWave" d="" fill="#8fe3ee" opacity=".6"/>
+  </g>
+  <g id="foiler">
+    <path d="M-14 0 h26" stroke="#f1ead6" stroke-width="3" stroke-linecap="round"/>
+    <path d="M0 0 v10 M-6 10 h12" stroke="#1d2026" stroke-width="1.6"/>
+    <path d="M-3 0 l3 -12 l3 12 M0 -12 v-8" stroke="#1d2026" stroke-width="2" fill="none"/>
+    <circle cx="0" cy="-23" r="3" fill="#1d2026"/>
+    <path d="M0 -17 l10 -8" stroke="#1d2026" stroke-width="1.6"/>
+    <path d="M6 -36 q18 2 20 16 q-12 4 -20 -16z" fill="#e2685a" class="thin"/>
+  </g>
+  <path d="M398 590 h196" stroke="#a9b3bb" stroke-width="5" stroke-linecap="round"/>
+  <g class="tag"><rect x="442" y="652" width="94" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="489" y="665" text-anchor="middle">foil pilot</text></g>
+</g>
+</a>
+
+<a class="deco flytrap" data-info="flytrap" tabindex="0" role="button" aria-label="Venus flytrap"><g id="flytrap"></g></a>
+
+<!-- three sisters (invest) -->
+<a class="door" href="invest/" data-label="three sisters" data-sub="how investing grows — three sisters, three paths">
+<g id="sisters"></g>
+</a>
+
+<!-- orders of magnitude (economy): seed jars from tiny to huge -->
+<a class="door" href="economy/" data-label="orders of magnitude" data-sub="french public money, to scale">
+<g id="jars"></g>
+</a>
+
+<!-- ============ centre: glass brain on a pedestal ============ -->
+<a class="door" href="glass-brain/" data-label="glass brain" data-sub="a brain of light — click to stimulate">
+<g>
+  <ellipse cx="800" cy="520" rx="120" ry="110" fill="url(#brainGlow)" class="glow"/>
+  <path d="M756 760 l8 -150 h72 l8 150z" fill="#d8d2c2" class="ink"/>
+  <path d="M780 612 v146 M800 612 v146 M820 612 v146" stroke="#a9a28f" stroke-width="2"/>
+  <rect x="742" y="596" width="116" height="18" rx="3" fill="#e9e4d6" class="ink"/>
+  <rect x="736" y="752" width="128" height="14" rx="3" fill="#e9e4d6" class="ink"/>
+  <rect x="760" y="580" width="80" height="16" rx="3" fill="url(#woodDark)" class="ink"/>
+  <g id="brain"></g>
+  <path d="M762 580 V500 q0 -50 38 -50 q38 0 38 50 V580z" fill="url(#glass)" stroke="#d9f3ff" stroke-opacity=".6" stroke-width="2"/>
+  <circle cx="800" cy="446" r="6" fill="#d9f3ff" fill-opacity=".4" stroke="#d9f3ff" stroke-opacity=".6"/>
+  <path d="M772 566 V506 q0 -30 18 -40" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="3"/>
+  <g class="tag"><rect x="752" y="772" width="96" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="800" y="785" text-anchor="middle">glass brain</text></g>
+</g>
+</a>
+
+<!-- mind, blown: a fiddlehead fern curled into a question mark -->
+<a class="door" href="mindblown/" data-label="mind, blown" data-sub="a quiz of things you probably believe that aren't quite true">
+<g>
+  <g class="sway" id="fiddle"></g>
+  <g class="tag"><rect x="906" y="784" width="96" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="954" y="797" text-anchor="middle">mind, blown</text></g>
+</g>
+</a>
+
+<!-- ============ hanging from the roof ============ -->
+<a class="door" href="aero/" data-label="how things fly" data-sub="planes, foils, stalls — potential-flow playground">
+<g>
+  <path d="M520 150 V330" stroke="#d9d2bf" stroke-width="1.2"/>
+  <g class="flow" fill="none" stroke="#bfe8ff" stroke-width="2" opacity=".55">
+    <path d="M430 318 q40 -14 80 -6 t100 2"/><path d="M430 340 q40 -6 80 4 t100 -2"/><path d="M430 362 q40 6 80 6 t100 -6"/>
+  </g>
+  <g transform="rotate(-8 520 340)">
+    <path d="M470 340 L572 326 L520 352z" fill="#f6f2e6" class="ink"/>
+    <path d="M520 352 L572 326 L528 338z" fill="#d9d2bf" class="thin"/>
+    <path d="M470 340 L528 338" stroke="#0d1110" stroke-width="1.2"/>
+  </g>
+  <g class="tag"><rect x="466" y="378" width="110" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="521" y="391" text-anchor="middle">how things fly</text></g>
+</g>
+</a>
+
+<a class="deco" data-info="pitcher" tabindex="0" role="button" aria-label="Pitcher plant"><g id="pitcher"></g></a>
+<a class="deco" data-info="fern" tabindex="0" role="button" aria-label="Boston fern"><g id="fern"></g></a>
+<g id="pothos"></g>
+
+<!-- ============ front floor ============ -->
+
+<!-- space: brass telescope on a tripod, aimed at Saturn -->
+<a class="door" href="space/" data-label="space" data-sub="zoom from your hand to the observable universe">
+<g>
+  <g transform="translate(410 120)">
+    <circle r="14" fill="#e8c98a"/>
+    <ellipse rx="30" ry="7" fill="none" stroke="#d6b47a" stroke-width="3" transform="rotate(-18)"/>
+    <path d="M-14 0 a14 14 0 0 0 28 0" fill="#e8c98a" transform="rotate(-18)"/>
+    <circle r="40" fill="#e8c98a" opacity=".08"/>
+  </g>
+  <path d="M190 660 L130 900 M194 660 L198 916 M198 660 L258 900" stroke="#5a3c24" stroke-width="8" stroke-linecap="round"/>
+  <path d="M190 660 L130 900 M194 660 L198 916 M198 660 L258 900" stroke="#8a6240" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="194" cy="652" r="11" fill="url(#brass)" class="ink"/>
+  <g transform="rotate(-64 194 640)">
+    <rect x="124" y="624" width="200" height="32" rx="6" fill="url(#brassTube)" class="ink"/>
+    <rect x="318" y="618" width="28" height="44" rx="4" fill="url(#brassTube)" class="ink"/>
+    <rect x="98" y="631" width="30" height="18" rx="3" fill="#8a6420" class="ink"/>
+    <path d="M164 624 v32 M260 624 v32" stroke="#8a6420" stroke-width="3"/>
+  </g>
+  <g class="tag"><rect x="156" y="926" width="76" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="194" y="939" text-anchor="middle">space</text></g>
+</g>
+</a>
+
+<a class="deco" data-info="soon" tabindex="0" role="button" aria-label="Seedlings: experiments coming soon"><g id="seedlings"></g></a>
+
+<!-- redacted: newspaper on a stool -->
+<a class="door" href="redacted/" data-label="redacted" data-sub="a wikipedia page, blacked out — type words to un-redact it">
+<g>
+  <path d="M556 840 l-10 90 M640 840 l10 90 M574 840 l-4 96 M622 840 l4 96" stroke="#5a3c24" stroke-width="7" stroke-linecap="round"/>
+  <path d="M556 884 h84" stroke="#5a3c24" stroke-width="5"/>
+  <ellipse cx="598" cy="840" rx="58" ry="12" fill="url(#wood)" class="ink"/>
+  <g transform="rotate(-8 598 820)">
+    <path d="M552 836 l6 -48 h82 l-4 48z" fill="#efe8d6" class="ink"/>
+    <text x="598" y="802" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="600" font-size="10" fill="#222">THE DAILY ████</text>
+    <g fill="#1a1a1a"><rect x="562" y="808" width="30" height="5"/><rect x="596" y="808" width="36" height="5"/><rect x="561" y="817" width="44" height="5"/><rect x="610" y="817" width="20" height="5"/><rect x="560" y="826" width="22" height="4"/></g>
+    <rect x="586" y="827" width="40" height="2" fill="#9a9384"/>
+  </g>
+  <g class="tag"><rect x="556" y="944" width="84" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="598" y="957" text-anchor="middle">redacted</text></g>
+</g>
+</a>
+
+<!-- mycelium: raised bed of glowing mushrooms -->
+<a class="door" href="mycelium/" data-label="mycelium" data-sub="grow a glowing fungal network, then some facts that'll mess with you">
+<g>
+  <ellipse cx="800" cy="880" rx="190" ry="60" fill="url(#shroomGlow)" class="glow"/>
+  <path d="M664 860 h272 l-10 60 h-252z" fill="#4a2e1c" class="ink"/>
+  <g id="hyphae" fill="none" stroke="#7dffcf" stroke-width="1.2" opacity=".75" class="glow"></g>
+  <rect x="656" y="850" width="288" height="14" rx="3" fill="url(#wood)" class="ink"/>
+  <g id="shrooms"></g>
+  <g class="tag"><rect x="752" y="926" width="96" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="800" y="939" text-anchor="middle">mycelium</text></g>
+</g>
+</a>
+
+<!-- codec: gramophone on a crate -->
+<a class="door" href="codec/" data-label="codec" data-sub="how sound gets squeezed — sampling, masking, and the bits your ear never misses">
+<g>
+  <rect x="1406" y="852" width="110" height="80" fill="#a87a4a" class="ink"/>
+  <path d="M1406 878 h110 M1406 904 h110" stroke="#6b4a2c" stroke-width="3"/>
+  <rect x="1416" y="818" width="92" height="36" rx="3" fill="url(#woodDark)" class="ink"/>
+  <ellipse cx="1462" cy="818" rx="40" ry="6" fill="#1a1a1a" class="thin"/>
+  <path d="M1480 816 q6 -30 -6 -56" fill="none" stroke="#b98a33" stroke-width="7" stroke-linecap="round"/>
+  <path d="M1474 762 q-30 -40 -82 -54 q-16 30 -4 74 q46 -12 86 -20z" fill="url(#brassTube)" class="ink"/>
+  <ellipse cx="1390" cy="745" rx="14" ry="38" fill="#5a3e14" class="thin" transform="rotate(14 1390 745)"/>
+  <g id="notes" font-family="Fraunces, Georgia, serif" font-size="22" fill="#ffe08a"></g>
+  <g class="tag"><rect x="1424" y="942" width="76" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="1462" y="955" text-anchor="middle">codec</text></g>
+</g>
+</a>
+
+<a class="deco" data-info="monstera" tabindex="0" role="button" aria-label="Monstera"><g id="monstera"></g></a>
+<a class="deco" data-info="lemon" tabindex="0" role="button" aria-label="Lemon tree"><g id="lemon"></g></a>
+<a class="deco" data-info="orchid" tabindex="0" role="button" aria-label="Moth orchid"><g id="orchid"></g></a>
+<a class="deco" data-info="cactus" tabindex="0" role="button" aria-label="Cacti"><g id="cacti"></g></a>
+<a class="deco" data-info="strelitzia" tabindex="0" role="button" aria-label="Bird of paradise"><g id="strelitzia"></g></a>
+
+<g id="fireflies" pointer-events="none"></g>
+<rect x="-1600" y="-1000" width="4800" height="3000" fill="url(#vignette)" pointer-events="none"/>
+</svg>
+</div>
+
+<div id="tip"><b></b><span></span></div>
+<aside id="pane" aria-live="polite"><button class="x" aria-label="close">×</button><h2></h2><div class="latin"></div><p></p></aside>
+<div class="hint"><span class="wide">hover to look closer · click the plants for fun facts</span><span class="narrow">swipe ← → · tap things</span></div>
 
 <script>
-(function () {
-'use strict';
+"use strict";
+const NS = "http://www.w3.org/2000/svg";
+const $ = id => document.getElementById(id);
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const R = rng(7);
+const rr = (a, b) => a + (b - a) * R();
+const pick = arr => arr[Math.floor(R() * arr.length)];
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const GREENS = ["#2f6b3a", "#3d7d44", "#28572f", "#4a8a4c"];
 
-var ZONES = {
-  quiz:  { title: '🧠 mind, blown',
-           desc: 'a quiz of things you probably believe that aren\'t quite true' },
-  codec: { title: '🎚️ codec',
-           desc: 'how sound gets squeezed — sampling, masking, and the bits your ear never misses' },
-  red:   { title: '📰 redacted',
-           desc: 'a wikipedia page, blacked out — type words until you can read the title' },
-  myc:   { title: '🍄 mycelium',
-           desc: 'grow a glowing fungal network, then a handful of facts about it' },
-  aero:  { title: '✈️ how things fly',
-           desc: 'planes, foils, stalls — potential-flow playground' },
-  space: { title: '🌌 space',
-           desc: 'zoom from your hand to the observable universe' },
-  brain: { title: '🧠 glass brain',
-           desc: 'a brain of light — click to stimulate' },
-  foil:  { title: '🌊 the foil break',
-           desc: 'two doors — click to choose',
-           links: [
-             { href: 'foil-designer/', title: '🪽 foil designer',
-               desc: 'shape a front wing, get star ratings — speed, glide, carve' },
-             { href: 'foil-rl/', title: '🏄 foil pilot',
-               desc: 'a stickman learns to wing foil' }
-           ] },
-  city:  { title: '🏙️ the numbers district',
-           desc: 'four doors — money, carbon, statistics. click to choose',
-           links: [
-             { href: 'tokens/', title: '🏭 token footprint',
-               desc: 'what an LLM prompt costs the planet — chips to inference, with a calculator' },
-             { href: 'correlation/', title: '🔗 what does r look like?',
-               desc: 'correlation as two coloured vectors — up to a glass brain and today's best brain decoders' },
-             { href: 'invest/', title: '📈 three sisters',
-               desc: 'how investing grows — three sisters, three paths' },
-             { href: 'economy/', title: '💶 orders of magnitude',
-               desc: 'french public money, to scale' }
-           ] }
+/* ============ the plain list ============ */
+const GROUPS = [
+  ["sea & sky", [["foil-designer/", "foil designer", "shape a front wing, get star ratings — speed, glide, carve"], ["foil-rl/", "foil pilot", "a stickman learns to wing foil"], ["aero/", "how things fly", "planes, foils, stalls — potential-flow playground"], ["space/", "space", "zoom from your hand to the observable universe"]]],
+  ["numbers, sound, scale", [["tokens/", "token footprint", "what an LLM prompt costs the planet"], ["correlation/", "what does r look like?", "correlation as two coloured vectors"], ["economy/", "orders of magnitude", "french public money, to scale"], ["invest/", "three sisters", "how investing grows — three paths"], ["codec/", "codec", "how sound gets squeezed"]]],
+  ["minds & society", [["glass-brain/", "glass brain", "a brain of light — click to stimulate"], ["mindblown/", "mind, blown", "things you probably believe that aren't quite true"], ["substances/", "what's actually dangerous?", "drug harms, deaths and the law — EN / FR"]]],
+  ["play & grow", [["redacted/", "redacted", "a wikipedia page, blacked out"], ["mycelium/", "mycelium", "grow a glowing fungal network"]]],
+];
+{
+  const nav = $("list");
+  for (const [g, items] of GROUPS) {
+    const h = document.createElement("h3"); h.textContent = g; nav.appendChild(h);
+    for (const [href, t, sub] of items) { const a = document.createElement("a"); a.href = href; a.textContent = t; const s = document.createElement("small"); s.textContent = sub; a.appendChild(s); nav.appendChild(a); }
+  }
+  const h = document.createElement("h3"); h.textContent = "seedlings (soon)"; nav.appendChild(h);
+  for (const t of ["movie → brain, à la TRIBE", "python in the browser"]) { const s = document.createElement("span"); s.className = "soon"; s.textContent = t; nav.appendChild(s); }
+}
+
+const INFO = {
+  flytrap:    { t: "Venus flytrap", l: "Dionaea muscipula", p: "It counts. One touch of a trigger hair does nothing; a second touch within about twenty seconds snaps the trap shut, and it only starts digesting after a few more touches. In the wild it grows in one small corner of the Carolinas and nowhere else." },
+  pitcher:    { t: "Pitcher plant", l: "Nepenthes", p: "Not every pitcher is a trap. Nepenthes lowii in Borneo has given up on insects: tree shrews sit on its rim to lick nectar and leave their droppings in the pitcher, and that is where the plant gets its nitrogen." },
+  fern:       { t: "Boston fern", l: "Nephrolepis exaltata", p: "Ferns were here before the dinosaurs and before flowers, and still spread with spores instead of seeds. Every new frond starts life rolled up as a fiddlehead, like the question mark next to the brain." },
+  monstera:   { t: "Monstera", l: "Monstera deliciosa", p: "The holes are thought to let light through to its own lower leaves and wind through without tearing. Its fruit tastes like pineapple and banana; eat it unripe and needle-shaped oxalate crystals sting your mouth." },
+  banana:     { t: "Banana", l: "Musa", p: "Not a tree but a giant herb: the 'trunk' is leaf sheaths rolled tightly together. Botanically, bananas are berries and strawberries are not." },
+  lemon:      { t: "Lemon tree", l: "Citrus × limon", p: "Menton, on the Côte d'Azur, has held a lemon festival every February since the 1930s: giant sculptures made of tonnes of citrus, rebuilt every year." },
+  orchid:     { t: "Moth orchid", l: "Phalaenopsis", p: "Orchid seeds are as fine as dust and carry no food. To germinate, each one has to be colonised by a fungus that feeds it, so the mycelium bed is the orchid's best friend. Vanilla is an orchid too." },
+  cactus:     { t: "Cacti", l: "Cactaceae", p: "A saguaro can take fifty to seventy-five years to grow its first arm. Almost every cactus is from the Americas; the one exception, Rhipsalis, probably reached Africa inside a bird." },
+  strelitzia: { t: "Bird of paradise", l: "Strelitzia reginae", p: "The orange-and-blue flower is a landing pad. When a sunbird perches on the blue petals they open under its weight and dust its feet with pollen. It is named after Queen Charlotte, born a duchess of Mecklenburg-Strelitz." },
+  soon:       { t: "Seedlings", l: "coming soon", p: "Two experiments are still sprouting: movie → brain (predicting brain responses to a film, à la TRIBE) and Python running right in your browser." },
 };
 
-var svg = document.getElementById('scene');
-var chip = document.getElementById('chip');
-var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-var hover = { aero: false, space: false, brain: false, foil: false, city: false };
-
-/* ---------- chip (hover label + dual-link popover) ---------- */
-var pinned = false;
-
-function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
-
-function placeChip(el) {
-  var r = el.getBoundingClientRect();
-  chip.hidden = false;
-  var cw = chip.offsetWidth, ch = chip.offsetHeight;
-  var left = r.left + r.width / 2 - cw / 2;
-  left = Math.max(8, Math.min(left, window.innerWidth - cw - 8));
-  var top = r.top - ch - 10;
-  if (top < 8) top = Math.min(r.bottom + 10, window.innerHeight - ch - 8);
-  chip.style.left = left + 'px';
-  chip.style.top = top + 'px';
+/* ============ outside ============ */
+for (let i = 0; i < 90; i++) el("circle", { cx: rr(0, 1600), cy: rr(40, 560), r: rr(.4, 1.5), opacity: rr(.25, .9), class: R() < .2 ? "twinkle" : "", style: `animation-delay:${rr(0, 2).toFixed(1)}s` }, $("stars"));
+for (let x = -60; x < 1660; x += rr(40, 90)) {
+  const h = rr(40, 110);
+  el("circle", { cx: x + rr(-10, 10), cy: 700 - h * rr(.5, .8), r: rr(18, 34) }, $("outsideTrees"));
+  el("rect", { x: x - 3, y: 700 - h * .5, width: 6, height: h * .5 }, $("outsideTrees"));
 }
 
-function showHover(el, z) {
-  chip.classList.remove('pinned');
-  chip.innerHTML = '<div class="ct">' + esc(z.title) + '</div>' +
-                   '<div class="cd">' + esc(z.desc) + '</div>';
-  placeChip(el);
-}
-
-function openPopover(el, z) {
-  pinned = true;
-  chip.classList.add('pinned');
-  var html = '<div class="ct">' + esc(z.title) + '</div>';
-  z.links.forEach(function (l) {
-    html += '<a class="crow" href="' + l.href + '"><b>' + esc(l.title) +
-            '</b><span>' + esc(l.desc) + '</span></a>';
-  });
-  chip.innerHTML = html;
-  placeChip(el);
-  var first = chip.querySelector('a');
-  if (first) first.focus();
-}
-
-function closeChip() {
-  pinned = false;
-  chip.hidden = true;
-  chip.classList.remove('pinned');
-}
-
-Array.prototype.forEach.call(document.querySelectorAll('[data-zone]'), function (el) {
-  var key = el.getAttribute('data-zone');
-  var z = ZONES[key];
-  el.addEventListener('mouseenter', function () {
-    hover[key] = true;
-    if (!pinned) showHover(el, z);
-  });
-  el.addEventListener('mouseleave', function () {
-    hover[key] = false;
-    if (!pinned) closeChip();
-  });
-  el.addEventListener('focus', function () { hover[key] = true; if (!pinned) showHover(el, z); });
-  el.addEventListener('blur', function () { hover[key] = false; if (!pinned) closeChip(); });
-  if (z.links) {
-    el.addEventListener('click', function (ev) {
-      ev.preventDefault();
-      ev.stopPropagation();
-      openPopover(el, z);
-    });
-    el.addEventListener('keydown', function (ev) {
-      if (ev.key === 'Enter' || ev.key === ' ') {
-        ev.preventDefault();
-        openPopover(el, z);
-      }
-    });
+/* ============ greenhouse frame ============ */
+const archY = x => { const t = (x - 30) / 1540; return (1 - t) * (1 - t) * 300 + 2 * (1 - t) * t * -200 + t * t * 300; };
+{
+  const f = $("frame");
+  el("path", { d: "M30 760 V300 Q800 -200 1570 300 V760", fill: "#cfe8f0", "fill-opacity": .04 }, f);
+  for (let x = 30; x <= 1570; x += 110) {
+    el("path", { d: `M${x} 700 V${archY(x).toFixed(1)}`, stroke: "#e9e4d6", "stroke-width": 7, fill: "none" }, f);
+    el("path", { d: `M${x + 2} 700 V${archY(x).toFixed(1)}`, stroke: "#9a9584", "stroke-width": 1.5, fill: "none", opacity: .6 }, f);
   }
-});
+  for (const y of [300, 500]) el("path", { d: `M30 ${y} H1570`, stroke: "#e9e4d6", "stroke-width": 6 }, f);
+  for (const k of [.38, .72]) el("path", { d: `M30 300 Q800 -200 1570 300`, fill: "none", stroke: "#e9e4d6", "stroke-width": 4, transform: `translate(800 300) scale(${1 - k * .45} ${1 - k * .2}) translate(-800 -300)`, opacity: .85 }, f);
+  el("path", { d: "M30 300 Q800 -200 1570 300", fill: "none", stroke: "#e9e4d6", "stroke-width": 10 }, f);
+  for (let i = 0; i < 12; i++) { const x = 44 + Math.floor(rr(0, 14)) * 110; el("path", { d: `M${x} ${rr(330, 640).toFixed(0)} l40 -40`, stroke: "#fff", "stroke-opacity": .1, "stroke-width": 6, "stroke-linecap": "round" }, f); }
+  for (let x = 120; x < 1500; x += 60) el("path", { d: `M${x} ${archY(x).toFixed(1)} v-12 m-6 6 h12`, stroke: "#e9e4d6", "stroke-width": 2.5 }, f);
+}
+{
+  let d = "";
+  for (let y = 714; y < 760; y += 15) { d += `M-1600 ${y}H3200`; const off = ((y - 714) / 15) % 2 ? 0 : 22; for (let x = -1600 + off; x < 3200; x += 44) d += `M${x} ${y}v15`; }
+  el("path", { d }, $("bricks"));
+}
+{
+  let d = "";
+  for (const y of [790, 830, 880, 945]) d += `M-1600 ${y}H3200`;
+  for (let x = -800; x <= 2400; x += 80) d += `M${800 + (x - 800) * .55} 760 L${800 + (x - 800) * 1.6} 1000`;
+  el("path", { d }, $("tiles"));
+}
+if (!reduced) for (let i = 0; i < 26; i++) {
+  const x = rr(40, 1560);
+  el("path", { d: `M${x.toFixed(0)} ${(archY(x) + 20).toFixed(0)} v14`, stroke: "#cfe8ff", "stroke-width": 1.4, "stroke-linecap": "round", class: "drop", style: `animation-duration:${rr(5, 11).toFixed(1)}s;animation-delay:-${rr(0, 10).toFixed(1)}s` }, $("rain"));
+}
 
-document.addEventListener('pointerdown', function (ev) {
-  if (pinned && !chip.contains(ev.target)) closeChip();
-});
-document.addEventListener('keydown', function (ev) {
-  if (ev.key === 'Escape' && pinned) closeChip();
-});
-window.addEventListener('scroll', function () { if (!pinned) closeChip(); }, { passive: true });
+/* ============ string of lights ============ */
+{
+  const g = $("lights");
+  const path = "M30 250 Q300 330 560 240 Q800 330 1040 240 Q1300 330 1570 250";
+  el("path", { d: path, fill: "none", stroke: "#1d1d1d", "stroke-width": 1.6 }, g);
+  const tmp = el("path", { d: path, fill: "none" }, g), L = tmp.getTotalLength();
+  for (let s = 30; s < L; s += 58) {
+    const p = tmp.getPointAtLength(s);
+    el("circle", { cx: p.x, cy: p.y + 10, r: 30, fill: "url(#lampGlow)", class: "glow", style: `animation-delay:-${rr(0, 3).toFixed(1)}s` }, g);
+    el("path", { d: `M${p.x} ${p.y} v4`, stroke: "#1d1d1d", "stroke-width": 2 }, g);
+    el("ellipse", { cx: p.x, cy: p.y + 10, rx: 4.5, ry: 6.5, fill: "#ffe7a8", stroke: "#8a6420", "stroke-width": 1 }, g);
+  }
+}
 
-/* ---------- decorate: city windows ---------- */
-var NS = 'http://www.w3.org/2000/svg';
-var winsG = document.getElementById('wins');
-Array.prototype.forEach.call(document.querySelectorAll('.bld'), function (b) {
-  var x = +b.getAttribute('x'), y = +b.getAttribute('y');
-  var w = +b.getAttribute('width'), h = +b.getAttribute('height');
-  for (var wx = x + 6; wx < x + w - 8; wx += 10) {
-    for (var wy = y + 8; wy < y + h - 10; wy += 14) {
-      if (Math.random() < 0.62) {
-        var r = document.createElementNS(NS, 'rect');
-        r.setAttribute('x', wx); r.setAttribute('y', wy);
-        r.setAttribute('width', 4); r.setAttribute('height', 6);
-        r.setAttribute('class', 'win');
-        r.style.transitionDelay = (Math.random() * 0.45).toFixed(2) + 's';
-        winsG.appendChild(r);
-      }
+/* ============ helpers ============ */
+function pot(g, cx, base, w, h, fill = "url(#terracotta)", rim = "#b55d36") {
+  el("path", { d: `M${cx - w / 2} ${base - h} h${w} l-${w * .1} ${h} h-${w * .8}z`, fill, class: "ink" }, g);
+  el("rect", { x: cx - w / 2 - 4, y: base - h - 8, width: w + 8, height: 10, rx: 2, fill: rim, class: "ink" }, g);
+}
+function leaf(g, x, y, len, wid, angle, fill) {
+  return el("path", { d: `M0 0 Q${wid} ${-len * .45} 0 ${-len} Q${-wid} ${-len * .45} 0 0z`, fill, class: "thin", transform: `translate(${x} ${y}) rotate(${angle})` }, g);
+}
+function bench(g, x0, x1, y) {
+  for (const x of [x0 + 14, x1 - 24]) el("rect", { x, y: y + 20, width: 10, height: 770 - y + 70, fill: "#5a3c24", class: "thin" }, g);
+  el("rect", { x: x0 + 14, y: y + 110, width: x1 - x0 - 28, height: 8, fill: "#5a3c24", class: "thin" }, g);
+  el("rect", { x: x0, y, width: x1 - x0, height: 12, rx: 2, fill: "url(#wood)", class: "ink" }, g);
+  el("rect", { x: x0 + 6, y: y + 12, width: x1 - x0 - 12, height: 8, fill: "#4a3020", class: "thin" }, g);
+}
+function tag(g, cx, y, text, w) {
+  const t = el("g", { class: "tag" }, g);
+  el("rect", { x: cx - w / 2, y, width: w, height: 18, rx: 9, fill: "#f1ead6", class: "thin" }, t);
+  el("text", { x: cx, y: y + 13, "text-anchor": "middle" }, t).textContent = text;
+}
+
+/* ============ benches ============ */
+bench($("benches"), 230, 610, 640);
+bench($("benches"), 1036, 1300, 640);
+{
+  const g = $("benches");
+  pot(g, 300, 752, 40, 28); pot(g, 300, 726, 36, 24);
+  el("path", { d: "M380 752 h52 v-38 h-52z", fill: "#6f8a8a", class: "ink" }, g);
+  el("path", { d: "M432 728 l34 -22", stroke: "#6f8a8a", "stroke-width": 7, "stroke-linecap": "round" }, g);
+  el("path", { d: "M392 714 q14 -26 30 0", fill: "none", stroke: "#4a6060", "stroke-width": 5 }, g);
+  for (let i = 0; i < 4; i++) pot(g, 1090 + i * 52, 752, 34, 24);
+}
+
+/* ============ bench objects ============ */
+{
+  const g = $("flytrap");
+  for (const [x, a, s] of [[254, -28, 1], [274, 14, 1.15], [244, -58, .8]]) {
+    const t = el("g", { transform: `translate(${x} 626) rotate(${a}) scale(${s})` }, g);
+    el("path", { d: "M0 0 v-22", stroke: "#4a8a4c", "stroke-width": 4 }, t);
+    const pivot = el("g", { transform: "translate(0 -22)" }, t);
+    const jl = el("g", { class: "snap jawL" }, pivot), jr = el("g", { class: "snap jawR" }, pivot);
+    el("path", { d: "M0 0 q-18 -4 -16 -22 q10 0 16 22z", fill: "#7cbf4a", class: "thin" }, jl);
+    el("path", { d: "M-1 -2 q-12 -4 -12 -16", fill: "none", stroke: "#d8443a", "stroke-width": 3 }, jl);
+    el("path", { d: "M-16 -22 l-4 -5 M-12 -18 l-5 -3 M-14 -12 l-5 -1", stroke: "#d9f0a0", "stroke-width": 1.2 }, jl);
+    el("path", { d: "M0 0 q18 -4 16 -22 q-10 0 -16 22z", fill: "#7cbf4a", class: "thin" }, jr);
+    el("path", { d: "M1 -2 q12 -4 12 -16", fill: "none", stroke: "#d8443a", "stroke-width": 3 }, jr);
+    el("path", { d: "M16 -22 l4 -5 M12 -18 l5 -3 M14 -12 l5 -1", stroke: "#d9f0a0", "stroke-width": 1.2 }, jr);
+  }
+  pot(g, 258, 640, 46, 20);
+}
+// three sisters: corn, beans climbing it, squash at its feet
+{
+  const g = $("sisters");
+  const sw = el("g", { class: "sway" }, g);
+  el("path", { d: "M1110 626 V500", stroke: "#8aab4a", "stroke-width": 6, "stroke-linecap": "round" }, sw);
+  for (const [y, a] of [[604, -50], [578, 50], [552, -45], [528, 45], [510, -40]]) leaf(sw, 1110, y, 64, 8, a, "#6fa34a");
+  el("path", { d: "M1110 500 l-4 -20 M1110 500 l4 -18 M1110 500 v-22", stroke: "#e8d78a", "stroke-width": 2.4 }, sw);
+  el("path", { d: "M1114 540 q12 4 8 26 q-4 12 2 22", stroke: "#e8c34a", "stroke-width": 10, "stroke-linecap": "round", fill: "none" }, sw);
+  let d = "M1110 624"; for (let y = 620; y > 500; y -= 12) d += ` Q${(y / 12) % 2 ? 1124 : 1096} ${y - 6} 1110 ${y - 12}`;
+  el("path", { d, fill: "none", stroke: "#2f6b3a", "stroke-width": 2 }, sw);
+  for (let i = 0; i < 5; i++) { const y = 612 - i * 22, s = i % 2 ? 1 : -1; leaf(sw, 1110 + s * 6, y, 16, 7, s * 60, "#3d7d44"); }
+  for (const [x, a] of [[1076, -70], [1144, 70], [1090, -20]]) leaf(g, x, 628, 30, 20, a, "#4a8a4c");
+  el("ellipse", { cx: 1142, cy: 622, rx: 14, ry: 10, fill: "#e8892a", class: "thin" }, g);
+  el("path", { d: "M1142 612 v-5", stroke: "#4a6b3a", "stroke-width": 3 }, g);
+  el("rect", { x: 1056, y: 624, width: 108, height: 16, rx: 3, fill: "#7a5034", class: "ink" }, g);
+  tag(g, 1110, 654, "three sisters", 104);
+}
+// seed jars: thousand → million → billion
+{
+  const g = $("jars");
+  for (const [x, w, h, n] of [[1192, 14, 18, 3], [1220, 22, 32, 18], [1262, 36, 62, 130]]) {
+    const top = 640 - h;
+    for (let i = 0; i < n; i++) el("circle", { cx: x + rr(-w / 2 + 3, w / 2 - 3), cy: 637 - Math.pow(R(), 1.6) * (h * .8), r: 1.6, fill: pick(["#e8c34a", "#c8893a", "#f0d98a"]) }, g);
+    el("rect", { x: x - w / 2, y: top, width: w, height: h, rx: 4, fill: "url(#glass)", stroke: "#d9f3ff", "stroke-opacity": .7, "stroke-width": 1.6 }, g);
+    el("rect", { x: x - w / 2 - 1, y: top - 5, width: w + 2, height: 6, rx: 1.5, fill: "#b98a33", class: "thin" }, g);
+  }
+  tag(g, 1232, 654, "a billion is…", 104);
+}
+// apothecary bottles + drawers
+{
+  const g = $("bottles");
+  const cols = ["#7d2a3a", "#2a5a7a", "#3d6b4a", "#a87a3a", "#5a3a6e", "#c9b38a", "#2a3a5a"];
+  for (const [y0, y1] of [[322, 381], [389, 449], [457, 516]]) {
+    let x = 1332;
+    while (true) {
+      const w = rr(12, 20), h = rr(26, y1 - y0 - 10);
+      if (x + w > 1488) break;
+      if (Math.abs(x + w / 2 - 1410) < 12) { x += 12; continue; }
+      el("rect", { x, y: y1 - h, width: w, height: h, rx: 3, fill: pick(cols), class: "thin", opacity: .92 }, g);
+      el("rect", { x: x + w * .25, y: y1 - h - 6, width: w * .5, height: 7, fill: "#3a2416" }, g);
+      el("rect", { x: x + 2, y: y1 - h * .6, width: w - 4, height: h * .28, fill: "#efe8d6", opacity: .85 }, g);
+      x += w + rr(2, 5);
     }
   }
-});
+  const dr = $("drawers");
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) {
+    const x = 1326 + c * 57, y = 556 + r * 40;
+    el("rect", { x, y, width: 52, height: 34, rx: 2, fill: "#6b4a2c", class: "thin" }, dr);
+    el("rect", { x: x + 14, y: y + 6, width: 24, height: 9, fill: "#efe8d6", opacity: .8 }, dr);
+    el("circle", { cx: x + 26, cy: y + 24, r: 3, fill: "url(#brass)", class: "thin" }, dr);
+  }
+}
+// orchid on top of the cabinet
+{
+  const g = $("orchid");
+  el("path", { d: "M1478 274 q-4 -46 14 -78", stroke: "#3d5a2a", "stroke-width": 2.2, fill: "none" }, g);
+  for (const [x, y, s] of [[1492, 196, 1], [1484, 218, .9], [1479, 240, .8]]) {
+    const f = el("g", { transform: `translate(${x} ${y}) scale(${s})` }, g);
+    for (const a of [0, 72, 144, 216, 288]) el("ellipse", { cx: 0, cy: -8, rx: 6.5, ry: 9, fill: "#f6e9f4", stroke: "#c98ab8", "stroke-width": .8, transform: `rotate(${a})` }, f);
+    el("circle", { r: 3.6, fill: "#c2366e" }, f);
+  }
+  for (const a of [-70, 70, -100]) leaf(g, 1478, 274, 26, 9, a, "#3d7d44");
+  el("rect", { x: 1462, y: 268, width: 32, height: 20, rx: 3, fill: "#e9e4d6", class: "ink" }, g);
+}
+for (let i = 0; i < 4; i++) el("circle", { cx: 1433, cy: 200, r: 10, fill: "#b9c1c4", opacity: 0, class: "puff", style: `animation-delay:${i}s` }, $("smoke"));
+["♪", "♫", "♪"].forEach((n, i) => { el("text", { x: 1386, y: 720, class: "note", style: `animation-delay:${i * 1.2}s` }, $("notes")).textContent = n; });
 
-/* ---------- decorate: star field ---------- */
-var starsG = document.getElementById('stars');
-var stars = [];
-for (var i = 0; i < 70; i++) {
-  var c = document.createElementNS(NS, 'circle');
-  c.setAttribute('cx', (Math.random() * 1600).toFixed(1));
-  c.setAttribute('cy', (Math.random() * 470).toFixed(1));
-  c.setAttribute('r', (0.6 + Math.random()).toFixed(2));
-  var base = 0.25 + Math.random() * 0.4;
-  c.setAttribute('opacity', base.toFixed(2));
-  starsG.appendChild(c);
-  stars.push({ el: c, base: base, amp: 0.15 + Math.random() * 0.25,
-               sp: 0.6 + Math.random() * 1.8, ph: Math.random() * 6.28 });
+/* ============ centre ============ */
+{
+  const g = $("brain");
+  el("path", { d: "M800 520 c-34 -6 -44 18 -34 38 c6 16 30 22 50 16 c22 -6 30 -26 22 -42 c-8 -16 -22 -16 -38 -12z", fill: "#f1a6b2", class: "ink" }, g);
+  el("path", { d: "M778 544 q8 -10 16 0 q8 10 16 0 q8 -10 16 0 M784 560 q8 -8 16 0 q8 8 16 0 M792 530 q6 -6 14 0", fill: "none", stroke: "#b9606f", "stroke-width": 2 }, g);
+  el("path", { d: "M812 574 q4 6 0 6", fill: "none", stroke: "#c97a86", "stroke-width": 6, "stroke-linecap": "round" }, g);
+  for (const [x, y, c, d] of [[828, 548, "#8fe0ff", 0], [806, 562, "#ffd34a", .8], [786, 556, "#8fe0ff", 1.6]]) el("circle", { cx: x, cy: y, r: 5, fill: c, class: "glow", style: `animation-delay:${d}s` }, g);
+}
+{
+  const g = $("fiddle");
+  const q = "M954 746 C952 700 946 664 948 634 C950 594 992 588 996 616 C1000 644 966 650 968 630 C970 618 982 618 982 626";
+  for (let i = 0; i < 8; i++) { const y = 738 - i * 13; leaf(g, 951 + (i % 2 ? 3 : -3), y, 22, 6, i % 2 ? 62 : -62, "#7cbf4a"); }
+  el("path", { d: q, fill: "none", stroke: "#0d1110", "stroke-width": 12, "stroke-linecap": "round" }, g);
+  el("path", { d: q, fill: "none", stroke: "#6fae3a", "stroke-width": 8, "stroke-linecap": "round" }, g);
+  el("circle", { cx: 954, cy: 768, r: 6, fill: "#6fae3a", class: "thin" }, g);
+  pot(g, 954, 782, 54, 26);
+}
+{
+  const h = $("hyphae");
+  for (let i = 0; i < 18; i++) {
+    let x = rr(680, 920), y = rr(872, 912), d = `M${x.toFixed(0)} ${y.toFixed(0)}`;
+    for (let k = 0; k < 4; k++) { x += rr(-30, 30); y = Math.max(870, Math.min(916, y + rr(-8, 8))); d += ` Q${(x + rr(-10, 10)).toFixed(0)} ${(y + rr(-6, 6)).toFixed(0)} ${x.toFixed(0)} ${y.toFixed(0)}`; }
+    el("path", { d }, h);
+  }
+  const g = $("shrooms");
+  for (const [x, hgt, w, c] of [[700, 30, 22, "#7dffcf"], [728, 44, 30, "#a9ffe0"], [760, 22, 16, "#7dffcf"], [800, 54, 40, "#b8fff0"], [842, 30, 22, "#7dffcf"], [872, 40, 26, "#a9ffe0"], [904, 24, 18, "#7dffcf"]]) {
+    el("rect", { x: x - w * .14, y: 852 - hgt, width: w * .28, height: hgt, rx: 3, fill: "#e8f5ee", class: "thin" }, g);
+    el("path", { d: `M${x - w / 2} ${852 - hgt + 2} q${w / 2} -${w * .9} ${w} 0z`, fill: c, class: "thin glow", style: `animation-delay:-${rr(0, 3).toFixed(1)}s` }, g);
+    el("circle", { cx: x - w * .15, cy: 852 - hgt - w * .2, r: w * .07, fill: "#fff", opacity: .8 }, g);
+  }
 }
 
-/* ---------- spray particle pool ---------- */
-var sprayG = document.getElementById('spray');
-var sprayPool = [];
-for (var s = 0; s < 22; s++) {
-  var p = document.createElementNS(NS, 'circle');
-  p.setAttribute('r', (1 + Math.random() * 1.6).toFixed(2));
-  p.setAttribute('opacity', 0);
-  sprayG.appendChild(p);
-  sprayPool.push({ el: p, life: 0, x: 0, y: 0, vx: 0, vy: 0 });
+/* ============ hanging plants ============ */
+function basket(g, x, y) {
+  el("path", { d: `M${x} 110 L${x - 26} ${y} M${x} 110 L${x + 26} ${y} M${x} 110 V${y}`, stroke: "#d9d2bf", "stroke-width": 1 }, g);
+  el("path", { d: `M${x - 30} ${y} h60 q-4 30 -30 30 q-26 0 -30 -30z`, fill: "#7a5034", class: "ink" }, g);
+  el("path", { d: `M${x - 26} ${y + 8} h52 M${x - 22} ${y + 16} h44`, stroke: "#4a3020", "stroke-width": 2 }, g);
+}
+{
+  const g = el("g", { class: "swayTop" }, $("pitcher"));
+  for (const a of [-50, 40, -10, 70]) leaf(g, 660, 214, 34, 9, a, "#4a8a4c");
+  basket(g, 660, 210);
+  for (const [x, len, s] of [[636, 70, 1], [686, 92, .9], [662, 58, .8]]) {
+    el("path", { d: `M${x} 236 q${x < 660 ? -6 : 6} ${len * .5} 0 ${len}`, stroke: "#6b8a3a", "stroke-width": 1.6, fill: "none" }, g);
+    const p = el("g", { transform: `translate(${x} ${236 + len}) scale(${s})` }, g);
+    el("path", { d: "M-8 0 q-4 22 8 30 q12 -8 8 -30z", fill: "#9fb84a", class: "thin" }, p);
+    el("path", { d: "M-6 2 q-2 14 4 24", stroke: "#b8344a", "stroke-width": 3, fill: "none", opacity: .7 }, p);
+    el("ellipse", { cx: 0, cy: 0, rx: 9, ry: 3.5, fill: "#b8344a", class: "thin" }, p);
+    el("path", { d: "M2 -2 q8 -8 12 -4", fill: "#9fb84a", class: "thin" }, p);
+  }
+}
+{
+  const g = el("g", { class: "swayTop", style: "animation-delay:-2s" }, $("fern"));
+  for (let i = 0; i < 16; i++) {
+    const a = 180 + (i / 15) * 180 + rr(-6, 6), len = rr(60, 100);
+    const fr = el("g", { transform: `translate(960 206) rotate(${a})` }, g);
+    const droop = Math.max(0, -Math.sin(a * Math.PI / 180)) < .5 ? 30 : 6;
+    el("path", { d: `M0 0 Q${len * .4} -4 ${len} ${droop}`, stroke: "#4a8a4c", "stroke-width": 2, fill: "none" }, fr);
+    for (let k = 8; k < len; k += 7) { const w = 9 * (1 - k / len) + 2, yy = (k / len) * (k / len) * droop; el("path", { d: `M${k} ${yy.toFixed(1)} l3 -${w.toFixed(1)} M${k} ${yy.toFixed(1)} l3 ${w.toFixed(1)}`, stroke: pick(["#5fa04a", "#4a8a4c"]), "stroke-width": 2.4 }, fr); }
+  }
+  basket(g, 960, 200);
+}
+{
+  const g = $("pothos");
+  for (const [x0, y0, len] of [[56, 250, 300], [1546, 250, 240]]) {
+    let d = `M${x0} ${y0}`, x = x0, y = y0;
+    const pts = [];
+    for (let k = 0; k < len; k += 24) { x += rr(-12, 12); y += 24; d += ` L${x.toFixed(0)} ${y}`; pts.push([x, y]); }
+    el("path", { d, fill: "none", stroke: "#4a7a3a", "stroke-width": 2 }, g);
+    pts.forEach(([x, y], i) => { el("path", { d: "M0 0 c-10 -4 -12 -16 0 -22 c12 6 10 18 0 22z", fill: pick(["#5fa04a", "#7cbf4a", "#4a8a4c"]), class: "thin", transform: `translate(${x.toFixed(0)} ${y}) rotate(${i % 2 ? 130 : -130})` }, g); });
+  }
 }
 
-if (reduced) {
-  document.documentElement.className += ' reduced';
-  return; // static painted frame: no animation loop
+/* ============ floor plants ============ */
+{
+  // heart-shaped leaves with slits running in from the edge and a few holes
+  const g = el("g", { class: "sway" }, $("monstera"));
+  const X = 1196, Y = 880;
+  for (const [len, a, sc] of [[170, -44, 1], [150, 38, .95], [190, -8, 1.1], [120, -72, .8], [130, 66, .8]]) {
+    const t = el("g", { transform: `translate(${X} ${Y}) rotate(${a})` }, g);
+    el("path", { d: `M0 0 Q6 ${-len * .45} 0 ${-len * .62}`, stroke: "#3d6b2a", "stroke-width": 3.5, fill: "none" }, t);
+    const lf = el("g", { transform: `translate(0 ${-len * .62}) scale(${sc}) rotate(${a > 0 ? 18 : -18})` }, t);
+    // heart outline
+    el("path", { d: "M0 6 C-30 8 -54 -16 -50 -44 C-46 -70 -20 -84 0 -74 C20 -84 46 -70 50 -44 C54 -16 30 8 0 6z", fill: "#2f7a3a", class: "thin" }, lf);
+    // slits
+    for (const s2 of [-1, 1]) for (const [yy, dd] of [[-18, 22], [-38, 24], [-58, 18]]) {
+      el("path", { d: `M${s2 * 54} ${yy} L${s2 * (54 - dd)} ${yy + 4} L${s2 * 54} ${yy + 10}z`, fill: "#3a2418" }, lf);
+    }
+    for (const s2 of [-1, 1]) el("ellipse", { cx: s2 * 14, cy: -30, rx: 3, ry: 5, fill: "#3a2418" }, lf);
+    el("path", { d: "M0 4 V-72", stroke: "#6fb35a", "stroke-width": 1.8 }, lf);
+    for (const s2 of [-1, 1]) for (const yy of [-14, -34, -54]) el("path", { d: `M0 ${yy + 6} Q${s2 * 14} ${yy} ${s2 * 30} ${yy - 2}`, stroke: "#5aa04a", "stroke-width": 1, fill: "none" }, lf);
+  }
+  pot($("monstera"), X, 930, 80, 54);
+}
+{
+  const g = el("g", { class: "sway", style: "animation-delay:-1s" }, $("banana"));
+  el("path", { d: "M1566 760 q-6 -160 4 -330", stroke: "#7a9a4a", "stroke-width": 18, fill: "none", "stroke-linecap": "round" }, g);
+  for (const [a, len] of [[-150, 190], [-110, 210], [-60, 200], [-20, 150], [-170, 140]]) {
+    const t = el("g", { transform: `translate(1570 440) rotate(${a})` }, g);
+    el("path", { d: `M0 0 Q${len * .4} -30 ${len} 10 Q${len * .5} 40 0 0z`, fill: pick(["#4f9a3a", "#5fae46", "#3d8a34"]), class: "thin" }, t);
+    el("path", { d: `M0 0 Q${len * .45} -6 ${len} 10`, stroke: "#c8e08a", "stroke-width": 1.6, fill: "none" }, t);
+    for (let k = .25; k < .95; k += .14) el("path", { d: `M${(len * k).toFixed(0)} ${(-4 + k * 8).toFixed(1)} l10 18`, stroke: "#1d3a24", "stroke-width": 1.4, opacity: .5 }, t);
+  }
+}
+{
+  const g = $("lemon");
+  el("path", { d: "M66 880 q-4 -100 6 -170 M70 760 q-24 -30 -30 -70 M72 740 q26 -30 40 -60", stroke: "#5a3c24", "stroke-width": 8, fill: "none", "stroke-linecap": "round" }, g);
+  const crown = el("g", { class: "sway", style: "animation-delay:-3s" }, g);
+  for (let i = 0; i < 70; i++) { const a = R() * 6.28, d = Math.sqrt(R()); leaf(crown, 70 + Math.cos(a) * d * 80, 660 + Math.sin(a) * d * 70, rr(16, 24), 7, rr(0, 360), pick(GREENS)); }
+  for (let i = 0; i < 12; i++) { const a = R() * 6.28, d = Math.sqrt(R()) * .85; el("ellipse", { cx: 70 + Math.cos(a) * d * 76, cy: 664 + Math.sin(a) * d * 64, rx: 8, ry: 6, fill: "#ffd84a", class: "thin" }, crown); }
+  pot(g, 68, 944, 96, 66, "#e9e4d6", "#f4f0e4");
+}
+{
+  const g = $("cacti");
+  for (const [x, h, w, arms, flower] of [[684, 46, 16, 1, "#ff6a9a"], [718, 30, 24, 0, null], [886, 52, 14, 2, "#ffd34a"]]) {
+    el("rect", { x: x - w / 2, y: 684 - h, width: w, height: h + 2, rx: w / 2, fill: "#5f9a5a", class: "thin" }, g);
+    if (arms) el("path", { d: `M${x + w / 2} ${684 - h * .45} h8 q4 0 4 -4 v-14`, stroke: "#5f9a5a", "stroke-width": 8, fill: "none", "stroke-linecap": "round" }, g);
+    if (arms > 1) el("path", { d: `M${x - w / 2} ${684 - h * .6} h-8 q-4 0 -4 -4 v-10`, stroke: "#5f9a5a", "stroke-width": 8, fill: "none", "stroke-linecap": "round" }, g);
+    for (let k = 0; k < 6; k++) el("path", { d: `M${(x + rr(-w / 2, w / 2)).toFixed(1)} ${(684 - rr(4, h)).toFixed(1)} l${rr(-3, 3).toFixed(1)} -3`, stroke: "#f1ead6", "stroke-width": 1 }, g);
+    if (flower) for (const a of [0, 72, 144, 216, 288]) el("ellipse", { cx: x, cy: 684 - h - 4, rx: 3, ry: 6, fill: flower, transform: `rotate(${a} ${x} ${684 - h})` }, g);
+    pot(g, x, 702, w + 18, 18);
+  }
+}
+{
+  const g = el("g", { class: "sway", style: "animation-delay:-2.4s" }, $("strelitzia"));
+  for (const [a, len] of [[-20, 190], [-5, 230], [12, 210], [-35, 150]]) {
+    const t = el("g", { transform: `translate(1590 1000) rotate(${a})` }, g);
+    el("path", { d: `M0 0 V${-len * .55}`, stroke: "#4a7a3a", "stroke-width": 3 }, t);
+    el("path", { d: `M0 ${-len * .5} q-22 ${-len * .25} 0 ${-len * .5} q22 ${len * .25} 0 ${len * .5}z`, fill: "#2f6b4a", class: "thin" }, t);
+  }
+  const fl = el("g", { transform: "translate(1536 800) rotate(-10)" }, g);
+  el("path", { d: "M50 200 V20", stroke: "#4a7a3a", "stroke-width": 4 }, fl);
+  el("path", { d: "M52 22 q-40 -2 -74 -14 q40 -6 78 4z", fill: "#3d6b5a", class: "thin" }, fl);
+  for (const [dx, dy, c] of [[-10, -36, "#ff8a2a"], [-24, -32, "#ffa83a"], [-38, -24, "#ff8a2a"]]) el("path", { d: `M${30 + dx * .3} 10 l${dx} ${dy} l7 5z`, fill: c, class: "thin" }, fl);
+  el("path", { d: "M18 8 l-24 -8 l6 9z", fill: "#3a6ad6", class: "thin" }, fl);
+}
+{
+  const g = $("seedlings");
+  el("rect", { x: 290, y: 912, width: 150, height: 30, rx: 3, fill: "#2a2a2a", class: "ink" }, g);
+  for (let i = 0; i < 6; i++) {
+    const x = 304 + i * 24;
+    el("rect", { x: x - 9, y: 904, width: 18, height: 12, fill: "#4a3020", class: "thin" }, g);
+    if (i % 3 !== 2) { el("path", { d: `M${x} 904 v-12`, stroke: "#7cbf4a", "stroke-width": 2 }, g); leaf(g, x, 893, 10, 5, -50, "#8fcf5a"); leaf(g, x, 893, 10, 5, 50, "#8fcf5a"); }
+  }
+  el("path", { d: "M420 904 l8 -30", stroke: "#e9e4d6", "stroke-width": 3 }, g);
+  el("rect", { x: 406, y: 852, width: 46, height: 20, rx: 3, fill: "#f1ead6", class: "thin", transform: "rotate(-6 429 862)" }, g);
+  el("text", { x: 429, y: 866, "text-anchor": "middle", "font-family": "Fraunces, Georgia, serif", "font-style": "italic", "font-weight": 600, "font-size": 12, fill: "#23301f", transform: "rotate(-6 429 862)" }, g).textContent = "soon";
 }
 
-/* ---------- animation loop ---------- */
-var wavef = document.getElementById('wavef');
-var wavem = document.getElementById('wavem');
-var waven = document.getElementById('waven');
-var clouds = [
-  { el: document.getElementById('cloud1'), x: 260, y: 120, sp: 5 },
-  { el: document.getElementById('cloud2'), x: 900, y: 175, sp: 3.4 },
-  { el: document.getElementById('cloud3'), x: 1350, y: 85, sp: 4.2 }
-];
-var pglider = document.getElementById('pglider');
-var foiler = document.getElementById('foiler');
-var mastfoil = document.getElementById('mastfoil');
-var boardwash = document.getElementById('boardwash');
-var lanternGlow = document.getElementById('lanternGlow');
-var neus = document.querySelectorAll('#neurons .neu');
-var axons = document.querySelectorAll('#neurons .axon');
-var streams = document.querySelectorAll('.stream');
-var shoot = document.getElementById('shoot');
-var bird = document.getElementById('bird');
+const flies = [];
+for (let i = 0; i < 14; i++) flies.push({ e: el("circle", { r: 2.2, fill: "#e8ff9a", filter: "url(#blur2)" }, $("fireflies")), x: rr(100, 1500), y: rr(300, 900), p: R() * 10 });
 
-var t = 0, lift = 0, streamSpeed = 40, dashOff = 0;
-var shootTimer = 5, shootLife = -1, shootX = 0, shootY = 0;
-var birdTimer = 9, birdLife = -1, birdY = 0;
-var sprayTimer = 0;
-
-function waveD(base, amp, k, speed, phase) {
-  var d = 'M0 900 L0 ' + (base + amp * Math.sin(t * speed + phase)).toFixed(1);
-  for (var x = 25; x <= 1600; x += 25) {
-    d += ' L' + x + ' ' + (base + amp * Math.sin(x * k + t * speed + phase)).toFixed(1);
-  }
-  return d + ' L1600 900 Z';
-}
-
-function update(dt) {
-  t += dt;
-
-  // waves
-  wavef.setAttribute('d', waveD(560, 5, 0.011, 0.9, 0));
-  wavem.setAttribute('d', waveD(640, 9, 0.014, 1.15, 2.1));
-  waven.setAttribute('d', waveD(730, 13, 0.017, 1.4, 4.2));
-
-  // clouds drift
-  clouds.forEach(function (cl) {
-    cl.x += cl.sp * dt;
-    if (cl.x > 1780) cl.x = -180;
-    cl.el.setAttribute('transform', 'translate(' + cl.x.toFixed(1) + ',' + cl.y + ')');
-  });
-
-  // stars twinkle (harder while observatory hovered)
-  var boost = hover.space ? 2.1 : 1;
-  for (var i = 0; i < stars.length; i++) {
-    var st = stars[i];
-    var o = st.base + st.amp * boost * Math.sin(t * st.sp * boost + st.ph);
-    st.el.setAttribute('opacity', Math.max(0.05, Math.min(1, o)).toFixed(2));
-  }
-
-  // shooting star
-  if (shootLife < 0) {
-    shootTimer -= dt;
-    if (shootTimer <= 0) {
-      shootLife = 0;
-      shootX = 200 + Math.random() * 1000;
-      shootY = 40 + Math.random() * 180;
-      shootTimer = 8 + Math.random() * 9;
-    }
-  } else {
-    shootLife += dt;
-    var sl = shootLife / 0.8;
-    if (sl >= 1) { shoot.setAttribute('opacity', 0); shootLife = -1; }
-    else {
-      var hx = shootX + sl * 260, hy = shootY + sl * 90;
-      shoot.setAttribute('x1', hx - 70); shoot.setAttribute('y1', hy - 24);
-      shoot.setAttribute('x2', hx); shoot.setAttribute('y2', hy);
-      shoot.setAttribute('opacity', (sl < 0.5 ? sl * 2 : 2 - sl * 2).toFixed(2));
-    }
-  }
-
-  // occasional bird
-  if (birdLife < 0) {
-    birdTimer -= dt;
-    if (birdTimer <= 0) {
-      birdLife = 0;
-      birdY = 200 + Math.random() * 140;
-      birdTimer = 14 + Math.random() * 12;
-    }
-  } else {
-    birdLife += dt;
-    var bl = birdLife / 14;
-    if (bl >= 1) { bird.setAttribute('opacity', 0); birdLife = -1; }
-    else {
-      var bx = -30 + bl * 1680;
-      var by = birdY + Math.sin(t * 3) * 8;
-      bird.setAttribute('transform', 'translate(' + bx.toFixed(1) + ',' + by.toFixed(1) + ')');
-      bird.setAttribute('opacity', 0.6);
-    }
-  }
-
-  // paraglider bob + streamlines
-  pglider.setAttribute('transform',
-    'translate(' + (790 + Math.sin(t * 0.5) * 14).toFixed(1) + ',' +
-    (195 + Math.sin(t * 1.1) * 7).toFixed(1) + ')');
-  streamSpeed += ((hover.aero ? 170 : 40) - streamSpeed) * Math.min(1, dt * 4);
-  dashOff -= streamSpeed * dt;
-  for (var j = 0; j < streams.length; j++) {
-    streams[j].setAttribute('stroke-dashoffset', dashOff.toFixed(1));
-  }
-
-  // foiler: hover lifts onto the foil
-  lift += ((hover.foil ? 1 : 0) - lift) * Math.min(1, dt * 5);
-  var fy = 650 - lift * 18 + Math.sin(t * (1.4 + lift)) * (3 - lift * 1.2);
-  foiler.setAttribute('transform', 'translate(820,' + fy.toFixed(1) + ') rotate(' +
-    (Math.sin(t * 1.2) * 2 * (1 - lift * 0.5)).toFixed(2) + ')');
-  mastfoil.setAttribute('opacity', lift.toFixed(2));
-  boardwash.setAttribute('opacity', (0.25 * (1 - lift)).toFixed(2));
-
-  // spray while foiling
-  if (lift > 0.5) {
-    sprayTimer -= dt;
-    if (sprayTimer <= 0) {
-      sprayTimer = 0.05;
-      for (var q = 0; q < sprayPool.length; q++) {
-        var pp = sprayPool[q];
-        if (pp.life <= 0) {
-          pp.life = 0.7;
-          pp.x = 820 - 28 - Math.random() * 8;
-          pp.y = 650 - lift * 18 + 4;
-          pp.vx = -30 - Math.random() * 50;
-          pp.vy = -60 - Math.random() * 60;
-          break;
-        }
-      }
-    }
-  }
-  for (var q2 = 0; q2 < sprayPool.length; q2++) {
-    var sp2 = sprayPool[q2];
-    if (sp2.life > 0) {
-      sp2.life -= dt;
-      sp2.vy += 260 * dt;
-      sp2.x += sp2.vx * dt;
-      sp2.y += sp2.vy * dt;
-      sp2.el.setAttribute('cx', sp2.x.toFixed(1));
-      sp2.el.setAttribute('cy', sp2.y.toFixed(1));
-      sp2.el.setAttribute('opacity', Math.max(0, sp2.life / 0.7 * 0.8).toFixed(2));
-    } else if (sp2.el.getAttribute('opacity') !== '0') {
-      sp2.el.setAttribute('opacity', 0);
-    }
-  }
-
-  // lighthouse neurons pulse (harder on hover)
-  var nb = hover.brain ? 1.9 : 1;
-  for (var n = 0; n < neus.length; n++) {
-    neus[n].setAttribute('opacity',
-      (0.35 + 0.3 * nb * (0.5 + 0.5 * Math.sin(t * 2.2 * nb + n * 1.7))).toFixed(2));
-  }
-  for (var a = 0; a < axons.length; a++) {
-    axons[a].setAttribute('opacity',
-      (0.2 + 0.25 * nb * (0.5 + 0.5 * Math.sin(t * 2.2 * nb + a * 1.3 + 0.8))).toFixed(2));
-  }
-  lanternGlow.setAttribute('opacity',
-    (hover.brain ? 1 : 0.45 + 0.15 * Math.sin(t * 1.3)).toFixed(2));
-}
-
-var raf = null, last = performance.now();
+/* ============ animation ============ */
+const foiler = $("foiler"), wave = $("troughWave");
+let T = 0, last = performance.now();
 function frame(now) {
-  var dt = Math.min((now - last) / 1000, 0.05);
-  last = now;
-  update(dt);
-  raf = requestAnimationFrame(frame);
+  const dt = Math.min(.05, (now - last) / 1000); last = now; T += dt;
+  const u = (T * .12) % 2, dir = u < 1 ? 1 : -1, s = u < 1 ? u : 2 - u;
+  const fx = 422 + s * 146, fy = 600 + Math.sin(T * 3) * 2;
+  foiler.setAttribute("transform", `translate(${fx.toFixed(1)} ${fy.toFixed(1)}) scale(${dir} 1)`);
+  let d = "M400 646 V612";
+  for (let x = 400; x <= 590; x += 10) d += ` L${x} ${(610 + Math.sin(x * .08 + T * 3) * 2).toFixed(1)}`;
+  wave.setAttribute("d", d + " V646z");
+  for (const f of flies) { f.p += dt; f.e.setAttribute("cx", (f.x + Math.sin(f.p * .7) * 40).toFixed(1)); f.e.setAttribute("cy", (f.y + Math.sin(f.p * 1.1) * 26).toFixed(1)); f.e.setAttribute("opacity", (.4 + .6 * Math.max(0, Math.sin(f.p * 2))).toFixed(2)); }
+  if (!reduced) requestAnimationFrame(frame);
 }
-document.addEventListener('visibilitychange', function () {
-  if (document.hidden) {
-    if (raf !== null) { cancelAnimationFrame(raf); raf = null; }
-  } else if (raf === null) {
-    last = performance.now();
-    raf = requestAnimationFrame(frame);
-  }
+requestAnimationFrame(frame);
+
+/* ============ tooltip + pane ============ */
+const tip = $("tip"), pane = $("pane");
+document.querySelectorAll(".door, .deco").forEach(a => {
+  a.addEventListener("pointerenter", () => {
+    if (a.classList.contains("door")) { tip.querySelector("b").textContent = a.dataset.label + " →"; tip.querySelector("span").textContent = a.dataset.sub; }
+    else { const i = INFO[a.dataset.info]; tip.querySelector("b").textContent = i.t; tip.querySelector("span").textContent = a.dataset.info === "soon" ? "coming soon" : "click for a fun fact"; }
+    tip.classList.add("on");
+  });
+  a.addEventListener("pointerleave", () => tip.classList.remove("on"));
 });
-raf = requestAnimationFrame(frame);
-})();
+addEventListener("pointermove", e => { tip.style.left = e.clientX + "px"; tip.style.top = e.clientY + "px"; });
+function openPane(key) {
+  const i = INFO[key];
+  pane.querySelector("h2").textContent = i.t; pane.querySelector(".latin").textContent = i.l; pane.querySelector("p").textContent = i.p;
+  pane.classList.add("open");
+}
+document.querySelectorAll(".deco").forEach(a => {
+  a.addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); openPane(a.dataset.info); });
+  a.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPane(a.dataset.info); } });
+});
+pane.querySelector(".x").addEventListener("click", () => pane.classList.remove("open"));
+$("stage").addEventListener("click", e => { if (!e.target.closest(".deco")) pane.classList.remove("open"); });
+const list = $("list"), listBtn = $("listBtn");
+listBtn.addEventListener("click", () => { const o = list.classList.toggle("open"); listBtn.setAttribute("aria-expanded", o); });
+addEventListener("keydown", e => { if (e.key === "Escape") { pane.classList.remove("open"); list.classList.remove("open"); } });
+const stage = $("stage");
+if (stage.scrollWidth > stage.clientWidth) stage.scrollLeft = (stage.scrollWidth - stage.clientWidth) * .5;
 </script>
 </body>
 </html>
