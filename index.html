@@ -144,6 +144,12 @@
   <radialGradient id="vignette" cx=".5" cy=".45" r=".75">
     <stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".6"/>
   </radialGradient>
+  <linearGradient id="fog" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#cfe8f0" stop-opacity="0"/><stop offset="1" stop-color="#cfe8f0" stop-opacity=".14"/>
+  </linearGradient>
+  <mask id="monMask" maskUnits="userSpaceOnUse" x="-80" y="-110" width="160" height="130">
+    <path d="M0 4 C-34 6 -62 -20 -58 -52 C-54 -84 -24 -100 0 -90 C24 -100 54 -84 58 -52 C62 -20 34 6 0 4z" fill="#fff"/><path d="M-66 -21 Q-40 -20 -17 -15 Q-40 -14 -66 -11z" fill="#000"/><path d="M-66 -41 Q-40 -40 -17 -35 Q-40 -34 -66 -31z" fill="#000"/><path d="M-66 -61 Q-40 -60 -17 -55 Q-40 -54 -66 -51z" fill="#000"/><path d="M-66 -79 Q-40 -78 -17 -73 Q-40 -72 -66 -69z" fill="#000"/><ellipse cx="-13" cy="-26" rx="3.2" ry="5" fill="#000" transform="rotate(20 -13 -26)"/><ellipse cx="-15" cy="-46" rx="3.2" ry="5" fill="#000" transform="rotate(20 -15 -46)"/><ellipse cx="-12" cy="-64" rx="3.2" ry="5" fill="#000" transform="rotate(20 -12 -64)"/><path d="M66 -21 Q40 -20 17 -15 Q40 -14 66 -11z" fill="#000"/><path d="M66 -41 Q40 -40 17 -35 Q40 -34 66 -31z" fill="#000"/><path d="M66 -61 Q40 -60 17 -55 Q40 -54 66 -51z" fill="#000"/><path d="M66 -79 Q40 -78 17 -73 Q40 -72 66 -69z" fill="#000"/><ellipse cx="13" cy="-26" rx="3.2" ry="5" fill="#000" transform="rotate(-20 13 -26)"/><ellipse cx="15" cy="-46" rx="3.2" ry="5" fill="#000" transform="rotate(-20 15 -46)"/><ellipse cx="12" cy="-64" rx="3.2" ry="5" fill="#000" transform="rotate(-20 12 -64)"/>
+  </mask>
   <filter id="blur6" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
   <filter id="blur2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2"/></filter>
   <clipPath id="troughClip"><rect x="404" y="598" width="182" height="40"/></clipPath>
@@ -237,6 +243,19 @@
   <g class="tag"><rect x="306" y="546" width="104" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="358" y="559" text-anchor="middle">foil designer</text></g>
 </g>
 </a>
+
+<!-- ============ floor shadows + glass condensation ============ -->
+<rect x="30" y="560" width="1540" height="140" fill="url(#fog)" pointer-events="none"/>
+<g fill="#000" opacity=".35" filter="url(#blur6)" pointer-events="none">
+  <ellipse cx="420" cy="772" rx="210" ry="16"/><ellipse cx="1168" cy="772" rx="150" ry="14"/>
+  <ellipse cx="800" cy="770" rx="70" ry="10"/><ellipse cx="1410" cy="770" rx="110" ry="10"/>
+  <ellipse cx="194" cy="918" rx="80" ry="10"/><ellipse cx="598" cy="936" rx="60" ry="8"/>
+  <ellipse cx="1462" cy="936" rx="70" ry="9"/><ellipse cx="68" cy="946" rx="60" ry="8"/>
+  <ellipse cx="1196" cy="936" rx="56" ry="8"/><ellipse cx="954" cy="784" rx="34" ry="6"/>
+</g>
+<g fill="#ffd98a" opacity=".07" filter="url(#blur6)" pointer-events="none">
+  <ellipse cx="560" cy="820" rx="200" ry="40"/><ellipse cx="1040" cy="820" rx="200" ry="40"/>
+</g>
 
 <!-- ============ benches ============ -->
 <g id="benches"></g>
@@ -333,11 +352,14 @@
   <path d="M190 660 L130 900 M194 660 L198 916 M198 660 L258 900" stroke="#5a3c24" stroke-width="8" stroke-linecap="round"/>
   <path d="M190 660 L130 900 M194 660 L198 916 M198 660 L258 900" stroke="#8a6240" stroke-width="3" stroke-linecap="round"/>
   <circle cx="194" cy="652" r="11" fill="url(#brass)" class="ink"/>
-  <g transform="rotate(-64 194 640)">
+  <g transform="rotate(-74 194 640)">
     <rect x="124" y="624" width="200" height="32" rx="6" fill="url(#brassTube)" class="ink"/>
     <rect x="318" y="618" width="28" height="44" rx="4" fill="url(#brassTube)" class="ink"/>
     <rect x="98" y="631" width="30" height="18" rx="3" fill="#8a6420" class="ink"/>
-    <path d="M164 624 v32 M260 624 v32" stroke="#8a6420" stroke-width="3"/>
+    <path d="M164 624 v32 M260 624 v32 M300 624 v32" stroke="#8a6420" stroke-width="3"/>
+    <path d="M130 630 H316" stroke="#fff6d8" stroke-opacity=".7" stroke-width="3" stroke-linecap="round"/>
+    <ellipse cx="346" cy="640" rx="4" ry="18" fill="#bfe6ff" stroke="#160d1c" stroke-width="1.5"/>
+    <path d="M346 628 v8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
   </g>
   <g class="tag"><rect x="156" y="926" width="76" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="194" y="939" text-anchor="middle">space</text></g>
 </g>
@@ -694,24 +716,24 @@ function basket(g, x, y) {
 
 /* ============ floor plants ============ */
 {
-  // heart-shaped leaves with slits running in from the edge and a few holes
+  // each leaf = a midrib plus finger lobes on both sides; the gaps between lobes are the splits
   const g = el("g", { class: "sway" }, $("monstera"));
-  const X = 1196, Y = 880;
-  for (const [len, a, sc] of [[170, -44, 1], [150, 38, .95], [190, -8, 1.1], [120, -72, .8], [130, 66, .8]]) {
-    const t = el("g", { transform: `translate(${X} ${Y}) rotate(${a})` }, g);
-    el("path", { d: `M0 0 Q6 ${-len * .45} 0 ${-len * .62}`, stroke: "#3d6b2a", "stroke-width": 3.5, fill: "none" }, t);
-    const lf = el("g", { transform: `translate(0 ${-len * .62}) scale(${sc}) rotate(${a > 0 ? 18 : -18})` }, t);
-    // heart outline
-    el("path", { d: "M0 6 C-30 8 -54 -16 -50 -44 C-46 -70 -20 -84 0 -74 C20 -84 46 -70 50 -44 C54 -16 30 8 0 6z", fill: "#2f7a3a", class: "thin" }, lf);
-    // slits
-    for (const s2 of [-1, 1]) for (const [yy, dd] of [[-18, 22], [-38, 24], [-58, 18]]) {
-      el("path", { d: `M${s2 * 54} ${yy} L${s2 * (54 - dd)} ${yy + 4} L${s2 * 54} ${yy + 10}z`, fill: "#3a2418" }, lf);
-    }
-    for (const s2 of [-1, 1]) el("ellipse", { cx: s2 * 14, cy: -30, rx: 3, ry: 5, fill: "#3a2418" }, lf);
-    el("path", { d: "M0 4 V-72", stroke: "#6fb35a", "stroke-width": 1.8 }, lf);
-    for (const s2 of [-1, 1]) for (const yy of [-14, -34, -54]) el("path", { d: `M0 ${yy + 6} Q${s2 * 14} ${yy} ${s2 * 30} ${yy - 2}`, stroke: "#5aa04a", "stroke-width": 1, fill: "none" }, lf);
+  const X = 1196, Y = 884;
+  function monsteraLeaf(parent, L, W, tilt, fill) {
+    const lf = el("g", { transform: `rotate(${tilt}) scale(${(L / 100).toFixed(2)} ${(L / 100).toFixed(2)})` }, parent);
+    const m = el("g", { mask: "url(#monMask)" }, lf);
+    el("path", { d: "M0 4 C-34 6 -62 -20 -58 -52 C-54 -84 -24 -100 0 -90 C24 -100 54 -84 58 -52 C62 -20 34 6 0 4z", fill, stroke: "#0d1110", "stroke-width": 2.4 }, m);
+    el("path", { d: "M0 2 C-8 -40 -4 -70 0 -88", stroke: "#7cc265", "stroke-width": 2.4, fill: "none" }, m);
+    for (const sd of [-1, 1]) for (const y of [-6, -24, -44, -63, -80]) el("path", { d: `M0 ${y} Q${sd * 20} ${y - 6} ${sd * 46} ${y - 4}`, stroke: "#5aa04a", "stroke-width": 1.2, fill: "none", opacity: .8 }, m);
+    el("path", { d: "M-30 -80 Q-12 -92 0 -88", stroke: "#fff", "stroke-opacity": .25, "stroke-width": 3, fill: "none" }, m);
   }
-  pot($("monstera"), X, 930, 80, 54);
+  for (const [stem, a, L, W, tilt] of [[64, -50, 100, 70, -30], [70, 40, 106, 72, 26], [92, -6, 116, 78, 0], [46, -84, 80, 56, -40], [50, 76, 84, 58, 40]]) {
+    const t = el("g", { transform: `translate(${X} ${Y}) rotate(${a})` }, g);
+    el("path", { d: `M0 0 Q6 ${-stem * .5} 0 ${-stem}`, stroke: "#3d6b2a", "stroke-width": 3.5, fill: "none" }, t);
+    const h = el("g", { transform: `translate(0 ${-stem})` }, t);
+    monsteraLeaf(h, L, W, a > 0 ? 14 : a < 0 ? -14 : 0, pick(["#2f7a3a", "#2a7034", "#358a40"]));
+  }
+  pot($("monstera"), X, 934, 80, 54);
 }
 {
   const g = el("g", { class: "sway", style: "animation-delay:-1s" }, $("banana"));
