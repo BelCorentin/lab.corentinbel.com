@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>the price of freedom · lab · Corentin Bel</title>
+<meta name="description" content="Money buys time. Slide your savings rate and watch how many years separate you from the island where your investments cover your spending. Plus: what a purchase costs in days of freedom, the 4 % rule, and fee drag.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛵</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400;1,9..144,600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1b1a22; --paper:#f5ecda; --paper2:#efe2c8; --card:#fbf5e8;
+    --sea:#2b7a87; --sea2:#1d566b; --sand:#ecd29b; --terra:#c4553a; --sun:#ef8b47;
+    --mimosa:#f2c230; --leaf:#5c8a4a; --dim:#6b6255; --rule:#d9c9a8;
+    --serif:"Fraunces", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    --sans:"Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;
+    background-image:radial-gradient(rgba(27,26,34,.035) 1px, transparent 1px);background-size:5px 5px}
+  a{color:var(--sea2)}
+  .top{position:sticky;top:0;z-index:20;padding:.55rem 1.2rem;font-size:.85rem;color:var(--dim);
+    background:rgba(245,236,218,.86);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-bottom:1px solid rgba(27,26,34,.08)}
+  .top a{color:var(--ink);text-decoration:none;font-weight:600}
+  .top a:hover{color:var(--terra)}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 1.2rem}
+  header.hero{padding:2.2rem 0 1.1rem}
+  .kicker{font-size:.75rem;letter-spacing:.16em;text-transform:uppercase;color:var(--terra);font-weight:600}
+  h1{font-family:var(--serif);font-weight:600;font-size:clamp(2.3rem,6vw,4.1rem);line-height:1.02;letter-spacing:-.01em;margin:.3rem 0 .6rem}
+  h1 em{font-style:italic;font-weight:400;color:var(--sea2)}
+  .lede{font-size:1.08rem;max-width:44rem;color:#3a3530}
+  h2{font-family:var(--serif);font-weight:600;font-size:clamp(1.6rem,3.6vw,2.3rem);line-height:1.1;margin:0 0 .7rem}
+  h2 em{font-style:italic;font-weight:400}
+  h3{font-family:var(--serif);font-weight:600;font-size:1.2rem;margin:1.2rem 0 .3rem}
+  p{margin:.0 0 .85rem;max-width:46rem}
+  section{padding:2.6rem 0 1rem}
+  .card{background:var(--card);border:2.4px solid var(--ink);border-radius:18px;box-shadow:5px 6px 0 rgba(27,26,34,.9)}
+  /* scene */
+  #sceneCard{position:relative;overflow:hidden;padding:0}
+  #scene{display:block;width:100%;height:auto;aspect-ratio:1200/430}
+  .verdict{display:flex;flex-wrap:wrap;align-items:baseline;gap:.4rem 1.1rem;padding:.85rem 1.2rem 1rem;border-top:2.4px solid var(--ink);background:var(--card)}
+  .verdict .big{font-family:var(--serif);font-weight:600;font-size:clamp(2rem,5vw,3rem);line-height:1;color:var(--terra)}
+  .verdict .big small{font-size:.45em;color:var(--ink);font-weight:600;margin-left:.25rem}
+  .verdict .sub{color:#3a3530;font-size:.95rem;flex:1 1 280px}
+  /* controls + chart */
+  .grid{display:grid;grid-template-columns:minmax(280px,360px) 1fr;gap:1.4rem;margin-top:1.4rem;align-items:start}
+  .controls{padding:1.1rem 1.2rem 1rem}
+  .ctl{margin-bottom:1rem}
+  .ctl label{display:flex;justify-content:space-between;align-items:baseline;font-size:.82rem;font-weight:600;gap:.6rem}
+  .ctl label output{font-family:var(--serif);font-size:1.15rem;color:var(--sea2);white-space:nowrap}
+  .ctl .hint{font-size:.74rem;color:var(--dim);line-height:1.35;margin-top:.15rem}
+  .ctl.main label{font-size:.95rem}
+  .ctl.main label output{font-size:1.6rem;color:var(--terra)}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;cursor:pointer;touch-action:pan-y}
+  input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:6px;background:var(--paper2);border:1.6px solid var(--ink)}
+  input[type=range]::-moz-range-track{height:6px;border-radius:6px;background:var(--paper2);border:1.6px solid var(--ink)}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--mimosa);border:2.2px solid var(--ink);margin-top:-8.5px}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--mimosa);border:2.2px solid var(--ink)}
+  input[type=range]:focus-visible{outline:2px dashed var(--terra);outline-offset:3px}
+  .note{font-size:.84rem;background:#fff6dd;border:1.6px dashed #b89a52;border-radius:12px;padding:.6rem .8rem;color:#4a3f2a;margin-top:.4rem}
+  .chartCard{padding:.9rem .9rem .6rem}
+  .chartCard .cap{font-size:.8rem;color:var(--dim);padding:0 .3rem .2rem}
+  svg text{font-family:var(--sans)}
+  #chart{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}
+  .table{display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem;margin:.6rem 0 1rem;max-width:40rem}
+  .table div{background:var(--card);border:1.8px solid var(--ink);border-radius:10px;text-align:center;padding:.35rem .2rem;font-size:.8rem}
+  .table b{display:block;font-family:var(--serif);font-size:1.25rem;color:var(--terra)}
+  /* purchase */
+  .buy{display:grid;grid-template-columns:240px 1fr;gap:1.4rem;padding:1.2rem;align-items:center}
+  .priceRow{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-bottom:.6rem}
+  .priceRow input[type=number]{font:600 1.3rem var(--serif);width:9rem;padding:.3rem .6rem;border:2.2px solid var(--ink);border-radius:10px;background:#fff;color:var(--ink)}
+  .seg{display:inline-flex;border:2px solid var(--ink);border-radius:999px;overflow:hidden}
+  .seg button{font:600 .82rem var(--sans);border:0;background:transparent;padding:.35rem .8rem;cursor:pointer;color:var(--ink)}
+  .seg button.on{background:var(--ink);color:var(--paper)}
+  .chips{display:flex;flex-wrap:wrap;gap:.4rem;margin:.2rem 0 .8rem}
+  .chips button{font:.8rem var(--sans);border:1.6px solid var(--ink);background:var(--paper2);border-radius:999px;padding:.25rem .7rem;cursor:pointer;color:var(--ink)}
+  .chips button:hover{background:var(--mimosa)}
+  .out{font-size:1rem;line-height:1.55}
+  .out .n{font-family:var(--serif);font-weight:600;color:var(--terra);font-size:1.35em}
+  .out p{margin-bottom:.55rem}
+  /* small charts */
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;align-items:start}
+  .mini{padding:1rem}
+  .mini svg{display:block;width:100%;height:auto}
+  .legend{display:flex;flex-wrap:wrap;gap:.3rem 1rem;font-size:.8rem;color:var(--dim);margin:.3rem .2rem 0}
+  .legend i{display:inline-block;width:18px;height:4px;border-radius:2px;margin-right:.35rem;vertical-align:middle;border:1px solid var(--ink)}
+  .formula{font-family:var(--serif);font-style:italic;font-size:1.1rem;background:var(--card);border-left:4px solid var(--sea);padding:.5rem .9rem;border-radius:0 10px 10px 0;margin:.4rem 0 1rem;display:inline-block}
+  .warn{border:2.4px solid var(--ink);background:#f7dccf;border-radius:16px;padding:1rem 1.2rem;margin-top:1rem}
+  .warn p{margin-bottom:.4rem}
+  footer{padding:2.4rem 0 3rem;font-size:.86rem;color:#4a4238}
+  footer ol{padding-left:1.2rem}
+  footer li{margin-bottom:.45rem;max-width:52rem}
+  hr.wave{border:0;height:14px;margin:1rem 0 0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='14'%3E%3Cpath d='M0 7 Q10 0 20 7 T40 7' fill='none' stroke='%231b1a22' stroke-width='1.6' opacity='.35'/%3E%3C/svg%3E") repeat-x}
+  @media (max-width:820px){
+    .grid,.buy,.pair{grid-template-columns:1fr}
+    .buy svg{max-width:200px;margin:0 auto}
+    .table{grid-template-columns:repeat(5,1fr)}
+    .table div{font-size:.7rem}
+    .table b{font-size:1.05rem}
+  }
+  @media (max-width:600px){#chart text{font-size:19px} #seq text,#fee text{font-size:17px}}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<nav class="top"><a href="../">← lab</a> · <a href="https://corentinbel.com">home</a></nav>
+
+<div class="wrap">
+<header class="hero">
+  <div class="kicker">money, as stored time</div>
+  <h1>The price of <em>freedom</em></h1>
+  <p class="lede">Most people measure money in things. I prefer to measure it in time. Every euro you keep is a small slice of a future where nobody has to pay you to show up. The question this page answers: how long is the crossing to the island where your investments cover your spending, and what sets the length of the trip?</p>
+</header>
+
+<div class="card" id="sceneCard">
+  <svg id="scene" viewBox="0 0 1200 430" role="img" aria-label="A small sailboat crossing from a quay toward an island; the number of buoys on the route equals the years to financial independence."></svg>
+  <div class="verdict">
+    <div class="big" id="vYears">17<small>years</small></div>
+    <div class="sub" id="vSub">at sea before your investments can pay for the life you live now.</div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card controls">
+    <div class="ctl main">
+      <label for="sr">Savings rate <output id="srO">25 %</output></label>
+      <input id="sr" type="range" min="0" max="90" step="1" value="25">
+      <div class="hint">Share of take-home pay you invest. The rest is what you live on, today and later.</div>
+    </div>
+    <div class="ctl">
+      <label for="inc">Take-home pay per month <output id="incO">€2,500</output></label>
+      <input id="inc" type="range" min="1000" max="10000" step="100" value="2500">
+    </div>
+    <div class="ctl">
+      <label for="b0">Already invested <output id="b0O">€0</output></label>
+      <input id="b0" type="range" min="0" max="400000" step="5000" value="0">
+    </div>
+    <div class="ctl">
+      <label for="rr">Real return, after fees <output id="rrO">5.0 %</output></label>
+      <input id="rr" type="range" min="0" max="8" step="0.5" value="5">
+      <div class="hint">Return above inflation. See below for why "real" matters.</div>
+    </div>
+    <div class="ctl">
+      <label for="wr">Withdrawal rate <output id="wrO">4.0 %</output></label>
+      <input id="wr" type="range" min="2.5" max="5" step="0.25" value="4">
+      <div class="hint">Share of the pile you spend each year once you arrive. 4 % means you need 25 × your yearly spending.</div>
+    </div>
+    <div class="note" id="incNote"></div>
+  </div>
+
+  <div class="card chartCard">
+    <svg id="chart" viewBox="0 0 640 420" role="img" aria-label="Years to financial independence as a function of savings rate"></svg>
+    <div class="cap">Years to the island vs savings rate. Shaded band: the same curve if your real return is 2 points lower or higher. Drag on the chart to move your point.</div>
+  </div>
+</div>
+
+<section id="why">
+  <h2>Why the savings rate <em>does almost all the work</em></h2>
+  <p>Saving more pulls two levers at once. It fills the pile faster, and it shrinks the pile you need, because whatever you don't spend today is spending you have shown you can live without. At 10 % you save one euro for every nine you spend. At 50 % it is one for one. At 75 % you put away three euros for every euro you live on.</p>
+  <p>That is the point Mr Money Mustache made in 2012 in a post with a cheeky title, "The Shockingly Simple Math Behind Early Retirement". Starting from zero, with a 5 % real return and a 4 % withdrawal rate, the crossing takes about:</p>
+  <div class="table" id="mmm"></div>
+  <p>Notice what is missing: your income. If you start with nothing invested, the answer depends only on the share you save, not on the number of euros. A surgeon who spends 95 % of her pay is further from the island than a gardener who saves half of his. Income matters through one door only: it makes a high savings rate easier to reach. You can check this above. With "already invested" at zero, slide the income and nothing moves.</p>
+  <span class="formula">target = yearly spending ÷ withdrawal rate</span>
+  <p>The model on this page is deliberately plain. Each year you invest a fixed share of a fixed income, the pile grows at a constant real return, and you arrive when the pile reaches the target. Real life is lumpier: incomes rise, kids happen, markets do not hand out the same return every year. The shape of the curve survives all of that. The exact number does not, so read it as "roughly".</p>
+</section>
+
+<hr class="wave">
+
+<section id="buy">
+  <h2>What does a purchase cost <em>in freedom?</em></h2>
+  <p>Prices are written in euros, but you pay them in hours. Here they are converted at your own exchange rate: the spending level you set above.</p>
+  <div class="card buy">
+    <svg id="glass" viewBox="0 0 200 280" aria-label="Hourglass showing the share of a year of freedom this purchase costs"></svg>
+    <div>
+      <div class="priceRow">
+        <input id="price" type="number" min="0" step="10" value="1400" aria-label="price in euros">
+        <div class="seg" role="group" aria-label="one-off or monthly">
+          <button id="once" class="on" type="button">one-off</button><button id="monthly" type="button">every month</button>
+        </div>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="ctl" style="max-width:420px">
+        <label for="hz">If invested instead, for <output id="hzO">20 years</output></label>
+        <input id="hz" type="range" min="5" max="40" step="1" value="20">
+      </div>
+      <div class="out" id="buyOut"></div>
+    </div>
+  </div>
+  <p style="margin-top:1rem">This is not an argument against buying things. A wing that gets you on the water every windy afternoon is a fine trade for a few weeks of freedom. The point is to see the price in the currency you actually care about, and to notice that small monthly habits are the expensive ones: they are paid in perpetuity, and the target pile has to grow to fund them forever.</p>
+</section>
+
+<hr class="wave">
+
+<section id="real">
+  <h2>Real, not nominal</h2>
+  <p>A bank statement shows nominal euros. Your future life is priced in real ones. If your investments return 7 % a year while prices rise 2 %, your purchasing power grows by about 4.9 %, not 7 %:</p>
+  <span class="formula">real return = (1 + nominal) ÷ (1 + inflation) − 1</span>
+  <p>Everything on this page is in real terms: returns above inflation, and targets in today's euros. That keeps the arithmetic honest without having to guess future price levels. For a sense of scale, Dimson, Marsh and Staunton's long-run data put world equities at roughly 5 % a year above inflation since 1900, with large differences between countries and decades. Bonds and cash have returned far less. A diversified portfolio sits somewhere in between, which is why 5 % is an optimistic but common default for a stock-heavy one, and why the band on the chart matters.</p>
+</section>
+
+<hr class="wave">
+
+<section id="rule">
+  <h2>Where the "4 % rule" <em>comes from</em></h2>
+  <p>In 1994 William Bengen, a financial planner, asked a narrow question with US data going back to 1926: if a retiree withdraws a fixed share of the starting portfolio in year one, then the same amount adjusted for inflation every year after, what is the highest starting rate that never ran out of money within 30 years? For a portfolio of roughly half to three quarters US stocks, the answer was about 4 %. The worst starting year sat near the late 1960s, when inflation was high and markets went nowhere.</p>
+  <p>In 1998 three professors at Trinity University (Cooley, Hubbard and Walz) ran a similar test and reported success rates by withdrawal rate and horizon. Their tables became "the Trinity study", and together the two papers became "the 4 % rule".</p>
+  <h3>The caveats are the interesting part</h3>
+  <p><b>It was built for 30 years.</b> Someone stopping work at 40 needs the pile to last 50 years or more. Longer horizons have lower historical safe rates, and analyses of long retirements often land near 3–3.5 %.</p>
+  <p><b>It is US data.</b> The US had one of the best stock markets of the 20th century. Wade Pfau repeated Bengen's exercise for 17 developed countries in 2010 and found that 4 % would have failed in many of them; for most, the historical safe rate was lower.</p>
+  <p><b>The order of returns matters, not just their average.</b> This is sequence-of-returns risk. While you are adding money, a crash is a sale. Once you are withdrawing, a crash early on forces you to sell cheap, and the pile may never recover. The two retirees below live through exactly the same 30 annual returns, in opposite order.</p>
+  <div class="pair">
+    <div class="card mini">
+      <svg id="seq" viewBox="0 0 520 300" aria-label="Two portfolios with the same returns in opposite order"></svg>
+      <div class="legend"><span><i style="background:var(--terra)"></i>bad years first</span><span><i style="background:var(--sea)"></i>bad years last</span></div>
+    </div>
+    <div class="out" id="seqOut" style="font-size:.95rem"></div>
+  </div>
+  <p style="margin-top:1rem">None of this makes 4 % wrong. It makes it a rule of thumb from one country's history, with a margin that shrinks as the horizon grows. Flexibility does a lot of the work in practice: spending a little less after a bad year, or earning a little on the island, changes the odds far more than a tenth of a point on the starting rate. Try 3.25 % on the slider above to see what a cautious early retiree is signing up for.</p>
+</section>
+
+<hr class="wave">
+
+<section id="fees">
+  <h2>Fees: the quiet <em>headwind</em></h2>
+  <p>A 1.6-point difference in yearly fees sounds like nothing. It compounds like everything else. Broad index funds and ETFs often charge 0.1–0.3 % a year. Actively managed funds sold through bank branches commonly charge 1.5–2 % or more, before any entry fees. Over a full crossing the gap is large.</p>
+  <div class="pair">
+    <div class="card mini">
+      <svg id="fee" viewBox="0 0 520 300" aria-label="Growth of 10,000 euros with low and high fees over 30 years"></svg>
+      <div class="legend"><span><i style="background:var(--sea)"></i>0.2 % fees</span><span><i style="background:var(--terra)"></i><span id="feeLbl">1.8 %</span> fees</span></div>
+    </div>
+    <div>
+      <div class="ctl">
+        <label for="fg">Real return before fees <output id="fgO">5.0 %</output></label>
+        <input id="fg" type="range" min="2" max="8" step="0.5" value="5">
+      </div>
+      <div class="ctl">
+        <label for="fx">Expensive fund's fees <output id="fxO">1.8 %</output></label>
+        <input id="fx" type="range" min="0.5" max="3" step="0.1" value="1.8">
+      </div>
+      <div class="out" id="feeOut"></div>
+    </div>
+  </div>
+</section>
+
+<hr class="wave">
+
+<section id="france">
+  <h2>A French footnote: <em>the PEA</em></h2>
+  <p>In France, the Plan d'Épargne en Actions is the usual wrapper for a long equity crossing. You can pay in up to €150,000. Once the plan is more than five years old, gains withdrawn are exempt from income tax. They are not exempt from social levies (prélèvements sociaux), which have been around 17–19 % depending on the year; check the rate in force when you withdraw. Withdrawing before five years generally closes the plan and the gains are taxed at the flat rate. Many low-fee ETFs tracking world indices are PEA-eligible through synthetic replication. The practical lesson: open one early, even with a small amount, because the five-year clock starts at opening, not at your first big deposit.</p>
+  <div class="warn">
+    <p><b>Not financial advice.</b> This is a teaching toy with a constant-return model. It ignores taxes, pensions, inflation surprises, and the fact that your life will change. Markets can lose half their value and take a decade to recover. If you make real decisions, use your own numbers, read the sources, and consider an independent adviser who is not paid on commission.</p>
+  </div>
+</section>
+
+<footer>
+  <h3>Sources</h3>
+  <ol>
+    <li>Bengen, W. P. (1994). Determining Withdrawal Rates Using Historical Data. <i>Journal of Financial Planning</i>, 7(4), 171–180.</li>
+    <li>Cooley, P. L., Hubbard, C. M., &amp; Walz, D. T. (1998). Retirement Savings: Choosing a Withdrawal Rate That Is Sustainable. <i>AAII Journal</i>, 20(2), 16–21. (The "Trinity study".)</li>
+    <li>Pfau, W. D. (2010). An International Perspective on Safe Withdrawal Rates: The Demise of the 4 Percent Rule? <i>Journal of Financial Planning</i>, 23(12), 52–61.</li>
+    <li>Mr Money Mustache (2012). <a href="https://www.mrmoneymustache.com/2012/01/13/the-shockingly-simple-math-behind-early-retirement/">The Shockingly Simple Math Behind Early Retirement</a>.</li>
+    <li>Dimson, E., Marsh, P., &amp; Staunton, M. <i>Global Investment Returns Yearbook</i> (UBS, annual editions). Long-run real returns by country since 1900.</li>
+    <li>Jeske, K. (2016–). <a href="https://earlyretirementnow.com/safe-withdrawal-rate-series/">The Safe Withdrawal Rate Series</a>, Early Retirement Now. Historical simulations for 40–60 year horizons.</li>
+    <li>Service-Public.fr, <a href="https://www.service-public.fr/particuliers/vosdroits/F2385">Plan d'épargne en actions (PEA)</a>. Ceiling, five-year rule, social levies.</li>
+  </ol>
+  <p style="margin-top:1rem">Model: yearly contributions at year end, constant real return, target = spending ÷ withdrawal rate, spending after arrival = spending today. The sequence-of-returns returns are invented for illustration (fixed seed), not historical data.</p>
+</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+const NS='http://www.w3.org/2000/svg';
+const INK='#1b1a22';
+const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function rng(seed){let s=seed>>>0;return function(){s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+const $=id=>document.getElementById(id);
+const eur=v=>'€'+Math.round(v).toLocaleString('en-US');
+const eurK=v=>Math.abs(v)>=1e6?'€'+(v/1e6).toFixed(v>=1e7?0:2)+'M':(Math.abs(v)>=1e4?'€'+Math.round(v/1e3)+'k':eur(v));
+const fmtY=y=>!isFinite(y)?'never':(y<10?y.toFixed(1):Math.round(y).toString());
+
+// ---------- model ----------
+// yearly saving S, spending E, start B0, real return r, withdrawal w
+function years(S,E,B0,r,w){
+  const T=E/w;
+  if(B0>=T) return 0;
+  if(r<=1e-9){return S>0?(T-B0)/S:Infinity;}
+  const den=B0*r+S; if(den<=0) return Infinity;
+  return Math.log((T*r+S)/den)/Math.log(1+r);
+}
+const st={s:.25,inc:2500,b0:0,r:.05,w:.04};
+function yrsFor(s,r){const I=12*st.inc;return years(I*s,I*(1-s),st.b0,r===undefined?st.r:r,st.w);}
+
+// ---------- scene ----------
+const scene=$('scene');
+function el(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
+const W=1200,H=430,HORIZON=228;
+let routeG,islandG,boatG,yearTxt,beyondG;
+function buildScene(){
+  const R=rng(7);
+  scene.innerHTML='';
+  const defs=el('defs',{},scene);
+  defs.innerHTML=`
+   <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3c88f"/><stop offset=".55" stop-color="#f8dcae"/><stop offset="1" stop-color="#fbe9c7"/></linearGradient>
+   <linearGradient id="seaG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f9ea3"/><stop offset=".4" stop-color="#2b7a87"/><stop offset="1" stop-color="#1b4f63"/></linearGradient>
+   <radialGradient id="sunG" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fbd27a"/><stop offset="1" stop-color="#ef8b47"/></radialGradient>
+   <linearGradient id="sandG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3dca8"/><stop offset="1" stop-color="#d9b56d"/></linearGradient>
+   <linearGradient id="hillG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d0674a"/><stop offset="1" stop-color="#9c3f2c"/></linearGradient>
+   <linearGradient id="glint" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbe2a6" stop-opacity=".8"/><stop offset="1" stop-color="#fbe2a6" stop-opacity="0"/></linearGradient>`;
+  el('rect',{x:0,y:0,width:W,height:HORIZON+2,fill:'url(#sky)'},scene);
+  // sun
+  el('circle',{cx:905,cy:150,r:62,fill:'url(#sunG)',stroke:INK,'stroke-width':2.4},scene);
+  // clouds
+  for(let i=0;i<5;i++){
+    const cx=80+R()*1040,cy=40+R()*80,s=.6+R()*.7;const g=el('g',{transform:`translate(${cx},${cy}) scale(${s})`},scene);
+    el('path',{d:'M-60 10 Q-62 -12 -38 -12 Q-30 -34 -6 -28 Q8 -44 30 -30 Q58 -32 58 -6 Q76 0 62 12 Z',fill:'#fff4e0',stroke:INK,'stroke-width':2/s,'stroke-linejoin':'round',opacity:.95},g);
+  }
+  // Esterel-red hills, left
+  el('path',{d:`M0 ${HORIZON} L0 168 Q40 140 78 158 Q110 118 150 146 Q185 128 215 160 Q250 150 290 176 Q330 190 360 ${HORIZON} Z`,fill:'url(#hillG)',stroke:INK,'stroke-width':2.4,'stroke-linejoin':'round'},scene);
+  el('path',{d:'M78 158 L96 190 M150 146 L160 182 M215 160 L222 196',stroke:INK,'stroke-width':1.4,opacity:.4,fill:'none'},scene);
+  // sea
+  el('rect',{x:0,y:HORIZON,width:W,height:H-HORIZON,fill:'url(#seaG)'},scene);
+  el('path',{d:`M845 ${HORIZON} L965 ${HORIZON} L1010 ${H} L800 ${H} Z`,fill:'url(#glint)',opacity:.55},scene);
+  el('line',{x1:0,y1:HORIZON,x2:W,y2:HORIZON,stroke:INK,'stroke-width':2.4},scene);
+  // waves
+  for(let i=0;i<70;i++){
+    const y=HORIZON+8+Math.pow(R(),1.4)*(H-HORIZON-14);const k=(y-HORIZON)/(H-HORIZON);
+    const x=R()*W,w=10+k*36;
+    el('path',{d:`M${x} ${y} q${w/4} ${-4-k*5} ${w/2} 0 q${w/4} ${-4-k*5} ${w/2} 0`,fill:'none',stroke:'#cfeee9','stroke-width':1+k*1.6,'stroke-linecap':'round',opacity:.35+k*.4},scene);
+  }
+  // quay + office with a clock
+  const q=el('g',{},scene);
+  el('path',{d:`M0 300 L150 300 L150 330 L0 330 Z`,fill:'#b9a27e',stroke:INK,'stroke-width':2.4},q);
+  for(let i=0;i<5;i++)el('line',{x1:i*32+10,y1:300,x2:i*32+10,y2:330,stroke:INK,'stroke-width':1.2,opacity:.5},q);
+  el('path',{d:'M14 300 L14 214 L96 214 L96 300 Z',fill:'#e3d4b8',stroke:INK,'stroke-width':2.4},q);
+  el('path',{d:'M8 216 L55 186 L102 216 Z',fill:'#8b5e4a',stroke:INK,'stroke-width':2.4,'stroke-linejoin':'round'},q);
+  for(let r=0;r<2;r++)for(let c=0;c<3;c++)el('rect',{x:22+c*24,y:250+r*24,width:14,height:16,fill:'#f8e3a6',stroke:INK,'stroke-width':1.6},q);
+  el('circle',{cx:55,cy:232,r:11,fill:'#fff8ea',stroke:INK,'stroke-width':2},q);
+  el('path',{d:'M55 232 L55 224 M55 232 L61 235',stroke:INK,'stroke-width':1.8,'stroke-linecap':'round'},q);
+  el('line',{x1:128,y1:300,x2:128,y2:332,stroke:INK,'stroke-width':4},q);
+  const lab1=el('text',{x:75,y:352,'text-anchor':'middle','font-size':15,'font-weight':600,fill:'#fbe9c7'},q);lab1.textContent='today';
+  routeG=el('g',{},scene);
+  islandG=el('g',{},scene);
+  beyondG=el('g',{},scene);
+  boatG=el('g',{},scene);
+  drawBoat(boatG);
+  yearTxt=el('text',{x:0,y:0,'text-anchor':'start','font-size':14,'font-weight':600,fill:INK,stroke:'#fbe9c7','stroke-width':4,'paint-order':'stroke'},scene);
+  // gulls
+  for(let i=0;i<4;i++){const gx=420+R()*360,gy=60+R()*90,s=.7+R()*.6;el('path',{d:`M${gx-12*s} ${gy} q${6*s} ${-7*s} ${12*s} 0 q${6*s} ${-7*s} ${12*s} 0`,fill:'none',stroke:INK,'stroke-width':2,'stroke-linecap':'round'},scene);}
+}
+function drawBoat(g){
+  g.innerHTML='';
+  el('path',{d:'M-34 0 L34 0 L24 15 L-24 15 Z',fill:'#c4553a',stroke:INK,'stroke-width':2.4,'stroke-linejoin':'round'},g);
+  el('path',{d:'M-30 5 L30 5',stroke:'#fbe9c7','stroke-width':2},g);
+  el('line',{x1:0,y1:0,x2:0,y2:-72,stroke:INK,'stroke-width':2.6},g);
+  el('path',{d:'M3 -68 Q30 -36 26 -4 L3 -4 Z',fill:'#fff6e4',stroke:INK,'stroke-width':2.2,'stroke-linejoin':'round'},g);
+  el('path',{d:'M-3 -60 Q-22 -32 -24 -4 L-3 -4 Z',fill:'#f2c230',stroke:INK,'stroke-width':2.2,'stroke-linejoin':'round'},g);
+  el('path',{d:'M0 -72 L14 -76 L0 -80 Z',fill:'#2b7a87',stroke:INK,'stroke-width':1.6},g);
+  el('path',{d:'M-40 16 q10 -5 20 0 q10 5 20 0 q10 -5 20 0 q10 5 20 0',fill:'none',stroke:'#e6f5f0','stroke-width':2,'stroke-linecap':'round'},g);
+}
+function drawIsland(g,x){
+  g.innerHTML='';const R=rng(11);
+  const y=318;
+  el('ellipse',{cx:x,cy:y+12,rx:150,ry:16,fill:'#7cc0b4',opacity:.6},g);
+  el('path',{d:`M${x-140} ${y+10} Q${x-90} ${y-28} ${x-10} ${y-34} Q${x+90} ${y-34} ${x+140} ${y+10} Z`,fill:'url(#sandG)',stroke:INK,'stroke-width':2.4,'stroke-linejoin':'round'},g);
+  el('path',{d:`M${x-60} ${y-26} Q${x-10} ${y-82} ${x+60} ${y-30} Z`,fill:'#6e9a52',stroke:INK,'stroke-width':2.4,'stroke-linejoin':'round'},g);
+  // hut
+  el('path',{d:`M${x+44} ${y-26} L${x+44} ${y-58} L${x+86} ${y-58} L${x+86} ${y-22} Z`,fill:'#e7c98f',stroke:INK,'stroke-width':2.2},g);
+  el('path',{d:`M${x+36} ${y-56} L${x+65} ${y-80} L${x+94} ${y-56} Z`,fill:'#b8873f',stroke:INK,'stroke-width':2.2,'stroke-linejoin':'round'},g);
+  el('rect',{x:x+59,y:y-46,width:12,height:20,fill:'#5b3a2c',stroke:INK,'stroke-width':1.6},g);
+  // mimosa tree
+  el('path',{d:`M${x-34} ${y-30} Q${x-40} ${y-80} ${x-30} ${y-118} M${x-34} ${y-80} Q${x-60} ${y-96} ${x-74} ${y-110} M${x-32} ${y-96} Q${x-8} ${y-108} ${x+6} ${y-124}`,fill:'none',stroke:INK,'stroke-width':4,'stroke-linecap':'round'},g);
+  for(let i=0;i<30;i++){
+    const a=R()*Math.PI*2,rr=Math.sqrt(R());const cx=x-34+Math.cos(a)*rr*58,cy=y-120+Math.sin(a)*rr*30;
+    el('circle',{cx,cy,r:7+R()*6,fill:i%4?'#f2c230':'#f7d65a',stroke:INK,'stroke-width':1.5},g);
+  }
+  for(let i=0;i<14;i++){const a=R()*Math.PI*2,rr=Math.sqrt(R());el('circle',{cx:x-34+Math.cos(a)*rr*54,cy:y-120+Math.sin(a)*rr*28,r:2.2,fill:'#fff2a8'},g);}
+  // hammock
+  el('path',{d:`M${x-10} ${y-40} Q${x+18} ${y-26} ${x+44} ${y-40}`,fill:'none',stroke:'#c4553a','stroke-width':4,'stroke-linecap':'round'},g);
+  const t=el('text',{x:x,y:y+48,'text-anchor':'middle','font-size':16,'font-weight':600,fill:'#fbe9c7'},g);t.textContent='freedom';
+}
+// route geometry: quadratic bezier from P0 to P2
+let P0={x:150,y:318},P1,P2;
+function bez(t){const u=1-t;return{x:u*u*P0.x+2*u*t*P1.x+t*t*P2.x,y:u*u*P0.y+2*u*t*P1.y+t*t*P2.y};}
+let Y=17,islandX=900,anim={t0:0};
+function layoutRoute(){
+  Y=yrsFor(st.s);
+  routeG.innerHTML='';beyondG.innerHTML='';
+  const shown=isFinite(Y)&&Y<=60;
+  islandX=shown?Math.max(440,Math.min(1040,300+Y/60*740)):1400;
+  if(shown){drawIsland(islandG,islandX);}else islandG.innerHTML='';
+  P2={x:shown?islandX-150:1210,y:shown?322:300};
+  P1={x:(P0.x+P2.x)/2,y:404};
+  if(Y===0){P2={x:P0.x+1,y:P0.y};}
+  let d=`M${P0.x} ${P0.y} Q${P1.x} ${P1.y} ${P2.x} ${P2.y}`;
+  el('path',{d,fill:'none',stroke:'#fbe9c7','stroke-width':2.2,'stroke-dasharray':'2 9','stroke-linecap':'round',opacity:.9},routeG);
+  const n=isFinite(Y)?Math.min(Math.floor(Y),60):60;
+  const span=shown?Y:60/0.92;
+  for(let k=1;k<=n;k++){
+    const t=k/span;if(t>=1)break;const p=bez(t);
+    const big=k%5===0;
+    el('line',{x1:p.x,y1:p.y,x2:p.x,y2:p.y-(big?20:12),stroke:INK,'stroke-width':1.6},routeG);
+    el('path',{d:`M${p.x-(big?7:5)} ${p.y} L${p.x} ${p.y-(big?15:9)} L${p.x+(big?7:5)} ${p.y} Z`,fill:k%2?'#c4553a':'#fff6e4',stroke:INK,'stroke-width':1.6,'stroke-linejoin':'round'},routeG);
+    if(big&&n<=60){const tx=el('text',{x:p.x,y:p.y+20,'text-anchor':'middle','font-size':12,'font-weight':600,fill:'#fbe9c7'},routeG);tx.textContent=k;}
+  }
+  if(!shown){
+    const t=el('text',{x:1185,y:270,'text-anchor':'end','font-size':17,'font-weight':600,fill:'#fbe9c7','font-style':'italic'},beyondG);
+    t.textContent=isFinite(Y)?'island beyond the horizon →':'no island in sight →';
+  }
+  anim.t0=performance.now();
+}
+function placeBoat(now){
+  let t,yr;
+  if(!isFinite(Y)||Y>60){const per=12000;const f=((now-anim.t0)%per)/per;t=f*0.92;yr=null;}
+  else if(Y===0){t=0;yr=0;}
+  else{
+    const dur=Math.max(2500,Y*450),pause=1600,f=(now-anim.t0)%(dur+pause);
+    const u=Math.min(f/dur,1);t=u<1?(1-Math.cos(u*Math.PI))/2:1;yr=t*Y;
+  }
+  if(reduce){t=isFinite(Y)&&Y<=60?(Y===0?0:.55):.5;yr=isFinite(Y)&&Y<=60?.55*Y:null;}
+  const p=bez(t),p2=bez(Math.min(t+.01,1));
+  const bob=reduce?0:Math.sin(now/420)*2.4,ang=Math.atan2(p2.y-p.y,p2.x-p.x)*180/Math.PI*.35+(reduce?0:Math.sin(now/610)*2);
+  boatG.setAttribute('transform',`translate(${p.x},${p.y-10+bob}) rotate(${ang}) scale(.95)`);
+  yearTxt.setAttribute('x',p.x+46);yearTxt.setAttribute('y',p.y-54+bob);
+  yearTxt.textContent=Y===0?'already there':(yr===null?'':(t>=1?'arrived':'year '+Math.floor(yr)));
+}
+function loop(now){placeBoat(now);if(!reduce)requestAnimationFrame(loop);}
+
+// ---------- chart ----------
+const chart=$('chart');
+const CX={l:58,r:620,t:22,b:370},YMAX=60,SMAX=.9;
+const cx=s=>CX.l+(s/SMAX)*(CX.r-CX.l), cy=y=>CX.b-(Math.min(y,YMAX)/YMAX)*(CX.b-CX.t);
+function curvePts(r){const pts=[];for(let i=0;i<=180;i++){const s=0.005+i/180*(SMAX-.005);const y=yrsFor(s,r);pts.push([cx(s),cy(isFinite(y)?y:YMAX+1)]);}return pts;}
+function drawChart(){
+  chart.innerHTML='';
+  const g=el('g',{},chart);
+  el('rect',{x:CX.l,y:CX.t,width:CX.r-CX.l,height:CX.b-CX.t,fill:'#fffaf0',stroke:'none'},g);
+  for(let y=0;y<=YMAX;y+=10){el('line',{x1:CX.l,x2:CX.r,y1:cy(y),y2:cy(y),stroke:'#e6d8bb','stroke-width':1},g);const t=el('text',{x:CX.l-8,y:cy(y)+4,'text-anchor':'end','font-size':12,fill:'#6b6255'},g);t.textContent=y;}
+  for(let s=0;s<=SMAX+1e-9;s+=.1){el('line',{x1:cx(s),x2:cx(s),y1:CX.t,y2:CX.b,stroke:'#efe3c9','stroke-width':1},g);const t=el('text',{x:cx(s),y:CX.b+18,'text-anchor':'middle','font-size':12,fill:'#6b6255'},g);t.textContent=Math.round(s*100)+'%';}
+  const ax=el('text',{x:(CX.l+CX.r)/2,y:CX.b+40,'text-anchor':'middle','font-size':13,'font-weight':600,fill:INK},g);ax.textContent='savings rate';
+  const ay=el('text',{x:16,y:(CX.t+CX.b)/2,'text-anchor':'middle','font-size':13,'font-weight':600,fill:INK,transform:`rotate(-90 16 ${(CX.t+CX.b)/2})`},g);ay.textContent='years to the island';
+  // clip
+  const cp=el('clipPath',{id:'cclip'},g);el('rect',{x:CX.l,y:CX.t,width:CX.r-CX.l,height:CX.b-CX.t},cp);
+  const cg=el('g',{'clip-path':'url(#cclip)'},g);
+  const lo=curvePts(st.r+.02),hi=curvePts(Math.max(st.r-.02,0));
+  let d='M'+lo.map(p=>p.join(' ')).join(' L')+' L'+hi.slice().reverse().map(p=>p.join(' ')).join(' L')+'Z';
+  el('path',{d,fill:'#9fd0c6',opacity:.45,stroke:'none'},cg);
+  el('path',{d:'M'+hi.map(p=>p.join(' ')).join(' L'),fill:'none',stroke:'#2b7a87','stroke-width':1.2,'stroke-dasharray':'4 4',opacity:.8},cg);
+  el('path',{d:'M'+lo.map(p=>p.join(' ')).join(' L'),fill:'none',stroke:'#2b7a87','stroke-width':1.2,'stroke-dasharray':'4 4',opacity:.8},cg);
+  const main=curvePts(st.r);
+  el('path',{d:'M'+main.map(p=>p.join(' ')).join(' L'),fill:'none',stroke:INK,'stroke-width':4.4,'stroke-linejoin':'round','stroke-linecap':'round'},cg);
+  el('path',{d:'M'+main.map(p=>p.join(' ')).join(' L'),fill:'none',stroke:'#1d566b','stroke-width':2.4,'stroke-linejoin':'round'},cg);
+  el('rect',{x:CX.l,y:CX.t,width:CX.r-CX.l,height:CX.b-CX.t,fill:'none',stroke:INK,'stroke-width':2},g);
+  // band labels
+  const bl=el('text',{x:CX.r-8,y:CX.t+18,'text-anchor':'end','font-size':11.5,fill:'#1d566b'},g);
+  bl.textContent=`band: real return ${Math.max(st.r*100-2,0).toFixed(1)}–${(st.r*100+2).toFixed(1)} %`;
+  // point
+  const y=yrsFor(st.s),px=cx(st.s),py=cy(isFinite(y)?y:YMAX);
+  el('line',{x1:px,x2:px,y1:py,y2:CX.b,stroke:'#c4553a','stroke-width':1.6,'stroke-dasharray':'3 4'},g);
+  if(isFinite(y)&&y<=YMAX)el('line',{x1:CX.l,x2:px,y1:py,y2:py,stroke:'#c4553a','stroke-width':1.6,'stroke-dasharray':'3 4'},g);
+  // tiny boat marker
+  const bm=el('g',{transform:`translate(${px},${py})`},g);
+  el('circle',{r:9,fill:'#f2c230',stroke:INK,'stroke-width':2.4},bm);
+  const lab=isFinite(y)&&y<=YMAX?(y===0?'already there':`${fmtY(y)} years`):'more than 60 years';
+  const right=px<CX.r-150;
+  const tg=el('text',{x:px+(right?14:-14),y:py-12,'text-anchor':right?'start':'end','font-size':15,'font-weight':600,fill:INK,stroke:'#fffaf0','stroke-width':4,'paint-order':'stroke'},g);
+  tg.textContent=`${Math.round(st.s*100)} % → ${lab}`;
+}
+function chartPick(ev){
+  const r=chart.getBoundingClientRect();const x=(ev.clientX-r.left)/r.width*640;
+  let s=(x-CX.l)/(CX.r-CX.l)*SMAX;s=Math.max(0,Math.min(SMAX,s));
+  $('sr').value=Math.round(s*100);update();
+}
+let dragging=false;
+chart.addEventListener('pointerdown',e=>{dragging=true;chart.setPointerCapture(e.pointerId);chartPick(e);});
+chart.addEventListener('pointermove',e=>{if(dragging)chartPick(e);});
+chart.addEventListener('pointerup',()=>dragging=false);
+chart.addEventListener('pointercancel',()=>dragging=false);
+
+// ---------- MMM table ----------
+function mmmTable(){
+  const box=$('mmm');box.innerHTML='';
+  [10,25,50,65,75].forEach(p=>{const s=p/100;const y=years(s,1-s,0,.05,.04);const d=document.createElement('div');d.innerHTML=`${p} % saved<b>${y<10?y.toFixed(1):Math.round(y)} y</b>`;box.appendChild(d);});
+}
+
+// ---------- verdict + controls ----------
+function update(){
+  st.s=+$('sr').value/100;st.inc=+$('inc').value;st.b0=+$('b0').value;st.r=+$('rr').value/100;st.w=+$('wr').value/100;
+  $('srO').textContent=Math.round(st.s*100)+' %';$('incO').textContent=eur(st.inc);$('b0O').textContent=eur(st.b0);
+  $('rrO').textContent=(st.r*100).toFixed(1)+' %';$('wrO').textContent=(st.w*100).toFixed(2).replace(/0$/,'')+' %';
+  const y=yrsFor(st.s);const E=12*st.inc*(1-st.s);const T=E/st.w;
+  const vy=$('vYears');
+  if(!isFinite(y)){vy.innerHTML='never';$('vSub').textContent='Without saving and with nothing invested, the island never appears. Even a small savings rate puts it on the map.';}
+  else if(y===0){vy.innerHTML='0<small>years</small>';$('vSub').textContent=`You are already there: ${eur(st.b0)} covers ${eur(E)} a year at a ${(st.w*100).toFixed(2).replace(/0$/,'')} % withdrawal rate.`;}
+  else{vy.innerHTML=`${fmtY(y)}<small>years</small>`;$('vSub').innerHTML=`at sea, investing ${eur(st.inc*st.s)} a month, until the pile reaches <b>${eurK(T)}</b>: ${Math.round(1/st.w)}&times; the ${eur(E)} you spend in a year.`;}
+  const n=$('incNote');
+  if(st.b0===0) n.innerHTML='With nothing invested yet, income cancels out: move the pay slider and the answer does not budge. Only the <b>rate</b> counts.';
+  else n.innerHTML=`Now that you start with ${eurK(st.b0)}, income matters a little: the head start is worth more to someone who spends less.`;
+  layoutRoute();placeBoat(performance.now());drawChart();updateBuy();
+}
+['sr','inc','b0','rr','wr'].forEach(id=>$(id).addEventListener('input',update));
+
+// ---------- purchase / hourglass ----------
+let recurring=false;
+const PRESETS=[['a new wing',1400,false],['a phone',900,false],['a used car',15000,false],['a week abroad',1800,false],['coffee out daily',90,true],['streaming + apps',35,true]];
+const chips=$('chips');
+PRESETS.forEach(([n,v,rec])=>{const b=document.createElement('button');b.type='button';b.textContent=`${n} · ${eur(v)}${rec?'/mo':''}`;b.onclick=()=>{$('price').value=v;setRec(rec);};chips.appendChild(b);});
+function setRec(r){recurring=r;$('once').classList.toggle('on',!r);$('monthly').classList.toggle('on',r);updateBuy();}
+$('once').onclick=()=>setRec(false);$('monthly').onclick=()=>setRec(true);
+$('price').addEventListener('input',updateBuy);$('hz').addEventListener('input',updateBuy);
+function drawGlass(frac,count){
+  const g=$('glass');g.innerHTML='';
+  const d=el('defs',{},g);d.innerHTML='<clipPath id="gl"><path d="M50 40 Q50 112 96 140 Q50 168 50 240 L150 240 Q150 168 104 140 Q150 112 150 40 Z"/></clipPath>';
+  el('rect',{x:30,y:20,width:140,height:20,rx:6,fill:'#8b5e4a',stroke:INK,'stroke-width':2.4},g);
+  el('rect',{x:30,y:240,width:140,height:20,rx:6,fill:'#8b5e4a',stroke:INK,'stroke-width':2.4},g);
+  el('line',{x1:40,y1:40,x2:40,y2:240,stroke:INK,'stroke-width':4},g);el('line',{x1:160,y1:40,x2:160,y2:240,stroke:INK,'stroke-width':4},g);
+  const cl=el('g',{'clip-path':'url(#gl)'},g);
+  el('rect',{x:40,y:40,width:120,height:200,fill:'#fffaf0'},cl);
+  const f=Math.max(0,Math.min(1,frac));
+  // top sand drains, bottom fills (by height, eyeballed to the bulb shape)
+  const topH=(1-f)*88, botH=f*92;
+  if(topH>0.5) el('rect',{x:40,y:136-topH,width:120,height:topH+4,fill:'#ecd29b'},cl);
+  if(botH>0.5) el('path',{d:`M40 ${240-botH} Q100 ${240-botH-10} 160 ${240-botH} L160 240 L40 240 Z`,fill:'#e0b45c'},cl);
+  if(f>0&&f<1) el('line',{x1:100,y1:140,x2:100,y2:240-botH-6,stroke:'#d9a849','stroke-width':2.5},cl);
+  el('path',{d:'M50 40 Q50 112 96 140 Q50 168 50 240 M150 40 Q150 112 104 140 Q150 168 150 240',fill:'none',stroke:INK,'stroke-width':2.6},g);
+  el('path',{d:'M62 58 Q64 100 84 124',fill:'none',stroke:'#fff','stroke-width':3,'stroke-linecap':'round',opacity:.8},g);
+  const t=el('text',{x:100,y:276,'text-anchor':'middle','font-size':13,'font-weight':600,fill:INK},g);
+  t.textContent=count>=1?`${count} full year${count>1?'s':''} + this glass`:'one glass = one year';
+}
+function updateBuy(){
+  const price=Math.max(0,+$('price').value||0);const N=+$('hz').value;$('hzO').textContent=N+' years';
+  const E=12*st.inc*(1-st.s);const perDay=E/365;const out=$('buyOut');
+  if(perDay<=0){out.innerHTML='<p>Set a savings rate below 100 % so there is some spending to compare against.</p>';drawGlass(0,0);return;}
+  const r=st.r,w=st.w;
+  if(!recurring){
+    const days=price/perDay;
+    const fut=price*Math.pow(1+r,N);const futDays=fut/perDay;
+    drawGlass((days%365)/365,Math.floor(days/365));
+    out.innerHTML=`<p>At ${eur(perDay)} a day of living, ${eur(price)} is <span class="n">${days<10?days.toFixed(1):Math.round(days)} days</span> of freedom.</p>
+    <p>Invested at ${(r*100).toFixed(1)} % real for ${N} years, it would become about <b>${eur(fut)}</b> in today's money: <b>${Math.round(futDays)} days</b>.</p>
+    <p>Left invested on the island, it would pay out ${eur(price*w)} a year at ${(w*100).toFixed(2).replace(/0$/,'')} %: <b>${(price*w/perDay).toFixed(1)} days</b> of freedom every year, for as long as the rule holds.</p>`;
+  }else{
+    const yearly=price*12,days=yearly/perDay;
+    const I=12*st.inc,S=I*st.s,E2=E+yearly,S2=S-yearly;
+    const y1=years(S,E,st.b0,r,w),y2=S2>0?years(S2,E2,st.b0,r,w):Infinity;
+    drawGlass((days%365)/365,Math.floor(days/365));
+    const extra=yearly/w;
+    let delay;
+    if(!isFinite(y2))delay='more than your whole savings: the island disappears';
+    else if(!isFinite(y1))delay='';
+    else{const dy=y2-y1;delay=dy*12<1?`${Math.round(dy*365)} days`:(dy<2?`${(dy*12).toFixed(0)} months`:`${dy.toFixed(1)} years`);}
+    out.innerHTML=`<p>${eur(price)} a month is ${eur(yearly)} a year: <span class="n">${days<10?days.toFixed(1):Math.round(days)} days</span> of freedom every year.</p>
+    <p>To keep paying for it forever from your investments, the target pile grows by <b>${eur(extra)}</b> (${eur(yearly)} ÷ ${(w*100).toFixed(2).replace(/0$/,'')} %).</p>
+    ${delay?`<p>Taken out of your current savings, it pushes your arrival back by <b>${delay}</b>${isFinite(y2)?`, from ${fmtY(y1)} to ${fmtY(y2)} years`:''}.</p>`:''}`;
+  }
+}
+
+// ---------- sequence-of-returns ----------
+function lineChart(svg,series,opt){
+  svg.innerHTML='';const L=56,Rr=505,T=16,B=262;
+  const xs=series[0].data.length-1;let ymax=opt.ymax;
+  const X=i=>L+i/xs*(Rr-L),Yy=v=>B-Math.max(0,Math.min(v,ymax))/ymax*(B-T);
+  el('rect',{x:L,y:T,width:Rr-L,height:B-T,fill:'#fffaf0'},svg);
+  const step=opt.ystep;
+  for(let v=0;v<=ymax+1e-6;v+=step){el('line',{x1:L,x2:Rr,y1:Yy(v),y2:Yy(v),stroke:'#e6d8bb'},svg);const t=el('text',{x:L-7,y:Yy(v)+4,'text-anchor':'end','font-size':11.5,fill:'#6b6255'},svg);t.textContent=opt.yfmt(v);}
+  for(let i=0;i<=xs;i+=opt.xstep){const t=el('text',{x:X(i),y:B+17,'text-anchor':'middle','font-size':11.5,fill:'#6b6255'},svg);t.textContent=i;}
+  const xl=el('text',{x:(L+Rr)/2,y:B+34,'text-anchor':'middle','font-size':12,'font-weight':600,fill:INK},svg);xl.textContent=opt.xlab;
+  series.forEach(s=>{
+    const d='M'+s.data.map((v,i)=>X(i)+' '+Yy(v)).join(' L');
+    el('path',{d,fill:'none',stroke:INK,'stroke-width':s.w+2.2,'stroke-linejoin':'round','stroke-linecap':'round'},svg);
+    el('path',{d,fill:'none',stroke:s.c,'stroke-width':s.w,'stroke-linejoin':'round','stroke-linecap':'round'},svg);
+  });
+  el('rect',{x:L,y:T,width:Rr-L,height:B-T,fill:'none',stroke:INK,'stroke-width':2},svg);
+  return {X,Yy};
+}
+function seqDemo(){
+  const R=rng(1994);const n=30;let rets=[];
+  for(let i=0;i<n;i++){const u=R()+R()+R()+R()-2;rets.push(.05+u*.26);} // roughly mean 5 %, sd ~15 %
+  const m=rets.reduce((a,b)=>a+b,0)/n;rets=rets.map(x=>x-m+.05); // arithmetic mean exactly 5 %
+  rets.sort((a,b)=>a-b);
+  const worst=rets.slice(0,6),rest=rets.slice(6);const R2=rng(3);
+  for(let i=rest.length-1;i>0;i--){const j=Math.floor(R2()*(i+1));[rest[i],rest[j]]=[rest[j],rest[i]];}
+  const A=worst.concat(rest),Bq=A.slice().reverse();
+  function run(seq,wd){let b=1e6;const out=[b];for(const x of seq){b=Math.max(0,(b-wd)*(1+x));out.push(b);}return out;}
+  const a=run(A,40000),b=run(Bq,40000),a0=run(A,0),b0=run(Bq,0);
+  lineChart($('seq'),[{data:b,c:'#2b7a87',w:3},{data:a,c:'#c4553a',w:3}],{ymax:Math.ceil(Math.max(...a,...b)/1e6)*1e6,ystep:1e6,yfmt:v=>v===0?'0':'€'+(v/1e6)+'M',xstep:5,xlab:'years into retirement'});
+  const zero=a.findIndex(v=>v<=0);
+  const worstPct=Math.round(worst[0]*100),bestPct=Math.round(rets[n-1]*100);
+  $('seqOut').innerHTML=`<p>Both start with <b>€1,000,000</b> and take out <b>€40,000</b> a year (4 %). The 30 yearly returns are identical, from &minus;${Math.abs(worstPct)} % to +${bestPct} %, averaging 5 %. Only the order differs.</p>
+  <p>With bad years first: <span class="n" style="color:#c4553a">${zero>=0?'broke in year '+zero:eurK(a[n])}</span>. With bad years last: <span class="n" style="color:#1d566b">${eurK(b[n])}</span> left after 30 years.</p>
+  <p>Without withdrawals, both would end at exactly ${eurK(a0[n])}. Multiplication does not care about order; selling to live does.</p>`;
+}
+
+// ---------- fees ----------
+function feeDemo(){
+  const g=+$('fg').value/100,fx=+$('fx').value/100;$('fgO').textContent=(g*100).toFixed(1)+' %';$('fxO').textContent=(fx*100).toFixed(1)+' %';$('feeLbl').textContent=(fx*100).toFixed(1)+' %';
+  const lo=[],hi=[];for(let i=0;i<=30;i++){lo.push(1e4*Math.pow(1+g-.002,i));hi.push(1e4*Math.pow(1+g-fx,i));}
+  const ymax=Math.ceil(lo[30]/1e4)*1e4;
+  lineChart($('fee'),[{data:lo,c:'#2b7a87',w:3},{data:hi,c:'#c4553a',w:3}],{ymax,ystep:ymax>8e4?2e4:1e4,yfmt:v=>v===0?'0':'€'+v/1e3+'k',xstep:5,xlab:'years invested (€10,000 at the start)'});
+  const lost=1-hi[30]/lo[30];
+  $('feeOut').innerHTML=`<p>After 30 years, €10,000 grows to <span class="n" style="color:#1d566b">${eur(lo[30])}</span> with 0.2 % fees and <span class="n">${eur(hi[30])}</span> with ${(fx*100).toFixed(1)} %, in today's euros.</p>
+  <p>The expensive fund quietly keeps <b>${Math.round(lost*100)} %</b> of what you would have had. On the crossing above, the same fee gap turns a ${(st.r*100).toFixed(1)} % real return into ${Math.max(0,st.r*100-(fx*100-.2)).toFixed(1)} %, and your ${fmtY(yrsFor(st.s))}-year trip into <b>${fmtY(yrsFor(st.s,Math.max(0,st.r-(fx-.002))))} years</b>.</p>`;
+}
+['fg','fx'].forEach(id=>$(id).addEventListener('input',feeDemo));
+
+// ---------- init (synchronous first frame) ----------
+buildScene();mmmTable();update();seqDemo();feeDemo();
+['sr','rr','wr','inc','b0'].forEach(id=>$(id).addEventListener('input',feeDemo));
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

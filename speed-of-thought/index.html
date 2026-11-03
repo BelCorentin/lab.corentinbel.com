@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The speed of a word · lab · Corentin Bel</title>
+<meta name="description" content="One second in the brain: scrub through what happens, millisecond by millisecond, when you hear, read or say a word, with a cartoon brain and a simulated MEG trace.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400;1,9..144,600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f5ede0; --paper2:#fbf6ec; --ink:#1b1a22; --ink2:#4a4652; --muted:#7a7380;
+  --hear:#178a86; --read:#5a48c8; --say:#d4512f; --mc:#178a86;
+  --amber:#f2b134; --navy:#1e2236; --navy2:#272c45; --cream:#f5ede0;
+  --serif:"Fraunces", Georgia, "Times New Roman", serif;
+  --sans:"Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55}
+body{background:
+  radial-gradient(1200px 600px at 85% -10%, #f9dcc7 0%, transparent 60%),
+  radial-gradient(900px 500px at -10% 20%, #e3eee6 0%, transparent 55%),
+  var(--paper);}
+a{color:inherit}
+.top{position:fixed;top:0;left:0;z-index:20;padding:10px 16px;font-size:13px;color:var(--ink2);
+  background:rgba(245,237,224,.82);backdrop-filter:blur(6px);border-bottom-right-radius:12px}
+.top a{text-decoration:none;font-weight:600}
+.top a:hover{text-decoration:underline}
+main{max-width:1240px;margin:0 auto;padding:56px 22px 40px}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(34px,5.4vw,60px);line-height:1.02;margin:6px 0 8px;letter-spacing:-.01em}
+h1 em{font-style:italic;font-weight:400;color:var(--mc);transition:color .4s}
+h2{font-family:var(--serif);font-weight:600;font-size:clamp(24px,3vw,34px);margin:0 0 6px;line-height:1.15}
+.lede{font-size:clamp(16px,1.6vw,19px);color:var(--ink2);max-width:720px;margin:0 0 18px}
+.controls{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin:10px 0 14px}
+.seg{display:inline-flex;border:2px solid var(--ink);border-radius:999px;overflow:hidden;background:var(--paper2);box-shadow:2px 3px 0 var(--ink)}
+.seg button{font:600 15px var(--sans);border:0;background:none;padding:8px 16px;cursor:pointer;color:var(--ink);display:flex;gap:7px;align-items:center}
+.seg button+button{border-left:2px solid var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--mc);color:#fff}
+.seg.small button{font-size:13px;padding:5px 11px}
+.seg svg{width:18px;height:18px}
+.wordbox{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink2)}
+.wordbox input{font:600 16px var(--sans);width:150px;padding:6px 10px;border:2px solid var(--ink);border-radius:10px;background:var(--paper2);color:var(--ink)}
+.stage{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:20px;align-items:stretch}
+.panel{background:var(--paper2);border:2.4px solid var(--ink);border-radius:20px;box-shadow:4px 5px 0 var(--ink);position:relative}
+.brainpanel{padding:8px;overflow:hidden;
+  background:radial-gradient(circle at 40% 45%, #fffaf1 0%, #f7eedf 70%, #f1e4d0 100%)}
+#brain{width:100%;height:auto;display:block}
+.clock{position:absolute;right:16px;top:12px;text-align:right;pointer-events:none}
+.clock .ms{font-family:var(--serif);font-weight:600;font-size:clamp(30px,4vw,46px);line-height:1;font-variant-numeric:tabular-nums}
+.clock .ms small{font-size:.5em;font-weight:600;margin-left:3px}
+.clock .sub{font-size:12px;color:var(--muted)}
+.stim{position:absolute;left:14px;top:12px;max-width:52%;font-size:13px;color:var(--ink2);pointer-events:none}
+.stim .w{font-family:var(--serif);font-size:clamp(20px,2.4vw,28px);color:var(--ink);line-height:1.15;letter-spacing:.02em}
+.stim .w span{transition:opacity .08s}
+.stim .w .off{opacity:.16}
+.stim .tag{display:inline-block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--mc)}
+.card{padding:18px 20px 16px;display:flex;flex-direction:column;gap:10px;min-height:100%}
+.chip{display:inline-block;font:600 12px var(--sans);letter-spacing:.04em;padding:3px 10px;border-radius:999px;background:var(--mc);color:#fff;align-self:flex-start}
+.card h3{font-family:var(--serif);font-size:24px;margin:0;line-height:1.15}
+.card p{margin:0;color:var(--ink2)}
+.card .src{font-size:12px;color:var(--muted)}
+.steps{list-style:none;margin:6px 0 0;padding:10px 0 0;border-top:1.6px dashed #cdbfae;display:flex;flex-direction:column;gap:2px}
+.steps li button{width:100%;text-align:left;font:14px var(--sans);background:none;border:0;padding:5px 8px;border-radius:8px;cursor:pointer;display:grid;grid-template-columns:92px 1fr;gap:8px;color:var(--ink2)}
+.steps li button:hover{background:#f1e6d6}
+.steps li button .when{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12.5px;padding-top:1px}
+.steps li.on button{background:color-mix(in srgb, var(--mc) 16%, transparent);color:var(--ink);font-weight:600}
+.steps li.past button .when{color:var(--mc)}
+.note{font-size:12.5px;color:var(--muted);margin:4px 0 0}
+.megpanel{margin-top:22px;background:var(--navy);color:var(--cream);padding:12px 12px 10px;border-radius:20px;border:2.4px solid var(--ink);box-shadow:4px 5px 0 var(--ink)}
+.meghead{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;padding:2px 6px 8px}
+.meghead .t{font-family:var(--serif);font-size:19px}
+.meghead .t small{font-family:var(--sans);font-size:12px;color:#b9b3c6;margin-left:8px}
+.play{font:600 15px var(--sans);display:inline-flex;align-items:center;gap:8px;background:var(--amber);color:var(--ink);border:2px solid var(--ink);border-radius:999px;padding:7px 16px 7px 12px;cursor:pointer;box-shadow:2px 3px 0 #0b0c14}
+.play svg{width:16px;height:16px}
+.megpanel .seg{background:var(--navy2);border-color:#0b0c14;box-shadow:2px 3px 0 #0b0c14}
+.megpanel .seg button{color:var(--cream)}
+.megpanel .seg button+button{border-left-color:#0b0c14}
+.megpanel .seg button[aria-pressed="true"]{background:var(--cream);color:var(--ink)}
+.megctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+canvas{display:block;width:100%;touch-action:none}
+#trace{height:230px;cursor:ew-resize}
+#ruler{height:200px;cursor:ew-resize}
+.rulerwrap{background:#252a42;border-radius:12px;margin-top:8px;padding:4px 0}
+input[type=range]{width:100%;accent-color:var(--amber);margin:10px 0 2px}
+.hint{font-size:12px;color:#b9b3c6;padding:0 6px}
+section.more{margin-top:46px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:28px;align-items:start}
+section.more p{color:var(--ink2);margin:0 0 12px}
+.race{padding:16px 16px 12px}
+.race svg{width:100%;height:auto;display:block}
+.racectl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
+.go{font:600 14px var(--sans);background:var(--ink);color:var(--paper);border:0;border-radius:999px;padding:7px 16px;cursor:pointer}
+.whymeg{padding:16px}
+.whymeg svg{width:100%;height:auto;display:block}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}
+.facts div{background:#fff7ea;border:1.8px solid var(--ink);border-radius:14px;padding:10px 12px;font-size:13.5px;color:var(--ink2)}
+.facts b{display:block;font-family:var(--serif);font-size:20px;color:var(--ink);font-weight:600}
+.sources{margin-top:50px;font-size:13.5px;color:var(--ink2);border-top:2px solid var(--ink);padding-top:14px}
+.sources ol{padding-left:20px;margin:6px 0}
+.sources li{margin:3px 0}
+.caveat{font-size:13px;color:var(--muted);max-width:800px}
+footer{margin:30px 0 10px;font-size:12.5px;color:var(--muted)}
+@media (max-width:860px){
+  main{padding:50px 12px 30px}
+  .stage{grid-template-columns:1fr}
+  section.more{grid-template-columns:1fr}
+  .facts{grid-template-columns:1fr}
+  #trace{height:190px}
+  .meghead .t small{display:block;margin:2px 0 0;line-height:1.35}
+  #ruler{height:210px}
+  .bphead{position:static;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:6px 8px 0;min-height:86px}
+  .bphead .stim,.bphead .clock{position:static;max-width:none}
+  .brainpanel{display:flex;flex-direction:column-reverse}
+  .seg button{padding:7px 12px;font-size:14px}
+  .steps li button{grid-template-columns:84px 1fr;font-size:13.5px}
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+</style>
+</head>
+<body>
+<nav class="top"><a href="../">← lab</a> · <a href="https://corentinbel.com">home</a></nav>
+<main>
+  <h1>The speed of <em>a word</em></h1>
+  <p class="lede">A word lasts a fraction of a second. In that time your brain turns air pressure (or ink, or an intention) into sounds, letters, meaning and grammar. Here is that first second, millisecond by millisecond. Press play, or drag the trace.</p>
+
+  <div class="controls">
+    <div class="seg" role="group" aria-label="What the brain does">
+      <button data-mode="hear" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 10a5 5 0 1 1 10 0c0 3-3 4-3 6.5a3 3 0 0 1-5.5 1.6"/><path d="M10 10a2 2 0 1 1 4 0"/></svg>Hear</button>
+      <button data-mode="read" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg>Read</button>
+      <button data-mode="say" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16v9H11l-5 4v-4H4z"/></svg>Say</button>
+    </div>
+    <label class="wordbox">your word <input id="word" value="mimosa" maxlength="16" spellcheck="false" autocomplete="off"></label>
+  </div>
+
+  <div class="stage">
+    <div class="panel brainpanel">
+      <svg id="brain" viewBox="0 0 640 500" aria-label="Cartoon of the left side of a head with the brain; regions light up as the timeline plays"></svg>
+      <div class="bphead"><div class="stim" id="stim"></div>
+      <div class="clock"><div class="ms" id="clock">0<small>ms</small></div><div class="sub" id="clocksub">after the word arrives</div></div></div>
+    </div>
+    <div class="panel card">
+      <span class="chip" id="chip">0 ms</span>
+      <h3 id="ctitle">…</h3>
+      <p id="ctext"></p>
+      <div class="src" id="csrc"></div>
+      <ul class="steps" id="steps"></ul>
+      <p class="note" id="modenote"></p>
+    </div>
+  </div>
+
+  <div class="megpanel">
+    <div class="meghead">
+      <div class="t">What an MEG would see <small>simulated, illustrative: shapes and timings follow the literature, the data are not real</small></div>
+      <div class="megctl">
+        <button class="play" id="play"><svg viewBox="0 0 16 16" id="playicon"><path d="M4 2l10 6-10 6z" fill="currentColor"/></svg><span id="playlabel">Play</span></button>
+        <div class="seg small" role="group" aria-label="Speed" id="speed">
+          <button data-s="1" aria-pressed="false">real time</button>
+          <button data-s="0.1" aria-pressed="true">10× slower</button>
+          <button data-s="0.02" aria-pressed="false">50× slower</button>
+        </div>
+        <div class="seg small" role="group" aria-label="Time axis" id="axis">
+          <button data-a="lin" aria-pressed="true">linear</button>
+          <button data-a="log" aria-pressed="false">stretch first ms</button>
+        </div>
+      </div>
+    </div>
+    <canvas id="trace" aria-label="Simulated MEG sensor traces over the first second"></canvas>
+    <input type="range" id="scrub" min="0" max="1000" step="1" value="400" aria-label="Time after the word, scrubber">
+    <div class="rulerwrap"><canvas id="ruler" aria-label="Everyday durations on the same time axis"></canvas></div>
+    <div class="hint">Each pale line is one sensor around the head; the gold line is their overall strength. Bottom: everyday things on the same axis. Keys: space plays, arrows step.</div>
+  </div>
+
+  <section class="more">
+    <div>
+      <h2>How fast is a nerve?</h2>
+      <p>Nerve signals are not electricity in a wire. They are waves of ion channels opening one after another, and their speed depends on the fibre. Thick fibres wrapped in myelin reach about 120 m/s. Thin bare ones crawl at 1 m/s or less.</p>
+      <p>That is why stubbing a toe hurts twice: a sharp first pain carried by fast fibres, then a dull, burning second pain that arrives about a second later on slow ones.</p>
+      <p>Pick a starting point and race the four main fibre types to the brain, in real time. The times count the nerve only; each relay adds a little.</p>
+    </div>
+    <div class="panel race">
+      <div class="racectl">
+        <div class="seg small" role="group" aria-label="Starting point" id="from">
+          <button data-d="1.7" aria-pressed="true">big toe ~1.7 m</button>
+          <button data-d="1.0" aria-pressed="false">fingertip ~1 m</button>
+          <button data-d="0.12" aria-pressed="false">lip ~0.1 m</button>
+        </div>
+        <button class="go" id="race">Race ▸</button>
+      </div>
+      <svg id="racesvg" viewBox="0 0 600 236"></svg>
+    </div>
+  </section>
+
+  <section class="more" style="grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)">
+    <div class="panel whymeg">
+      <svg id="whysvg" viewBox="0 0 600 270"></svg>
+    </div>
+    <div>
+      <h2>Why I use MEG</h2>
+      <p>Neurons talk with electrical currents. When tens of thousands of them push current the same way at the same moment, the tiny magnetic field they make can be picked up outside the head. That is magnetoencephalography: about 300 sensors in a helmet, sampling a thousand times a second, so it sees every wave on this page.</p>
+      <p>fMRI measures something else: the blood that rushes in to refuel active tissue. That response is slow. It peaks about 5–6 seconds after the neural activity and takes 15 seconds or more to settle. The whole story above fits inside its first rising edge.</p>
+      <p>The trade is space for time: fMRI localises to millimetres, MEG is blurrier in space. For decoding words, which arrive every few hundred milliseconds, time wins. In my research I train decoders on these signals to read out which word someone heard, or only imagined.</p>
+    </div>
+  </section>
+  <div class="facts">
+    <div><b>~10–1000 fT</b>typical brain magnetic fields: roughly a hundred million to a billion times weaker than Earth's field</div>
+    <div><b>−269 °C</b>classic MEG sensors (SQUIDs) sit in liquid helium; newer optically pumped sensors work near room temperature</div>
+    <div><b>~1 ms vs ~1 s</b>MEG samples every millisecond; an fMRI brain volume typically takes one to two seconds</div>
+  </div>
+
+  <div class="sources">
+    <h2 style="font-size:22px">Sources and caveats</h2>
+    <p class="caveat">Latencies are approximate and vary with the stimulus, the person, loudness or contrast, and how a wave is measured. Wave names (N1, N400…) come from EEG; MEG has close counterparts (M100, N400m). Brain regions are where these responses are mostly thought to come from, drawn on a cartoon; real sources are spread out and overlap in time.</p>
+    <ol>
+      <li>Picton, T. W. (2010). <i>Human Auditory Evoked Potentials</i>. Plural Publishing. (brainstem, middle-latency and N1 responses)</li>
+      <li>Kutas, M., &amp; Hillyard, S. A. (1980). Reading senseless sentences: brain potentials reflect semantic incongruity. <i>Science</i>, 207, 203–205.</li>
+      <li>Kutas, M., &amp; Federmeier, K. D. (2011). Thirty years and counting: finding meaning in the N400 component of the event-related brain potential (ERP). <i>Annual Review of Psychology</i>, 62, 621–647.</li>
+      <li>Osterhout, L., &amp; Holcomb, P. J. (1992). Event-related brain potentials elicited by syntactic anomaly. <i>Journal of Memory and Language</i>, 31, 785–806.</li>
+      <li>Marslen-Wilson, W. D. (1987). Functional parallelism in spoken word-recognition. <i>Cognition</i>, 25, 71–102.</li>
+      <li>Dehaene, S., &amp; Cohen, L. (2011). The unique role of the visual word form area in reading. <i>Trends in Cognitive Sciences</i>, 15, 254–262.</li>
+      <li>Rayner, K. (1998). Eye movements in reading and information processing: 20 years of research. <i>Psychological Bulletin</i>, 124, 372–422.</li>
+      <li>Indefrey, P., &amp; Levelt, W. J. M. (2004). The spatial and temporal signatures of word production components. <i>Cognition</i>, 92, 101–144.</li>
+      <li>Stivers, T., et al. (2009). Universals and cultural variation in turn-taking in conversation. <i>PNAS</i>, 106, 10587–10592.</li>
+      <li>Hämäläinen, M., Hari, R., Ilmoniemi, R. J., Knuutila, J., &amp; Lounasmaa, O. V. (1993). Magnetoencephalography: theory, instrumentation, and applications to noninvasive studies of the working human brain. <i>Reviews of Modern Physics</i>, 65, 413–497.</li>
+      <li>Glover, G. H. (1999). Deconvolution of impulse response in event-related BOLD fMRI. <i>NeuroImage</i>, 9, 416–429.</li>
+      <li>Kandel, E. R., et al. (2013). <i>Principles of Neural Science</i> (5th ed.). McGraw-Hill. (nerve fibre classes and conduction speeds)</li>
+    </ol>
+  </div>
+  <footer>Corentin Bel · NeuroSpin. The MEG traces are synthetic: a sum of textbook-shaped waves plus noise, not a recording.</footer>
+</main>
+
+<script>
+"use strict";
+/* ---------- utilities ---------- */
+function rng(seed){let a=seed>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const $=s=>document.querySelector(s);
+const NS="http://www.w3.org/2000/svg";
+function el(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const ss=x=>{x=clamp(x,0,1);return x*x*(3-2*x);};
+function interp(t,xs,ys){if(t<=xs[0])return ys[0];for(let i=1;i<xs.length;i++){if(t<=xs[i]){const f=(t-xs[i-1])/(xs[i]-xs[i-1]);return ys[i-1]+f*(ys[i]-ys[i-1]);}}return ys[ys.length-1];}
+const REDUCED=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+const COL={hear:"#178a86",read:"#5a48c8",say:"#d4512f"};
+
+/* ---------- content ---------- */
+const N400={t0:250,t1:560,peak:400,regions:[["mtg",1],["atl",.8],["ifg",.55]],label:"N400",
+  title:"The N400: meaning",range:"~300–500 ms, peak ~400",
+  body:"Every content word evokes an N400, a wave tied to fetching its meaning, mostly from the left temporal lobe with frontal help. It grows when a word is unexpected: “He spread the warm bread with socks” gives a big one.",
+  src:"Kutas & Hillyard 1980; Kutas & Federmeier 2011"};
+const P600={t0:500,t1:850,peak:650,regions:[["stg",.5],["ifg",.5]],label:"P600",
+  title:"The P600: structure",range:"~500–800 ms",
+  body:"If the grammar does not fit, as in “The dogs barks”, a late positive wave appears. It is usually read as re-checking or repairing the sentence's structure. Where exactly it comes from is still debated.",
+  src:"Osterhout & Holcomb 1992"};
+const MODES={
+ hear:{sub:"after the word starts",note:"Times are from the start of a spoken word. Loud, clear sounds give earlier and bigger early waves.",
+  events:[
+  {t0:0,t1:2,peak:1,regions:[["ear",1]],title:"Ear: sound becomes spikes",range:"0–2 ms",
+   body:"The eardrum and three tiny bones pass the vibration to the cochlea, where hair cells turn it into electrical signals. The first spikes leave on the auditory nerve within about 1–2 ms.",src:"Picton 2010"},
+  {t0:1,t1:10,peak:5.5,regions:[["stem",1]],title:"Brainstem relay",range:"~1–10 ms",
+   body:"The signal climbs a chain of brainstem nuclei. Scalp sensors catch it as five tiny ripples, the auditory brainstem response; the clearest one, wave V, comes at around 5–6 ms. It is used to screen newborns' hearing.",src:"Picton 2010"},
+  {t0:10,t1:50,peak:30,regions:[["thal",.8],["a1",1]],title:"Thalamus, then auditory cortex",range:"~15–50 ms",
+   body:"After a relay in the thalamus, the signal reaches primary auditory cortex on Heschl's gyrus, folded inside the Sylvian fissure. These middle-latency waves span roughly 15 to 50 ms.",src:"Picton 2010"},
+  {t0:70,t1:150,peak:100,regions:[["a1",1],["stg",.6]],label:"M100",title:"The N1, or M100",range:"~80–150 ms, peak ~100",
+   body:"The biggest early wave: auditory cortex registering that a sound has begun. In MEG it is called the M100, and it is the most prominent auditory response you can see.",src:"Picton 2010; Hämäläinen et al. 1993"},
+  {t0:100,t1:310,peak:200,regions:[["stg",1]],title:"Speech sounds, word forms",range:"~100–300 ms",
+   body:"The superior temporal gyrus maps the sound onto speech sounds and narrows down which word it could be while the word is still arriving. A spoken word lasts a few hundred milliseconds, and many are recognised before their last sound.",src:"Marslen-Wilson 1987"},
+  N400,P600,
+  {t0:820,t1:1000,peak:960,regions:[],title:"The next word is already here",range:"~800 ms on",
+   body:"In conversation we hear roughly two to three words per second, so all of this overlaps with the next word, and the one after that.",src:""}
+ ]},
+ read:{sub:"after the word appears",note:"Times are from the moment the printed word appears. Contrast, word length and familiarity shift them.",
+  events:[
+  {t0:0,t1:45,peak:22,regions:[["eye",1]],title:"Eye: light becomes spikes",range:"~0–40 ms",
+   body:"Photoreceptors respond to the printed word, and the retina processes the image before it leaves along the optic nerve. Vision is slower off the mark than hearing: this alone takes a few tens of milliseconds.",src:"Kandel et al. 2013"},
+  {t0:30,t1:95,peak:65,regions:[["thal",.6],["v1",1]],title:"Primary visual cortex",range:"~50–80 ms",
+   body:"Via the thalamus, the signal reaches primary visual cortex at the very back of the head. The first cortical response appears around 50–80 ms. Here the word is still just small patches of edges and contrast.",src:"Kandel et al. 2013"},
+  {t0:80,t1:150,peak:105,regions:[["vis",1],["v1",.4]],label:"P1",title:"Shapes and letters",range:"~100 ms",
+   body:"Visual areas beyond V1 build up features: lines, junctions, letter shapes. In EEG this is the P1 wave, around 100 ms.",src:"Kandel et al. 2013"},
+  {t0:130,t1:225,peak:170,regions:[["vwfa",1]],label:"N170",title:"The visual word form area",range:"~150–200 ms",
+   body:"A patch of the left fusiform gyrus, on the underside of the brain, responds to letter strings and recognises a word whatever its font or case. The N170 (M170 in MEG) is the wave linked to it. The area only specialises as we learn to read.",src:"Dehaene & Cohen 2011"},
+  {t0:200,t1:290,peak:240,regions:[["eye",.6]],title:"Your eyes move on",range:"~200–250 ms",
+   body:"In fluent reading a fixation lasts about 200–250 ms, then the eyes jump to the next word. The meaning of this one is still being worked out after they leave.",src:"Rayner 1998"},
+  N400,P600,
+  {t0:820,t1:1000,peak:960,regions:[],title:"Three or four words later",range:"~800 ms on",
+   body:"A skilled reader covers roughly three to four words per second, so by now the eyes are several words further on.",src:"Rayner 1998"}
+ ]},
+ say:{sub:"after the picture appears",note:"Indefrey and Levelt's stage times are a meta-analytic estimate for a 600 ms naming time. Real naming times are often longer, and the stages likely overlap.",
+  events:[
+  {t0:0,t1:175,peak:100,regions:[["eye",.5],["v1",1],["vis",1]],label:"",title:"See the picture, pick a concept",range:"0–~175 ms",
+   body:"Picture naming is the classic lab task for speaking. First you recognise the object and settle on the concept you want to say. Indefrey and Levelt estimate this takes about 175 ms.",src:"Indefrey & Levelt 2004"},
+  {t0:175,t1:250,peak:212,regions:[["mtg",1]],title:"Lemma: choose the word",range:"~175–250 ms",
+   body:"The concept selects a word from your mental lexicon, with its grammar (noun, gender) but not yet its sounds. Linked to the middle part of the left middle temporal gyrus.",src:"Indefrey & Levelt 2004"},
+  {t0:250,t1:330,peak:290,regions:[["stg",1]],title:"Fetch its sounds",range:"~250–330 ms",
+   body:"Now the word's sound form is retrieved, phoneme by phoneme. This step is linked to the back of the left temporal lobe (Wernicke's area).",src:"Indefrey & Levelt 2004"},
+  {t0:330,t1:455,peak:390,regions:[["ifg",1]],title:"Syllabify",range:"~330–455 ms",
+   body:"The phonemes are strung into syllables. Linked to the left inferior frontal gyrus (Broca's area).",src:"Indefrey & Levelt 2004"},
+  {t0:455,t1:600,peak:530,regions:[["motor",1],["sma",.8],["cereb",.7]],title:"Plan the movements",range:"~455–600 ms",
+   body:"Syllables become motor commands for lips, tongue, jaw and larynx: motor and premotor cortex, the supplementary motor area and the cerebellum.",src:"Indefrey & Levelt 2004"},
+  {t0:600,t1:1000,peak:720,regions:[["mouth",1],["motor",.7],["stg",.45]],title:"Speech",range:"~600 ms on",
+   body:"Articulation starts around 600 ms. Your auditory cortex listens to your own voice to catch errors. For MEG this is the hard part: jaw and tongue muscles make magnetic artefacts much larger than the brain signals.",src:"Indefrey & Levelt 2004"}
+ ]}
+};
+/* waveform components: mu (ms), sigma (ms), amplitude, label */
+const COMPS={
+ hear:[[1.5,.35,.22],[2.6,.35,.18],[3.7,.35,.2],[4.8,.35,.2],[5.8,.45,.32,"V"],[19,3,-.3],[30,4.5,.38],[42,5,-.25],[55,9,.42],
+       [100,15,-1.25,"M100"],[185,26,.7],[230,55,.32],[400,62,-.9,"N400"],[650,95,.6,"P600"]],
+ read:[[75,10,.38],[105,13,.65,"P1"],[170,18,-1.2,"N170"],[235,26,.5],[400,62,-.9,"N400"],[650,95,.55,"P600"]],
+ say:[[100,13,.6,"P1"],[165,22,-.65],[212,28,.36],[290,30,-.4],[390,45,.42],[530,50,-.55]]
+};
+
+/* ---------- state ---------- */
+const P=new URLSearchParams(location.search);
+const S={mode:MODES[P.get("mode")]?P.get("mode"):"hear",t:clamp(+(P.get("t")??400)||0,0,1000),
+  playing:false,speed:0.1,axis:P.get("axis")==="log"?"log":"lin",word:"mimosa"};
+const LOG1001=Math.log10(1001);
+function frac(t){return S.axis==="lin"?t/1000:Math.log10(1+t)/LOG1001;}
+function unfrac(f){f=clamp(f,0,1);return S.axis==="lin"?f*1000:Math.pow(10,f*LOG1001)-1;}
+
+/* ---------- brain SVG ---------- */
+const svg=$("#brain");
+const BRAIN="M80 250 C60 180 110 110 190 85 C260 55 360 50 430 75 C510 100 565 160 568 230 C572 280 545 310 505 318 C460 330 400 340 340 340 C290 342 240 332 215 310 C195 295 190 280 200 268 C180 275 150 280 120 276 C95 272 82 262 80 250 Z";
+const HEAD="M320 18 C470 10 614 90 614 240 C614 330 578 392 545 428 L540 500 L250 500 C250 472 236 452 204 446 C164 441 122 446 96 432 C80 422 78 404 82 394 C70 388 62 380 66 368 C57 362 56 354 64 347 C55 342 52 336 55 330 C40 330 22 322 26 309 C32 294 42 280 49 262 C52 250 47 240 52 228 C50 200 58 160 80 118 C120 52 212 22 320 18 Z";
+const REG={ /* glow shapes */
+  a1:{cx:325,cy:243,rx:26,ry:10,rot:-14,name:"primary auditory cortex"},
+  stg:{cx:398,cy:240,rx:48,ry:14,rot:-16,name:"superior temporal gyrus"},
+  mtg:{cx:338,cy:286,rx:62,ry:14,rot:-10,name:"middle temporal gyrus"},
+  atl:{cx:232,cy:296,rx:26,ry:17,rot:-20,name:"temporal pole"},
+  ifg:{cx:185,cy:226,rx:34,ry:22,rot:-10,name:"Broca's area (IFG)"},
+  motor:{cx:292,cy:180,rx:13,ry:44,rot:18,name:"motor cortex"},
+  sma:{cx:318,cy:70,rx:30,ry:11,rot:4,name:"SMA"},
+  v1:{cx:553,cy:232,rx:15,ry:42,rot:0,name:"V1"},
+  vis:{cx:508,cy:262,rx:26,ry:34,rot:-15,name:"visual areas"},
+  vwfa:{cx:440,cy:322,rx:36,ry:9,rot:-6,name:"word form area (underside)"},
+  thal:{cx:352,cy:212,rx:19,ry:15,rot:0,name:"thalamus (deep)"},
+  cereb:{cx:492,cy:342,rx:56,ry:28,rot:0,name:"cerebellum"},
+  stem:{cx:352,cy:390,rx:20,ry:52,rot:-8,name:"brainstem"},
+  ear:{cx:438,cy:398,rx:30,ry:40,rot:0,name:"ear"},
+  eye:{cx:74,cy:286,rx:26,ry:20,rot:0,name:"eye"},
+  mouth:{cx:62,cy:358,rx:30,ry:22,rot:0,name:"mouth"}
+};
+const PATHS={
+  hear:{d:"M428 392 C410 404 380 404 362 392 C354 350 354 290 352 224 C346 232 338 238 326 242",tx:[0,2,10,20,32],fx:[0,.14,.62,.9,1]},
+  read:{d:"M86 284 C170 292 290 250 352 214 C420 230 500 236 550 232",tx:[0,25,45,70],fx:[0,.06,.55,1]},
+  say:{d:"M290 200 C312 260 345 330 352 380 C300 410 150 384 72 358",tx:[470,600],fx:[0,1]}
+};
+let regEls={},pathEl,pathLit,dotEl,lblEls={};
+function buildBrain(){
+  const R=rng(7);
+  const defs=el("defs",{},svg);
+  const g=el("radialGradient",{id:"glow"},defs);
+  el("stop",{offset:"0",style:"stop-color:#ffe28a;stop-opacity:1"},g);
+  el("stop",{offset:".45",style:"stop-color:var(--mc);stop-opacity:.75"},g);
+  el("stop",{offset:"1",style:"stop-color:var(--mc);stop-opacity:0"},g);
+  const sk=el("linearGradient",{id:"skin",x1:"0",y1:"0",x2:"0",y2:"1"},defs);
+  el("stop",{offset:"0","stop-color":"#fbe6d4"},sk);el("stop",{offset:"1","stop-color":"#f3d2bb"},sk);
+  const cp=el("clipPath",{id:"bclip"},defs);el("path",{d:BRAIN},cp);
+  const blur=el("filter",{id:"soft",x:"-50%",y:"-50%",width:"200%",height:"200%"},defs);
+  el("feGaussianBlur",{stdDeviation:"5"},blur);
+  /* head */
+  el("path",{d:HEAD,fill:"url(#skin)",stroke:"#1b1a22","stroke-width":"2.6","stroke-linejoin":"round"},svg);
+  el("path",{d:"M545 428 C520 420 470 420 430 440",fill:"none",stroke:"#d9b49c","stroke-width":"2","stroke-linecap":"round"},svg);
+  /* brainstem + cerebellum (behind) */
+  el("path",{d:"M335 330 C338 370 336 420 330 470 L372 474 C374 430 378 380 380 332 Z",fill:"#e9b4a8",stroke:"#1b1a22","stroke-width":"2.2"},svg);
+  const cb=el("path",{d:"M432 318 C440 300 520 296 556 318 C578 334 566 372 530 378 C490 384 446 378 432 360 C424 348 426 330 432 318 Z",fill:"#e7aab0",stroke:"#1b1a22","stroke-width":"2.2"},svg);
+  for(let i=0;i<6;i++){const y=316+i*10;el("path",{d:`M${440+i*2} ${y} C480 ${y-6} 520 ${y-6} ${560-i*4} ${y+2}`,fill:"none",stroke:"#b7737f","stroke-width":"1.2",opacity:".8"},svg);}
+  /* brain lobes */
+  let lobes=el("g",{"clip-path":"url(#bclip)"},svg);
+  el("rect",{x:0,y:0,width:640,height:500,fill:"#f3c7bb"},lobes);
+  const lb=el("filter",{id:"lobeblur",x:"-20%",y:"-20%",width:"140%",height:"140%"},defs);el("feGaussianBlur",{stdDeviation:"9"},lb);
+  const lobes0=lobes;lobes=el("g",{filter:"url(#lobeblur)"},lobes0);
+  el("path",{d:"M0 0 L336 0 L334 55 L280 228 L205 268 L0 300 Z",fill:"#f6d0bf"},lobes);
+  el("path",{d:"M336 0 L500 0 L492 200 L436 192 L400 222 L280 228 L334 55 Z",fill:"#f1c0c4"},lobes);
+  el("path",{d:"M500 0 L640 0 L640 400 L478 334 L492 200 Z",fill:"#ebc0d3"},lobes);
+  el("path",{d:"M205 268 L280 228 L400 222 L436 192 L492 200 L478 334 L200 420 Z",fill:"#f6d6b6"},lobes);
+  lobes=lobes0;
+  /* shading */
+  const sh=el("radialGradient",{id:"shade",cx:".4",cy:".35",r:".75"},defs);
+  el("stop",{offset:".55","stop-color":"#fff","stop-opacity":"0"},sh);el("stop",{offset:"1","stop-color":"#7a3d4a","stop-opacity":".22"},sh);
+  el("path",{d:BRAIN,fill:"url(#shade)"},lobes);
+  /* gyral wiggles, seeded */
+  for(let i=0;i<95;i++){
+    const x=95+R()*465,y=80+R()*255,len=10+R()*16,a=R()*Math.PI,h=(R()<.5?-1:1)*len*(.3+R()*.25);
+    const ca=Math.cos(a),sa=Math.sin(a);
+    const p=(u,v)=>`${(x+u*ca-v*sa).toFixed(1)} ${(y+u*sa+v*ca).toFixed(1)}`;
+    el("path",{d:`M${p(0,0)} C${p(len*.25,h)} ${p(len*.75,h)} ${p(len,0)}`,fill:"none",stroke:"#b06a78","stroke-width":"1.4","stroke-linecap":"round",opacity:(.28+R()*.22).toFixed(2)},lobes);
+  }
+  /* glows (inside clip for cortex; outside for ear/eye/mouth/stem/cereb/thal) */
+  const glowIn=el("g",{"clip-path":"url(#bclip)"},svg), glowOut=el("g",{},svg);
+  /* sulci */
+  const sul=["M205 268 C250 250 330 238 400 222 C420 216 432 205 438 192",
+    "M336 56 C320 100 310 140 300 170 C292 195 282 210 278 228",
+    "M366 60 C350 110 336 160 330 214",
+    "M226 300 C290 290 370 276 452 254",
+    "M120 132 C170 120 230 106 300 100",
+    "M108 198 C160 186 220 180 284 170",
+    "M362 136 C410 134 452 150 492 182",
+    "M262 326 C330 318 400 306 470 300",
+    "M520 140 C538 176 548 214 546 282",
+    "M180 100 C200 140 230 160 250 200"];
+  const sg=el("g",{"clip-path":"url(#bclip)"},svg);
+  sul.forEach((d,i)=>el("path",{d,fill:"none",stroke:"#1b1a22","stroke-width":i<2?"2.4":"1.7","stroke-linecap":"round",opacity:i<2?".9":".7"},sg));
+  for(const k in REG){
+    const r=REG[k],out=["ear","eye","mouth","stem","cereb","thal"].includes(k);
+    const grp=el("g",{opacity:0,transform:`rotate(${r.rot} ${r.cx} ${r.cy})`},out?glowOut:glowIn);
+    el("ellipse",{cx:r.cx,cy:r.cy,rx:r.rx*1.7,ry:r.ry*1.7,fill:"url(#glow)",filter:"url(#soft)"},grp);
+    el("ellipse",{cx:r.cx,cy:r.cy,rx:r.rx,ry:r.ry,fill:"url(#glow)"},grp);
+    regEls[k]=grp;
+  }
+  /* brain outline on top */
+  el("path",{d:BRAIN,fill:"none",stroke:"#1b1a22","stroke-width":"3","stroke-linejoin":"round"},svg);
+  /* thalamus (deep) */
+  el("ellipse",{cx:352,cy:212,rx:17,ry:13,fill:"none",stroke:"#1b1a22","stroke-width":"1.6","stroke-dasharray":"4 3",opacity:".75"},svg);
+  /* face features: eye, ear, mouth */
+  el("path",{d:"M58 286 C66 276 84 276 92 286 C84 294 66 294 58 286 Z",fill:"#fffaf2",stroke:"#1b1a22","stroke-width":"2"},svg);
+  el("circle",{cx:66,cy:286,r:4.2,fill:"#1b1a22"},svg);
+  el("path",{d:"M54 276 C64 268 82 268 94 274",fill:"none",stroke:"#1b1a22","stroke-width":"2.4","stroke-linecap":"round"},svg);
+  el("path",{d:"M64 347 C70 352 74 354 82 352 M66 368 C72 364 78 362 84 362",fill:"none",stroke:"#1b1a22","stroke-width":"1.8","stroke-linecap":"round"},svg);
+  el("path",{d:"M430 366 C452 352 474 368 470 392 C468 412 456 420 452 434 C448 446 432 448 424 438",fill:"#f2c8ae",stroke:"#1b1a22","stroke-width":"2.4","stroke-linejoin":"round"},svg);
+  el("path",{d:"M440 380 C452 374 460 386 454 398 C450 406 440 404 444 396",fill:"none",stroke:"#1b1a22","stroke-width":"1.8","stroke-linecap":"round"},svg);
+  /* pathway */
+  pathEl=el("path",{d:"",fill:"none",stroke:"#1b1a22","stroke-width":"1.6","stroke-dasharray":"2 5","stroke-linecap":"round",opacity:".55"},svg);
+  pathLit=el("path",{d:"",fill:"none",stroke:"var(--mc)","stroke-width":"4","stroke-linecap":"round",opacity:".85"},svg);
+  dotEl=el("circle",{r:7,fill:"#ffe28a",stroke:"#1b1a22","stroke-width":"2"},svg);
+  /* labels */
+  const L=[["a1",290,262,"auditory cortex"],["stg",420,218,"superior temporal"],["mtg",300,316,"middle temporal"],["atl",160,328,"temporal pole"],["ifg",130,206,"Broca's area"],
+    ["motor",222,138,"motor cortex"],["sma",286,48,"SMA"],["v1",590,180,"V1"],["vis",586,300,"visual"],["vwfa",392,352,"word form area"],
+    ["thal",360,190,"thalamus"],["cereb",580,370,"cerebellum"],["stem",300,450,"brainstem"],["ear",478,452,"ear"],["mouth",20,402,"mouth"],["eye",18,320,"eye"]];
+  const lg=el("g",{"font-family":"Inter, system-ui, sans-serif","font-size":"13","font-weight":"600"},svg);
+  L.forEach(([k,x,y,t])=>{
+    const tx=el("text",{x,y,fill:"#1b1a22",opacity:0,"paint-order":"stroke",stroke:"#fffaf2","stroke-width":"4","stroke-linejoin":"round","text-anchor":x>560?"end":"start"},lg);
+    tx.textContent=t;lblEls[k]=tx;
+  });
+}
+
+/* ---------- env & intensities ---------- */
+function env(t,e){
+  const a=e.t0,b=e.t1,p=e.peak;
+  if(t<a)return .4*Math.exp(-(a-t)/(0.12*(b-a)+0.4));
+  if(t<=p)return .4+.6*ss((t-a)/Math.max(1e-6,p-a));
+  if(t<=b)return .4+.6*(1-ss((t-p)/Math.max(1e-6,b-p)));
+  return .4*Math.exp(-(t-b)/(0.3*(b-a)+1));
+}
+function intensities(t){
+  const I={};for(const k in REG)I[k]=0;
+  MODES[S.mode].events.forEach(e=>{const v=env(t,e);e.regions.forEach(([k,w])=>{I[k]=Math.max(I[k],v*w);});});
+  return I;
+}
+function activeEvent(t){
+  const ev=MODES[S.mode].events;let best=0,bv=-1;
+  ev.forEach((e,i)=>{const v=(t>=e.t0&&t<=e.t1)?1+env(t,e):env(t,e);if(v>bv){bv=v;best=i;}});
+  return best;
+}
+
+/* ---------- stimulus overlay ---------- */
+function syllables(w){
+  const parts=w.toLowerCase().match(/[^aeiouyàâéèêëîïôûü]*[aeiouyàâéèêëîïôûü]+(?:[^aeiouyàâéèêëîïôûü]*$)?/g);
+  if(!parts)return [w];
+  const out=[];parts.forEach((p,i)=>{
+    if(i<parts.length-1){const m=p.match(/^(.*?[aeiouyàâéèêëîïôûü]+)([^aeiouyàâéèêëîïôûü]*)$/);if(m&&m[2].length>1){out.push(m[1]+m[2][0]);parts[i+1]=m[2].slice(1)+parts[i+1];return;}}
+    out.push(p);});
+  return out;
+}
+function esc(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+let lastStim="";
+function renderStim(t){
+  const w=S.word||"word";let h="";
+  if(S.mode==="hear"){
+    const dur=Math.min(650,120+70*w.length);
+    const n=Math.round(clamp(t/dur,0,1)*w.length);
+    h=`<span class="tag">heard</span><div class="w">“${[...w].map((c,i)=>`<span class="${i<n?"":"off"}">${esc(c)}</span>`).join("")}”</div>`+
+      `<div>${t<dur?"the word is still arriving":"the sound is over"}</div>`;
+  }else if(S.mode==="read"){
+    h=`<span class="tag">on the page</span><div class="w">${esc(w)}</div><div>${t<240?"eyes on the word":"eyes already moving on"}</div>`;
+  }else{
+    let s="",tag="picture";
+    if(t<175){s=`<span class="off">[ a picture ]</span>`;}
+    else if(t<250){s=`<span class="off">${esc(w)}</span>`;tag="word chosen, no sound yet";}
+    else if(t<330){const k=Math.round(ss((t-250)/80)*w.length);s=[...w].map((c,i)=>`<span class="${i<k?"":"off"}">${esc(c)}</span>`).join("");tag="sounds";}
+    else if(t<600){s=syllables(w).map(esc).join(" · ");tag=t<455?"syllables":"motor plan";}
+    else{s=`“${esc(w)}!”`;tag="said aloud";}
+    h=`<span class="tag">${tag}</span><div class="w">${s}</div>`;
+  }
+  if(h!==lastStim){$("#stim").innerHTML=h;lastStim=h;}
+}
+
+/* ---------- MEG simulation ---------- */
+const NSENS=22;
+let sens=[];
+function buildSensors(){
+  const R=rng(42);sens=[];
+  for(let s=0;s<NSENS;s++){
+    const th=2*Math.PI*s/NSENS+(R()-.5)*.3,g=.55+.6*R(),sn=[];
+    for(let j=0;j<6;j++)sn.push([3+R()*30,.025+R()*.045,R()*6.283]);
+    const art=[];for(let j=0;j<4;j++)art.push([55+R()*80,.15+R()*.25,R()*6.283]);
+    sens.push({th,g,sn,art});
+  }
+}
+let compPhi={};
+function phis(mode){if(!compPhi[mode]){const R=rng(mode.length*97+3);compPhi[mode]=COMPS[mode].map(()=>R()*6.283);}return compPhi[mode];}
+function val(s,t){
+  const c=COMPS[S.mode],ph=phis(S.mode),z=sens[s];let v=0;
+  for(let i=0;i<c.length;i++){const d=(t-c[i][0])/c[i][1];if(d>-5&&d<5)v+=c[i][2]*Math.cos(z.th-ph[i])*z.g*Math.exp(-.5*d*d);}
+  for(const [f,a,p] of z.sn)v+=a*Math.sin(2*Math.PI*f*t/1000+p);
+  if(S.mode==="say"&&t>560){const r=ss((t-560)/80);for(const [f,a,p] of z.art)v+=r*a*3.2*Math.sin(2*Math.PI*f*t/1000+p);}
+  return v;
+}
+
+/* ---------- canvases ---------- */
+const ML=46,MR=16;
+function setupCanvas(c){
+  const dpr=Math.min(2,window.devicePixelRatio||1),r=c.getBoundingClientRect();
+  const W=Math.max(200,r.width),H=r.height||200;
+  if(c.width!==Math.round(W*dpr)||c.height!==Math.round(H*dpr)){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);}
+  const x=c.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);return {x,W,H};
+}
+const X=(t,W)=>ML+frac(t)*(W-ML-MR);
+function ticks(W){if(W<600)return S.axis==="lin"?[0,200,400,600,800,1000]:[0,2,10,50,200,1000];return S.axis==="lin"?[0,100,200,300,400,500,600,700,800,900,1000]:[0,1,2,5,10,20,50,100,200,500,1000];}
+function drawTrace(){
+  const c=$("#trace"),{x,W,H}=setupCanvas(c);
+  x.clearRect(0,0,W,H);
+  const top=22,bot=H-24,mid=(top+bot)/2,sc=(bot-top)/2/1.75;
+  x.font="11px Inter, system-ui, sans-serif";x.textBaseline="middle";
+  ticks(W).forEach(t=>{const px=X(t,W);x.strokeStyle="rgba(245,237,224,.09)";x.lineWidth=1;x.beginPath();x.moveTo(px,top-6);x.lineTo(px,bot);x.stroke();
+    x.fillStyle="#b9b3c6";x.textAlign="center";x.fillText(t+(t===1000?" ms":""),Math.min(px,W-24),H-10);});
+  x.strokeStyle="rgba(245,237,224,.22)";x.beginPath();x.moveTo(ML,mid);x.lineTo(W-MR,mid);x.stroke();
+  x.save();x.translate(14,mid);x.rotate(-Math.PI/2);x.textAlign="center";x.fillStyle="#b9b3c6";x.fillText("field (a.u.)",0,0);x.restore();
+  const tc=S.t,xc=X(tc,W);
+  const cols=[];for(let px=ML;px<=W-MR;px+=1)cols.push([px,unfrac((px-ML)/(W-ML-MR))]);
+  /* butterfly */
+  for(let s=0;s<NSENS;s++){
+    x.lineWidth=1.1;
+    for(const pass of [0,1]){
+      x.beginPath();let st=false;
+      for(const [px,t] of cols){
+        if(pass===0&&px>xc+1)break; if(pass===1&&px<xc-1)continue;
+        const y=mid-val(s,t)*sc; if(!st){x.moveTo(px,y);st=true;}else x.lineTo(px,y);
+      }
+      x.strokeStyle=pass===0?"rgba(245,237,224,.42)":"rgba(245,237,224,.08)";x.stroke();
+    }
+  }
+  /* RMS */
+  x.beginPath();let st=false;
+  for(const [px,t] of cols){if(px>xc)break;let q=0;for(let s=0;s<NSENS;s++){const v=val(s,t);q+=v*v;}
+    const y=bot-Math.sqrt(q/NSENS)*sc*1.6;if(!st){x.moveTo(px,y);st=true;}else x.lineTo(px,y);}
+  x.strokeStyle="#f2b134";x.lineWidth=2.4;x.stroke();
+  /* labels */
+  let lastR=-1e9;
+  COMPS[S.mode].forEach(cmp=>{if(!cmp[3])return;const px=X(cmp[0],W);if(px<ML+4)return;
+    const lit=tc>=cmp[0];x.font="600 12px Inter, system-ui, sans-serif";x.textAlign="center";
+    const tw=x.measureText(cmp[3]).width+12;if(px-tw/2<lastR+3)return;lastR=px+tw/2;
+    x.fillStyle=lit?COL[S.mode]:"rgba(255,255,255,.08)";
+    roundRect(x,px-tw/2,top-17,tw,18,9);x.fill();
+    x.fillStyle=lit?"#fff":"rgba(245,237,224,.4)";x.fillText(cmp[3],px,top-8);});
+  /* onset */
+  x.fillStyle="#b9b3c6";x.textAlign="left";x.font="11px Inter, system-ui, sans-serif";
+  if(S.mode==="say"){const px=X(600,W);x.strokeStyle="rgba(212,81,47,.7)";x.setLineDash([4,4]);x.beginPath();x.moveTo(px,top);x.lineTo(px,bot);x.stroke();x.setLineDash([]);x.fillStyle="#f0a08a";x.fillText("mouth opens, muscle artefacts",px+5,bot-8);}
+  /* cursor */
+  x.strokeStyle="#f2b134";x.lineWidth=2;x.beginPath();x.moveTo(xc,top-4);x.lineTo(xc,bot);x.stroke();
+  x.fillStyle="#f2b134";x.beginPath();x.arc(xc,bot,5,0,6.283);x.fill();
+}
+function roundRect(x,a,b,w,h,r){x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath();}
+const SCALE=[
+  {a:33,b:33,l:"one video frame at 30 fps",n:"33 ms"},
+  {a:30,b:50,l:"a touch on your toe reaches the brain",n:"~30–50 ms"},
+  {a:100,b:400,l:"a blink",n:"~100–400 ms"},
+  {a:200,b:250,l:"one fixation while reading",n:"~200–250 ms"},
+  {a:150,b:250,l:"typical gap between turns in conversation",n:"~200 ms"},
+  {a:600,b:600,l:"naming a picture aloud (at the fastest)",n:"~600 ms"}
+];
+function drawRuler(){
+  const c=$("#ruler"),{x,W,H}=setupCanvas(c);x.clearRect(0,0,W,H);
+  const n=SCALE.length,rh=(H-14)/n,tc=S.t,xc=X(tc,W);
+  x.textBaseline="middle";
+  SCALE.forEach((s,i)=>{
+    const narrow=W<600,y=8+rh*i+rh/2+(narrow?6:0),xa=X(s.a,W),xb=Math.max(X(s.b,W),xa+4);
+    const on=tc>=s.a&&tc<=s.b+ (s.a===s.b?12:0),past=tc>s.b;
+    x.fillStyle=on?"#f2b134":past?"rgba(245,237,224,.55)":"rgba(245,237,224,.18)";
+    roundRect(x,xa-2,y-5,xb-xa+4,10,5);x.fill();
+    if(s.a===s.b){x.beginPath();x.arc(xa,y,6,0,6.283);x.fill();}
+    x.font="12.5px Inter, system-ui, sans-serif";
+    const txt=s.l+"  "+s.n,tw=x.measureText(txt).width;
+    let tx=xb+10,al="left",ty=y;if(tx+tw>W-MR){tx=xa-10;al="right";}
+    if(al==="right"&&tx-tw<ML){tx=xb+10;al="left";}
+    if(narrow){x.font="11.5px Inter, system-ui, sans-serif";tx=12;al="left";ty=y-12;}
+    x.textAlign=al;x.fillStyle=on?"#ffe7b0":"#d8d1e2";x.fillText(txt,tx,ty);
+  });
+  x.strokeStyle="#f2b134";x.lineWidth=2;x.beginPath();x.moveTo(xc,2);x.lineTo(xc,H-4);x.stroke();
+}
+
+/* ---------- brain render ---------- */
+let pulse=0;
+function renderBrain(t){
+  const I=intensities(t);
+  for(const k in regEls){const v=I[k];regEls[k].setAttribute("opacity",(v*(REDUCED?1:(.9+.1*Math.sin(pulse*6+k.length)))).toFixed(3));
+    lblEls[k]&&lblEls[k].setAttribute("opacity",v>.45?Math.min(1,(v-.45)*3).toFixed(2):0);}
+  const pth=PATHS[S.mode];
+  if(pathEl.getAttribute("d")!==pth.d){pathEl.setAttribute("d",pth.d);pathLit.setAttribute("d",pth.d);}
+  const L=pathEl.getTotalLength(),f=interp(t,pth.tx,pth.fx);
+  pathLit.setAttribute("stroke-dasharray",`${f*L} ${L}`);
+  const tEnd=pth.tx[pth.tx.length-1],tSt=pth.tx[0];
+  if(t>=tSt&&t<=tEnd+ (S.mode==="say"?15:3)&&f>0){const p=pathEl.getPointAtLength(f*L);dotEl.setAttribute("cx",p.x);dotEl.setAttribute("cy",p.y);dotEl.setAttribute("opacity",1);}
+  else dotEl.setAttribute("opacity",0);
+}
+
+/* ---------- card / steps ---------- */
+let lastAct=-1,lastMode="";
+function buildSteps(){
+  const ul=$("#steps");ul.innerHTML="";
+  MODES[S.mode].events.forEach((e,i)=>{
+    const li=document.createElement("li"),b=document.createElement("button");
+    b.innerHTML=`<span class="when">${e.range.replace(/, peak.*/,"")}</span><span>${e.title}</span>`;
+    b.addEventListener("click",()=>{pause();setT(e.peak);});
+    li.appendChild(b);ul.appendChild(li);
+  });
+  $("#modenote").textContent=MODES[S.mode].note;
+  $("#clocksub").textContent=MODES[S.mode].sub;
+}
+function renderCard(t){
+  const ev=MODES[S.mode].events,i=activeEvent(t);
+  if(i!==lastAct||lastMode!==S.mode){
+    const e=ev[i];$("#chip").textContent=e.range;$("#ctitle").textContent=e.title;$("#ctext").textContent=e.body;
+    $("#csrc").textContent=e.src?"Source: "+e.src:"";lastAct=i;lastMode=S.mode;
+  }
+  [...$("#steps").children].forEach((li,j)=>{li.classList.toggle("on",j===i);li.classList.toggle("past",t>=ev[j].t0);});
+  const ms=t<10?t.toFixed(1):Math.round(t);
+  $("#clock").innerHTML=`${ms}<small>ms</small>`;
+}
+
+/* ---------- main loop ---------- */
+let dirty=true;
+function render(){renderBrain(S.t);renderCard(S.t);renderStim(S.t);drawTrace();drawRuler();$("#scrub").value=Math.round(frac(S.t)*1000);dirty=false;}
+function setT(t){S.t=clamp(t,0,1000);dirty=true;}
+let lastTs=0,spoke=false;
+function tick(ts){
+  const dt=lastTs?Math.min(100,ts-lastTs):0;lastTs=ts;pulse+=dt/1000;
+  if(S.playing){
+    const f=frac(S.t)+dt*S.speed/1000;
+    if(S.mode==="say"&&!spoke&&S.t>=600&&$("#word").value){spoke=true;speak();}
+    if(f>=1){setT(1000);pause();}else setT(unfrac(f));
+  }
+  if(dirty||(!REDUCED&&S.playing))render();
+  else if(!REDUCED)renderBrain(S.t);
+  requestAnimationFrame(tick);
+}
+function speak(){try{if(!("speechSynthesis" in window)||S.speed!==1)return;const u=new SpeechSynthesisUtterance(S.word);u.rate=1.05;speechSynthesis.speak(u);}catch(e){}}
+function play(){if(S.t>=999.5)S.t=0;if(S.t<600)spoke=false;S.playing=true;$("#playlabel").textContent="Pause";$("#playicon").innerHTML='<path d="M3 2h4v12H3zM9 2h4v12H9z" fill="currentColor"/>';
+  if(S.mode==="hear"&&S.t<1&&S.speed===1)speak();}
+function pause(){S.playing=false;$("#playlabel").textContent=S.t>=999.5?"Replay":"Play";$("#playicon").innerHTML='<path d="M4 2l10 6-10 6z" fill="currentColor"/>';}
+
+/* ---------- interactions ---------- */
+function setMode(m){S.mode=m;document.documentElement.style.setProperty("--mc",COL[m]);
+  document.querySelectorAll("[data-mode]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===m));
+  lastAct=-1;lastStim="";buildSteps();dirty=true;}
+document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>{setMode(b.dataset.mode);}));
+document.querySelectorAll("#speed button").forEach(b=>b.addEventListener("click",()=>{S.speed=+b.dataset.s;document.querySelectorAll("#speed button").forEach(o=>o.setAttribute("aria-pressed",o===b));}));
+document.querySelectorAll("#axis button").forEach(b=>b.addEventListener("click",()=>{S.axis=b.dataset.a;document.querySelectorAll("#axis button").forEach(o=>o.setAttribute("aria-pressed",o===b));dirty=true;}));
+$("#play").addEventListener("click",()=>S.playing?pause():play());
+$("#scrub").addEventListener("input",e=>{pause();setT(unfrac(+e.target.value/1000));});
+$("#word").addEventListener("input",e=>{S.word=e.target.value.trim().slice(0,16)||"word";lastStim="";dirty=true;});
+function scrubber(c){
+  let down=false;
+  const go=e=>{const r=c.getBoundingClientRect();setT(unfrac((e.clientX-r.left-ML)/(r.width-ML-MR)));};
+  c.addEventListener("pointerdown",e=>{down=true;pause();c.setPointerCapture(e.pointerId);go(e);});
+  c.addEventListener("pointermove",e=>{if(down)go(e);});
+  c.addEventListener("pointerup",()=>down=false);c.addEventListener("pointercancel",()=>down=false);
+}
+scrubber($("#trace"));scrubber($("#ruler"));
+document.addEventListener("keydown",e=>{
+  if(e.target.tagName==="INPUT"&&e.target.type!=="range")return;
+  if(e.code==="Space"){e.preventDefault();S.playing?pause():play();}
+  else if(e.key==="ArrowRight"||e.key==="ArrowLeft"){if(e.target.type==="range")return;e.preventDefault();pause();const d=e.key==="ArrowRight"?1:-1;setT(unfrac(frac(S.t)+d*(e.shiftKey?.05:.01)));}
+});
+window.addEventListener("resize",()=>{dirty=true;drawRace(raceT);drawWhy();});
+
+/* ---------- nerve race ---------- */
+const FIB=[{n:"Aα",what:"muscle sense",lo:80,hi:120,c:"#178a86"},{n:"Aβ",what:"touch",lo:35,hi:75,c:"#5a48c8"},
+  {n:"Aδ",what:"sharp pain, cold",lo:5,hi:35,c:"#e09a2a"},{n:"C",what:"dull pain, warmth",lo:.5,hi:2,c:"#d4512f"}];
+let dist=1.7,raceT=null,raceStart=0,raceRaf=0;
+const rs=$("#racesvg");
+function fmt(s){return s<1?Math.round(s*1000)+" ms":s.toFixed(1)+" s";}
+function drawRace(el_t){
+  rs.innerHTML="";
+  const x0=110,x1=548;
+  el("rect",{x:x0,y:6,width:x1-x0,height:212,rx:10,fill:"#fff7ea"},rs);
+  FIB.forEach((f,i)=>{
+    const y=34+i*50,mid=(f.lo+f.hi)/2,T=dist/mid;
+    el("line",{x1:x0+8,y1:y,x2:x1-8,y2:y,stroke:"#1b1a22","stroke-width":f.n==="C"?2:f.n==="Aδ"?3.5:6,"stroke-linecap":"round",opacity:".18"},rs);
+    const tx=el("text",{x:8,y:y-4,"font-family":"Fraunces, Georgia, serif","font-size":"20","font-weight":"600",fill:f.c},rs);tx.textContent=f.n;
+    const t2=el("text",{x:8,y:y+14,"font-size":"11.5","font-family":"Inter, system-ui, sans-serif",fill:"#4a4652"},rs);t2.textContent=f.what;
+    const sp=el("text",{x:46,y:y-4,"font-size":"11","font-family":"Inter, system-ui, sans-serif",fill:"#7a7380"},rs);sp.textContent=(f.lo<1?f.lo:Math.round(f.lo))+"–"+f.hi+" m/s";
+    let p=el_t==null?0:clamp(el_t/T,0,1);
+    const cx=x0+12+p*(x1-x0-24);
+    el("circle",{cx,cy:y,r:9,fill:f.c,stroke:"#1b1a22","stroke-width":"2"},rs);
+    const lo=dist/f.hi,hi=dist/f.lo;
+    const lab=el("text",{x:x1-12,y:y+24,"text-anchor":"end","font-size":"12","font-family":"Inter, system-ui, sans-serif","font-weight":"600",fill:p>=1?"#1b1a22":"#a59c94"},rs);
+    lab.textContent=(p>=1?"arrived: ":"")+fmt(lo)+" – "+fmt(hi);
+  });
+  const a=el("text",{x:x0+10,y:232,"font-size":"11.5","font-family":"Inter, system-ui, sans-serif",fill:"#7a7380"},rs);a.textContent=dist>1.5?"toe":dist>.5?"fingertip":"lip";
+  const b=el("text",{x:x1-10,y:232,"text-anchor":"end","font-size":"11.5","font-family":"Inter, system-ui, sans-serif",fill:"#7a7380"},rs);b.textContent="brain";
+  if(el_t!=null){const c=el("text",{x:330,y:232,"text-anchor":"middle","font-size":"12","font-weight":"600","font-family":"Inter, system-ui, sans-serif",fill:"#1b1a22"},rs);c.textContent="clock: "+fmt(el_t);}
+}
+function race(){
+  cancelAnimationFrame(raceRaf);
+  const slowest=dist/1.25;
+  if(REDUCED){raceT=slowest;drawRace(raceT);return;}
+  raceStart=performance.now();
+  const step=now=>{raceT=(now-raceStart)/1000;drawRace(raceT);if(raceT<slowest+.05)raceRaf=requestAnimationFrame(step);};
+  raceRaf=requestAnimationFrame(step);
+}
+$("#race").addEventListener("click",race);
+document.querySelectorAll("#from button").forEach(b=>b.addEventListener("click",()=>{dist=+b.dataset.d;raceT=null;cancelAnimationFrame(raceRaf);
+  document.querySelectorAll("#from button").forEach(o=>o.setAttribute("aria-pressed",o===b));drawRace(null);}));
+
+/* ---------- why MEG plot ---------- */
+function gamma(n){let r=1;for(let i=2;i<n;i++)r*=i;return r;}
+function hrf(t){if(t<=0)return 0;return Math.pow(t,5)*Math.exp(-t)/gamma(6)-Math.pow(t,15)*Math.exp(-t)/gamma(16)/6;}
+function drawWhy(){
+  const w=$("#whysvg");w.innerHTML="";
+  const x0=44,x1=584,y0=34,y1=220,T=20,X2=t=>x0+t/T*(x1-x0);
+  const hmax=hrf(5);
+  el("rect",{x:X2(0),y:y0-6,width:X2(1)-X2(0),height:y1-y0+6,fill:"#f2b134",opacity:".28"},w);
+  const tl=el("text",{x:X2(1)+6,y:y0+4,"font-size":"12","font-family":"Inter, system-ui, sans-serif","font-weight":"600",fill:"#1b1a22"},w);tl.textContent="← everything on this page: the first second";
+  for(let s=0;s<=20;s+=5){el("line",{x1:X2(s),y1:y1,x2:X2(s),y2:y1+5,stroke:"#1b1a22","stroke-width":"1.5"},w);
+    const tx=el("text",{x:X2(s),y:y1+19,"text-anchor":"middle","font-size":"12","font-family":"Inter, system-ui, sans-serif",fill:"#4a4652"},w);tx.textContent=s+" s";}
+  el("line",{x1:x0,y1:y1,x2:x1,y2:y1,stroke:"#1b1a22","stroke-width":"2"},w);
+  let d="";for(let i=0;i<=400;i++){const t=i/400*T;const v=hrf(t)/hmax;d+=(i?"L":"M")+X2(t).toFixed(1)+" "+(y1-30-v*(y1-y0-60)).toFixed(1);}
+  el("path",{d,fill:"none",stroke:"#5a48c8","stroke-width":"3","stroke-linejoin":"round"},w);
+  el("line",{x1:x0,y1:y1-30,x2:x1,y2:y1-30,stroke:"#5a48c8","stroke-width":"1",opacity:".3","stroke-dasharray":"3 4"},w);
+  /* MEG: compressed RMS of the hearing response */
+  let m="";const sv=S.mode;S.mode="hear";
+  for(let i=0;i<=120;i++){const t=i/120*1000;let q=0;for(let s=0;s<NSENS;s++){const v=val(s,t);q+=v*v;}m+=(i?"L":"M")+X2(t/1000).toFixed(1)+" "+(y1-Math.sqrt(q/NSENS)*95).toFixed(1);}
+  S.mode=sv;
+  el("path",{d:m,fill:"none",stroke:"#d4512f","stroke-width":"2.4","stroke-linejoin":"round"},w);
+  const a=el("text",{x:X2(5.3),y:y0+30,"font-size":"13","font-family":"Inter, system-ui, sans-serif","font-weight":"600",fill:"#5a48c8"},w);a.textContent="fMRI blood response, peaks ~5–6 s";
+  const b=el("text",{x:X2(1.4),y:y1-12,"font-size":"13","font-family":"Inter, system-ui, sans-serif","font-weight":"600",fill:"#d4512f"},w);b.textContent="MEG: the brain's own currents";
+  const c=el("text",{x:x0,y:16,"font-family":"Fraunces, Georgia, serif","font-size":"17","font-weight":"600",fill:"#1b1a22"},w);c.textContent="One heard word, seen by two machines";
+  const e=el("text",{x:X2(11),y:y1-12,"font-size":"11.5","font-family":"Inter, system-ui, sans-serif",fill:"#4a4652"},w);e.textContent="undershoot, back to baseline ~20 s";
+}
+
+/* ---------- init ---------- */
+buildBrain();buildSensors();
+document.querySelectorAll("#axis button").forEach(o=>o.setAttribute("aria-pressed",o.dataset.a===S.axis));
+setMode(S.mode);render();drawRace(null);drawWhy();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

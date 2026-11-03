@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Beaufort scale, painted · lab · Corentin Bel</title>
+<meta name="description" content="An animated seascape driven by the Beaufort wind scale, force 0 to 12: wind speeds, WMO wave heights, sea states, history, and what each force means on a wing-foil.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌬️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400;1,9..144,600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1b1a22; --paper:#f3ead8; --paper2:#fbf5e8; --coral:#e0674b; --mustard:#e9b949;
+  --teal:#1f6f86; --sea:#8cc7c9; --muted:#5d5866;
+  --serif:'Fraunces',Georgia,'Times New Roman',serif;
+  --sans:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55}
+a{color:var(--teal)}
+.topbar{position:absolute;top:10px;left:12px;z-index:5;font-size:13px;background:rgba(251,245,232,.82);
+  border:1.5px solid var(--ink);border-radius:999px;padding:3px 12px;backdrop-filter:blur(3px)}
+.topbar a{color:var(--ink);text-decoration:none}
+.topbar a:hover{text-decoration:underline}
+.stage{position:relative;width:100%;height:min(68vh,720px);min-height:430px;overflow:hidden;
+  border-bottom:3px solid var(--ink);background:#a9d6e6;touch-action:pan-y}
+#sea{position:absolute;inset:0;width:100%;height:100%;display:block}
+.badge{position:absolute;left:14px;top:48px;z-index:4;pointer-events:none;
+  background:rgba(251,245,232,.88);border:2px solid var(--ink);border-radius:14px;padding:8px 14px 9px;
+  box-shadow:3px 3px 0 var(--ink);max-width:min(330px,62vw)}
+.badge .f{font-family:var(--serif);font-weight:600;font-size:15px;letter-spacing:.02em;color:var(--muted)}
+.badge .f b{font-size:44px;line-height:1;color:var(--ink);margin-right:8px;vertical-align:-6px}
+.badge .nm{font-family:var(--serif);font-style:italic;font-size:24px;line-height:1.1;margin-top:2px}
+.badge .kn{font-size:13px;color:var(--muted);margin-top:3px}
+.controls{max-width:1100px;margin:0 auto;padding:16px 18px 6px;display:flex;gap:14px;align-items:center}
+.play{flex:none;font:600 14px var(--sans);background:var(--mustard);color:var(--ink);border:2px solid var(--ink);
+  border-radius:999px;padding:8px 16px;box-shadow:2px 2px 0 var(--ink);cursor:pointer}
+.play:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--ink)}
+.play:focus-visible,input[type=range]:focus-visible{outline:3px solid var(--coral);outline-offset:3px}
+.sliderwrap{flex:1;min-width:0}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:16px;border-radius:999px;margin:6px 0 2px;
+  border:2px solid var(--ink);background:linear-gradient(90deg,#bfe3ea,#8cc7c9 25%,#e9b949 45%,#e0674b 65%,#6c3b4a 85%,#2b313b);cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:var(--paper2);border:3px solid var(--ink);box-shadow:2px 2px 0 var(--ink)}
+input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:var(--paper2);border:3px solid var(--ink);box-shadow:2px 2px 0 var(--ink)}
+.ticks{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding:0 9px;user-select:none}
+.ticks span{width:16px;text-align:center;cursor:pointer}
+.ticks span.on{color:var(--ink);font-weight:600}
+.hint{max-width:1100px;margin:0 auto;padding:0 18px;font-size:13px;color:var(--muted)}
+main{max-width:1100px;margin:0 auto;padding:10px 18px 60px}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(30px,4.6vw,50px);line-height:1.05;margin:26px 0 8px}
+h1 i{font-weight:400}
+h2{font-family:var(--serif);font-weight:600;font-size:26px;margin:44px 0 10px}
+.lede{font-size:18px;max-width:720px}
+.grid{display:grid;grid-template-columns:1.05fr 1fr;gap:20px;margin-top:22px}
+.card{background:var(--paper2);border:2px solid var(--ink);border-radius:16px;padding:18px 20px;box-shadow:4px 4px 0 var(--ink)}
+.card h3{font-family:var(--serif);font-weight:600;font-size:24px;margin:0 0 2px}
+.card h3 small{font-family:var(--sans);font-size:14px;color:var(--muted);font-weight:400;margin-left:6px}
+.nums{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
+.num{border:1.5px solid var(--ink);border-radius:10px;padding:6px 8px;background:#fff}
+.num .v{font-family:var(--serif);font-weight:600;font-size:19px;line-height:1.2;white-space:nowrap}
+.num .u{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.lab{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-top:12px;font-weight:600}
+.sea-plain{font-size:17px;margin:2px 0 0}
+.wmo{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--muted);margin:4px 0 0}
+.rule{margin-top:14px;background:#fdebd9;border:1.5px dashed var(--ink);border-radius:12px;padding:10px 12px}
+.rule .tag{display:inline-block;font-size:11px;font-weight:600;background:var(--coral);color:#fff;border-radius:999px;padding:1px 8px;margin-bottom:4px}
+.rule p{margin:2px 0}
+#chart{width:100%;height:auto;display:block}
+.chartcap{font-size:13px;color:var(--muted);margin-top:6px}
+table{border-collapse:collapse;width:100%;font-size:14px;background:var(--paper2);border:2px solid var(--ink);border-radius:12px;overflow:hidden}
+th,td{padding:6px 8px;text-align:left;border-bottom:1px solid #d9cfbb;white-space:nowrap}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:#efe5cf}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:#f6ead0}
+tbody tr.on{background:#fdebd9;font-weight:600}
+td.b{font-family:var(--serif);font-weight:600;font-size:16px}
+.tablewrap{overflow-x:auto;border-radius:12px;margin-top:12px}
+.prose{max-width:740px}
+.prose p{margin:10px 0}
+.formula{font-family:var(--serif);font-size:22px;text-align:center;margin:16px 0;padding:10px;border:1.5px solid var(--ink);border-radius:12px;background:var(--paper2)}
+.sources{font-size:14px;color:var(--muted)}
+.sources li{margin:6px 0}
+.note{font-size:13px;color:var(--muted)}
+footer{font-size:13px;color:var(--muted);margin-top:40px}
+@media (max-width:820px){
+  .grid{grid-template-columns:1fr}
+  .stage{height:56vh;min-height:400px}
+  .badge{top:44px;left:10px;padding:6px 10px}
+  .badge .f b{font-size:34px}
+  .badge .nm{font-size:19px}
+  .nums{grid-template-columns:repeat(2,1fr)}
+  .controls{padding:14px 12px 4px;gap:10px}
+  .ticks{padding:0 7px;font-size:11px}
+  .ticks span{width:12px}
+  .hint{padding:0 12px}
+  main{padding:6px 14px 50px}
+}
+</style>
+</head>
+<body>
+<nav class="topbar"><a href="../">← lab</a> · <a href="https://corentinbel.com">home</a></nav>
+
+<div class="stage" id="stage">
+  <canvas id="sea" aria-label="Animated cartoon seascape showing the sea state for the selected Beaufort force" role="img"></canvas>
+  <div class="badge" aria-live="polite">
+    <div class="f"><b id="bNum">4</b>force</div>
+    <div class="nm" id="bName">Moderate breeze</div>
+    <div class="kn" id="bKn">11–16 knots</div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="play" id="play" aria-pressed="false">▶ Play</button>
+  <div class="sliderwrap">
+    <input type="range" id="force" min="0" max="12" step="1" value="4" aria-label="Beaufort force, 0 to 12">
+    <div class="ticks" id="ticks"></div>
+  </div>
+</div>
+<p class="hint">Drag the slider, tap a number, or use the arrow keys. Play sweeps 0 → 12 → 0.</p>
+
+<main>
+  <h1>The Beaufort scale, <i>painted</i></h1>
+  <p class="lede">Thirteen words for the wind, from a sea like a mirror to air filled with foam. The scale is two centuries old and still on every marine forecast. Slide through it and watch the sea change, the gulls give up, and the sailboat run for port.</p>
+
+  <div class="grid">
+    <section class="card" id="card">
+      <h3 id="cName">Moderate breeze <small id="cForce">force 4</small></h3>
+      <div class="nums">
+        <div class="num"><div class="v" id="nKn">11–16</div><div class="u">knots</div></div>
+        <div class="num"><div class="v" id="nKmh">20–28</div><div class="u">km/h</div></div>
+        <div class="num"><div class="v" id="nMs">5.5–7.9</div><div class="u">m/s</div></div>
+        <div class="num"><div class="v" id="nWave">1 m</div><div class="u" id="nWaveU">probable wave (max 1.5)</div></div>
+      </div>
+      <div class="lab">At sea, in plain words</div>
+      <p class="sea-plain" id="cSea"></p>
+      <p class="wmo" id="cWmo"></p>
+      <div class="lab">On land</div>
+      <p class="sea-plain" id="cLand" style="font-size:15px"></p>
+      <div class="rule">
+        <span class="tag">my rule of thumb, not a fact</span>
+        <p id="cRule"></p>
+      </div>
+    </section>
+    <section class="card">
+      <h3>Speed ranges <small>m/s, with knots on the right</small></h3>
+      <svg id="chart" viewBox="0 0 600 330" role="img" aria-label="Chart of wind speed range for each Beaufort force, with the empirical curve v = 0.836 B to the power 3/2"></svg>
+      <p class="chartcap">Bars: the official speed range of each force. Line: the empirical fit v = 0.836 B<sup>3/2</sup> m/s, which runs through the bars. Each step up covers a wider band of speeds than the last. Tap a bar to jump there.</p>
+    </section>
+  </div>
+
+  <h2>The whole table</h2>
+  <p class="note">Speeds at the standard 10 m height. Wave heights are the WMO "probable" height (and probable maximum) in the open sea, far from land. Close to the coast, or with little fetch, as in much of the Mediterranean, waves are usually smaller and steeper.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>B</th><th>Name</th><th>knots</th><th>km/h</th><th>m/s</th><th>wave (max)</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <h2>Where it comes from</h2>
+  <div class="prose">
+    <p>Francis Beaufort, an Irish-born officer of the Royal Navy, wrote his scale into his private journal around 1805–06, while commanding HMS <i>Woolwich</i>. He was not the first to grade the wind. Earlier scales existed, and he borrowed from them. What he added was a fixed set of numbers that every officer could log the same way.</p>
+    <p>The original scale did not mention speed at all. There were no anemometers on ships. Each force was defined by what a fully rigged man-of-war could carry: force 1 was a wind "just sufficient to give steerage way", force 12 was "that which no canvas could withstand". The sails were the instrument.</p>
+    <p>Robert FitzRoy used it on HMS <i>Beagle</i>, the ship that carried Darwin. In 1838 the Admiralty made it standard in all Royal Navy logs. When steam replaced sail, the sail descriptions stopped making sense. The descriptions of the sea surface that we use today, and the land descriptions (smoke, leaves, chimney pots), came in the late 19th and early 20th century; George Simpson of the Met Office set out land-based equivalents and speeds around 1906.</p>
+    <p>The speed equivalents follow a simple empirical law:</p>
+    <div class="formula">v ≈ 0.836 · B<sup>3/2</sup> m/s</div>
+    <p>So force 4 is about 0.836 × 8 ≈ 6.7 m/s (13 kn), the middle of its 11–16 kn band, and force 12 lands near 35 m/s. Because of the 3/2 power, the steps get wider as you go up. Force 1 spans 2 knots; force 11 spans 7. Wind pressure on a sail grows roughly with the square of speed, so going from force 4 to force 8 means nearly three times the speed and roughly eight times the push on the rig.</p>
+    <p>Two caveats. The Met Office and WMO tables note that the wave heights are a guide for the open sea, far from land, and should not be used backwards to estimate the wind from the waves. And a Beaufort number describes a mean wind; gusts are stronger, sometimes by a force or two.</p>
+  </div>
+
+  <h2>Sources</h2>
+  <ul class="sources">
+    <li>World Meteorological Organization. Beaufort scale of wind force, with speed equivalents and probable wave heights, as tabulated in the <i>Manual on Marine Meteorological Services</i> (WMO-No. 558) and related WMO marine guides. Speed ranges and wave heights on this page follow that table.</li>
+    <li>UK Met Office. <a href="https://www.metoffice.gov.uk/weather/guides/coast-and-sea/beaufort-scale">The Beaufort wind force scale</a>. Speed ranges in knots, km/h and m/s, sea and land descriptions, history.</li>
+    <li>Scott Huler (2004). <i>Defining the Wind: The Beaufort Scale and How a Nineteenth-Century Admiral Turned Science into Poetry</i>. Crown, New York. History of the scale, its precursors and its wording.</li>
+    <li>The foiling notes are my own experience on the Côte d'Azur, not data. Your weight, gear and spot will move every number.</li>
+  </ul>
+  <footer>Drawn in code by Corentin Bel. Same sea every visit: the clouds, rocks and gulls come from a seeded random generator.</footer>
+</main>
+
+<script>
+'use strict';
+const INK = '#1b1a22';
+const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------- data (WMO / Met Office Beaufort table) ----------
+const BF = [
+  {n:'Calm', kn:'< 1', kmh:'< 1', ms:'0–0.2', w:'0', wm:'0',
+   plain:'Flat, glassy water. The sea reflects the sky.',
+   wmo:'Sea like a mirror.',
+   land:'Calm; smoke rises vertically.',
+   rule:'Glassy. No wing session. A pump-foil or a paddle, or a swim. Sailors motor.'},
+  {n:'Light air', kn:'1–3', kmh:'1–5', ms:'0.3–1.5', w:'0.1', wm:'0.1',
+   plain:'Tiny ripples like fish scales. No white anywhere.',
+   wmo:'Ripples with the appearance of scales are formed, but without foam crests.',
+   land:'Direction shown by smoke drift, but not by wind vanes.',
+   rule:'Nothing to wing with. A light dinghy barely ghosts along.'},
+  {n:'Light breeze', kn:'4–6', kmh:'6–11', ms:'1.6–3.3', w:'0.2', wm:'0.3',
+   plain:'Small wavelets. Their crests look glassy and do not break.',
+   wmo:'Small wavelets, still short but more pronounced; crests have a glassy appearance and do not break.',
+   land:'Wind felt on face; leaves rustle; ordinary vanes moved by wind.',
+   rule:'Too light to fly a wing for most people. Nice for a lazy dinghy sail.'},
+  {n:'Gentle breeze', kn:'7–10', kmh:'12–19', ms:'3.4–5.4', w:'0.6', wm:'1',
+   plain:'Bigger wavelets. The first crests tip over, a few scattered whitecaps.',
+   wmo:'Large wavelets. Crests begin to break. Foam of glassy appearance. Perhaps scattered white horses.',
+   land:'Leaves and small twigs in constant motion; wind extends light flag.',
+   rule:'Below about 10 kn it is hard to get on the foil: a big wing, a big board and a lot of pumping. Lovely for light-wind sailing.'},
+  {n:'Moderate breeze', kn:'11–16', kmh:'20–28', ms:'5.5–7.9', w:'1', wm:'1.5',
+   plain:'Small waves, getting longer. Whitecaps fairly common.',
+   wmo:'Small waves, becoming longer; fairly frequent white horses.',
+   land:'Raises dust and loose paper; small branches are moved.',
+   rule:'Entering the sweet spot (about 12–20 kn). Mid-size wing, easy take-off, long flights. Keelboats at full sail.'},
+  {n:'Fresh breeze', kn:'17–21', kmh:'29–38', ms:'8.0–10.7', w:'2', wm:'2.5',
+   plain:'Moderate, longer waves. Whitecaps everywhere, maybe some spray.',
+   wmo:'Moderate waves, taking a more pronounced long form; many white horses are formed. Chance of some spray.',
+   land:'Small trees in leaf begin to sway; crested wavelets form on inland waters.',
+   rule:'Top of the sweet spot. A smaller wing. With swell running, this is where downwinders start to work. Small sailboats think about a first reef.'},
+  {n:'Strong breeze', kn:'22–27', kmh:'39–49', ms:'10.8–13.8', w:'3', wm:'4',
+   plain:'Large waves begin to build. Foam crests all over; probably some spray.',
+   wmo:'Large waves begin to form; the white foam crests are more extensive everywhere. Probably some spray.',
+   land:'Large branches in motion; whistling heard in telegraph wires; umbrellas used with difficulty.',
+   rule:'Around 25 kn and up: small wing, experienced riders only. Great downwind runs if the swell lines up. Sailors reef down.'},
+  {n:'Near gale', kn:'28–33', kmh:'50–61', ms:'13.9–17.1', w:'4', wm:'5.5',
+   plain:'The sea heaps up. Foam from breaking waves starts to streak downwind.',
+   wmo:'Sea heaps up and white foam from breaking waves begins to be blown in streaks along the direction of the wind.',
+   land:'Whole trees in motion; inconvenience felt when walking against the wind.',
+   rule:'Most riders are back on the beach. Only experts with tiny wings. Small boats stay in or head home.'},
+  {n:'Gale', kn:'34–40', kmh:'62–74', ms:'17.2–20.7', w:'5.5', wm:'7.5',
+   plain:'Moderately high, longer waves. Crests break into spindrift; foam in clear streaks.',
+   wmo:'Moderately high waves of greater length; edges of crests begin to break into spindrift. The foam is blown in well-marked streaks along the direction of the wind.',
+   land:'Twigs break off trees; progress generally impeded.',
+   rule:'Not a riding day. Boats are in port, lines doubled.'},
+  {n:'Strong gale', kn:'41–47', kmh:'75–88', ms:'20.8–24.4', w:'7', wm:'10',
+   plain:'High waves. Dense streaks of foam; crests topple and roll over. Spray cuts visibility.',
+   wmo:'High waves. Dense streaks of foam along the direction of the wind. Crests of waves begin to topple, tumble and roll over. Spray may affect visibility.',
+   land:'Slight structural damage occurs (chimney pots and slates removed).',
+   rule:'Stay ashore. Watch from far back: waves over jetties are a real danger.'},
+  {n:'Storm', kn:'48–55', kmh:'89–102', ms:'24.5–28.4', w:'9', wm:'12.5',
+   plain:'Very high waves with overhanging crests. The sea looks white overall. Heavy, shock-like tumbling.',
+   wmo:'Very high waves with long overhanging crests. The resulting foam, in great patches, is blown in dense white streaks along the direction of the wind. On the whole the surface of the sea takes on a white appearance. The tumbling of the sea becomes heavy and shock-like. Visibility affected.',
+   land:'Seldom experienced inland; trees uprooted; considerable structural damage.',
+   rule:'Stay ashore, away from the seafront.'},
+  {n:'Violent storm', kn:'56–63', kmh:'103–117', ms:'28.5–32.6', w:'11.5', wm:'16',
+   plain:'Exceptionally high waves; a small or medium ship can vanish behind them. Long foam patches everywhere.',
+   wmo:'Exceptionally high waves (small and medium-size ships might be for a time lost to view behind the waves). The sea is completely covered with long white patches of foam lying along the direction of the wind. Everywhere the edges of the wave crests are blown into froth. Visibility affected.',
+   land:'Very rarely experienced; accompanied by widespread damage.',
+   rule:'Stay indoors.'},
+  {n:'Hurricane force', kn:'64 +', kmh:'118 +', ms:'32.7 +', w:'14 +', wm:'—',
+   plain:'The air is full of foam and spray. The sea is completely white. You can barely see.',
+   wmo:'The air is filled with foam and spray. Sea completely white with driving spray; visibility very seriously affected.',
+   land:'Very rare over land; devastating where it happens.',
+   rule:'Stay indoors.'}
+];
+// numeric ranges for the chart (m/s), from the table above
+const MS = [[0,0.2],[0.3,1.5],[1.6,3.3],[3.4,5.4],[5.5,7.9],[8.0,10.7],[10.8,13.8],[13.9,17.1],[17.2,20.7],[20.8,24.4],[24.5,28.4],[28.5,32.6],[32.7,37]];
+
+// ---------- helpers ----------
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function hash(a,b){let h=(Math.imul(a|0,374761393)+Math.imul(b|0,668265263))|0;h=Math.imul(h^(h>>>13),1274126177);h^=h>>>16;return (h>>>0)/4294967296;}
+const clamp=(x,a,b)=>x<a?a:x>b?b:x;
+const lerp=(a,b,f)=>a+(b-a)*f;
+const smooth=(e0,e1,x)=>{const t=clamp((x-e0)/(e1-e0),0,1);return t*t*(3-2*t);};
+function tab(arr,B){B=clamp(B,0,arr.length-1);const i=Math.min(arr.length-2,Math.floor(B));const f=B-i;return arr[i]*(1-f)+arr[i+1]*f;}
+function hex(c){const n=parseInt(c.slice(1),16);return [n>>16&255,n>>8&255,n&255];}
+function mix(a,b,f){const A=hex(a),B=hex(b);return '#'+A.map((v,i)=>Math.round(v+(B[i]-v)*clamp(f,0,1)).toString(16).padStart(2,'0')).join('');}
+function rgba(c,a){const A=hex(c);return `rgba(${A[0]},${A[1]},${A[2]},${a})`;}
+function keyLerp(keys,B){ // keys: [[B,color],...]
+  for(let i=0;i<keys.length-1;i++){if(B<=keys[i+1][0])return mix(keys[i][1],keys[i+1][1],(B-keys[i][0])/(keys[i+1][0]-keys[i][0]));}
+  return keys[keys.length-1][1];
+}
+const vms = B => 0.836*Math.pow(Math.max(B,0),1.5);
+const frac = x => x-Math.floor(x);
+
+// ---------- canvas ----------
+const cv=document.getElementById('sea'), ctx=cv.getContext('2d');
+let W=0,H=0,U=1,DPR=1,HZ=0;
+const NROWS=7, ROWF=[0.0,0.055,0.14,0.27,0.43,0.62,0.84];
+let rowY=[], rowD=[];
+// seeded scenery
+const R=rng(1805);
+const CLOUDS=[];for(let i=0;i<12;i++){const c={x:R(),y:0.16+R()*0.24,s:0.6+R()*0.75,p:[]};const n=4+Math.floor(R()*4);for(let j=0;j<n;j++)c.p.push({dx:(j/(n-1)-0.5)*1.6+(R()-0.5)*0.25,dy:-R()*0.35-(j>0&&j<n-1?0.25:0),r:0.32+R()*0.3});CLOUDS.push(c);}
+const HILLS=[];{let y=0;for(let i=0;i<=40;i++){y=clamp(y+(R()-0.48)*0.22,0,1);HILLS.push(0.25+0.75*Math.abs(Math.sin(i*0.21+0.6))*0.7+y*0.3);}}
+const ROCKS=[];for(let i=0;i<26;i++)ROCKS.push({x:i/25,w:0.7+R()*0.6,h:0.6+R()*0.6,c:R()});
+const STREAK=[];for(let i=0;i<70;i++)STREAK.push({x:R(),dy:R(),l:0.5+R(),row:3+Math.floor(R()*4)});
+const SCALES=[];for(let i=0;i<160;i++)SCALES.push({x:R(),row:1+Math.floor(R()*6),dy:R(),s:0.6+R()*0.8});
+const RAIN=[];for(let i=0;i<220;i++)RAIN.push({x:R(),y:R(),l:0.6+R()*0.8});
+const SWOOSH=[];for(let i=0;i<10;i++)SWOOSH.push({x:R(),y:0.06+R()*0.3,l:0.6+R()*0.6});
+
+function sunX(){return W<700?W*0.6:W*0.2;}
+function resize(){
+  const r=cv.getBoundingClientRect();DPR=Math.min(2,window.devicePixelRatio||1);
+  W=Math.max(300,r.width);H=Math.max(300,r.height);
+  cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0);
+  U=Math.max(W<700?0.56:0.42,Math.min(W/1150,H/640));
+  HZ=H*(W<700?0.5:0.45);
+  rowY=ROWF.map(f=>HZ+(H-HZ)*f+ (f===0?2:0));
+  rowD=ROWF.map(f=>0.1+0.9*Math.pow(f/0.84,0.85));
+}
+
+// ---------- state ----------
+let target=4, Bv=4, playing=false, playT=0, t=3.0, last=0;
+let boatX=null, gullSit=0, pF=0, pK=0;
+
+// wave parameters per force (near row)
+const AMP=[0,0.0015,0.004,0.010,0.017,0.026,0.036,0.047,0.058,0.069,0.081,0.093,0.105];
+const LEN=[0.06,0.06,0.075,0.10,0.14,0.19,0.25,0.31,0.38,0.45,0.52,0.6,0.68];
+const CAP=[0,0,0,0.08,0.42,0.55,0.75,0.85,0.92,0.97,1,1,1];
+
+function rowWave(i,B){
+  const d=rowD[i], A=tab(AMP,B)*H*d, L=tab(LEN,B)*Math.max(W,H*1.3)*(0.25+0.75*d);
+  const v=vms(B), c=(10+2.4*v)*(0.3+0.7*d)*U*1.6;
+  const k1=2*Math.PI/L, k2=2*Math.PI/(L*0.47);
+  const A2=A*0.42, ph1=i*1.7, ph2=i*2.9+1;
+  let Q=0.25+0.06*B; Q=Math.min(Q,0.8/Math.max(1e-6,A*k1+A2*k2));
+  return {d,A,A2,L,k1,k2,w1:k1*c,w2:k2*c*0.72,ph1,ph2,Q,base:rowY[i],c};
+}
+function surf(wv,x){ // y of surface at x (ignoring horizontal displacement)
+  return wv.base-wv.A*Math.cos(wv.k1*x-wv.w1*t+wv.ph1)-wv.A2*Math.cos(wv.k2*x-wv.w2*t+wv.ph2);
+}
+function rowPoints(wv){
+  const pts=[], step=Math.max(4,6*U);
+  for(let x0=-60;x0<=W+60;x0+=step){
+    const th1=wv.k1*x0-wv.w1*t+wv.ph1, th2=wv.k2*x0-wv.w2*t+wv.ph2;
+    pts.push([x0-wv.Q*(wv.A*Math.sin(th1)+wv.A2*Math.sin(th2)), wv.base-wv.A*Math.cos(th1)-wv.A2*Math.cos(th2)]);
+  }
+  return pts;
+}
+
+// ---------- palette ----------
+const SKY_TOP=[[0,'#5fa9d6'],[4,'#5aa0cc'],[7,'#6a8399'],[9,'#4c5866'],[12,'#262b34']];
+const SKY_MID=[[0,'#a8d8e8'],[4,'#a3cfe2'],[7,'#98a5ab'],[9,'#6f7a82'],[12,'#454c55']];
+const SKY_HZ =[[0,'#f8dcb2'],[4,'#f2d6b0'],[7,'#cfc4ae'],[9,'#a39f94'],[12,'#7a7f80']];
+const SEA_FAR=[[0,'#b9e0e0'],[3,'#8dc8cb'],[6,'#7fb2b6'],[9,'#7e8d90'],[12,'#a5aeb0']];
+const SEA_NEAR=[[0,'#3c93a6'],[3,'#22788f'],[6,'#1d6075'],[9,'#24404b'],[12,'#3d4d55']];
+
+// ---------- drawing ----------
+function inkStroke(w){ctx.strokeStyle=INK;ctx.lineWidth=w;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke();}
+
+function drawSky(B){
+  const g=ctx.createLinearGradient(0,0,0,HZ);
+  g.addColorStop(0,keyLerp(SKY_TOP,B));g.addColorStop(0.6,keyLerp(SKY_MID,B));g.addColorStop(1,keyLerp(SKY_HZ,B));
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,HZ+2);
+  // sun
+  const sa=1-smooth(4,6.8,B); if(sa>0.01){
+    const sx=sunX(), sy=HZ*(W<700?0.55:0.36), sr=34*U;
+    ctx.globalAlpha=sa;
+    const halo=ctx.createRadialGradient(sx,sy,sr*0.6,sx,sy,sr*4);halo.addColorStop(0,'rgba(255,236,190,.55)');halo.addColorStop(1,'rgba(255,236,190,0)');
+    ctx.fillStyle=halo;ctx.fillRect(sx-sr*4,sy-sr*4,sr*8,sr*8);
+    ctx.beginPath();ctx.arc(sx,sy,sr,0,7);ctx.fillStyle='#ffe3a1';ctx.fill();inkStroke(2.2*U+0.6);
+    ctx.globalAlpha=1;
+  }
+}
+function drawSwooshes(B){
+  const n=B<2.3?0:Math.min(10,Math.floor((B-2)*1.1)+1); if(!n)return;
+  const v=vms(B);
+  for(let i=0;i<n;i++){
+    const s=SWOOSH[i], len=(70+60*s.l)*U*(0.7+B*0.06);
+    const x=frac(s.x+t*(0.03+v*0.006))*(W+len*2)-len, y=s.y*HZ+Math.sin(t*1.3+i)*4*U;
+    ctx.beginPath();ctx.moveTo(x,y);ctx.bezierCurveTo(x+len*0.4,y-6*U,x+len*0.7,y+6*U,x+len,y);
+    if(B<7.5){ctx.arc(x+len,y-8*U,8*U,Math.PI/2,-Math.PI*0.9,true);}
+    ctx.strokeStyle=rgba('#ffffff',0.75*(B>9?0.6:1));ctx.lineWidth=2.4*U;ctx.lineCap='round';ctx.stroke();
+  }
+}
+function drawClouds(B){
+  const storm=smooth(5,10,B), cnt=2+B*0.75, v=vms(B);
+  const top=mix('#fffaf0','#5d646c',storm), bot=mix('#e6dccd','#363c44',storm);
+  for(let i=0;i<CLOUDS.length;i++){
+    const a=clamp(cnt-i,0,1); if(a<=0)break;
+    const c=CLOUDS[i], sz=c.s*U*(70+storm*40)*(0.35+0.65*a), span=W+c.s*U*440;
+    const x=frac(c.x+t*(1.5+v*1.2)*U/span*(0.7+c.s*0.3))*span-sz*2, y=c.y*HZ*(1-storm*0.25)+sz*0.3;
+    ctx.beginPath();for(const p of c.p){ctx.moveTo(x+p.dx*sz+p.r*sz,y+p.dy*sz);ctx.arc(x+p.dx*sz,y+p.dy*sz,p.r*sz,0,7);}
+    ctx.strokeStyle=INK;ctx.lineWidth=2*(2*U+0.5);ctx.stroke();
+    const g=ctx.createLinearGradient(0,y-sz*0.7,0,y+sz*0.35);g.addColorStop(0,top);g.addColorStop(1,bot);
+    ctx.fillStyle=g;ctx.fill();
+  }
+  // low scud in gales
+  const sc=smooth(7.5,10,B); if(sc>0){
+    for(let i=0;i<7;i++){
+      const w=(120+hash(i,7)*160)*U, span=W+w*2;
+      const x=frac(hash(i,3)+t*(0.02+v*0.004))*span-w, y=HZ*(0.45+hash(i,5)*0.4);
+      ctx.globalAlpha=sc*0.75;ctx.beginPath();ctx.ellipse(x,y,w/2,10*U+hash(i,9)*8*U,0,0,7);
+      ctx.fillStyle=mix('#4a525c','#2a2f37',storm);ctx.fill();ctx.globalAlpha=1;
+    }
+  }
+}
+function drawHills(B){
+  const haze=smooth(6,11,B);
+  ctx.beginPath();ctx.moveTo(-5,HZ+1);
+  for(let i=0;i<HILLS.length;i++){const x=i/(HILLS.length-1)*W*0.62;ctx.lineTo(x,HZ-HILLS[i]*H*0.075*(1-0.6*Math.max(0,i-30)/10));}
+  ctx.lineTo(W*0.62+4,HZ+1);ctx.closePath();
+  ctx.fillStyle=mix(mix('#b6553f','#cf8a6b',0.15),keyLerp(SKY_HZ,B),0.25+haze*0.7);ctx.fill();
+  ctx.globalAlpha=1-haze*0.85;inkStroke(1.8*U+0.4);ctx.globalAlpha=1;
+  // a little village / tower on the hill
+  ctx.globalAlpha=1-haze;
+  const hx=W*0.33,hy=HZ-HILLS[21]*H*0.075;
+  ctx.fillStyle='#f3e2c4';ctx.fillRect(hx,hy-12*U,8*U,12*U);ctx.strokeStyle=INK;ctx.lineWidth=1.2*U+0.3;ctx.strokeRect(hx,hy-12*U,8*U,12*U);
+  ctx.fillRect(hx+10*U,hy-7*U,12*U,7*U);ctx.strokeRect(hx+10*U,hy-7*U,12*U,7*U);
+  ctx.globalAlpha=1;
+}
+
+function drawRow(i,B,wv){
+  const d=wv.d, white=smooth(9.5,12,B)*0.55*(0.5+0.5*d);
+  const col=mix(mix(keyLerp(SEA_FAR,B),keyLerp(SEA_NEAR,B),Math.pow(d,0.9)),'#e8eef0',white);
+  const pts=rowPoints(wv);
+  ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let j=1;j<pts.length;j++)ctx.lineTo(pts[j][0],pts[j][1]);
+  ctx.lineTo(W+80,H+5);ctx.lineTo(-80,H+5);ctx.closePath();
+  const g=ctx.createLinearGradient(0,wv.base-wv.A*1.5,0,wv.base+(H-HZ)*0.25);
+  g.addColorStop(0,mix(col,'#ffffff',0.2));g.addColorStop(1,col);
+  ctx.fillStyle=g;ctx.fill();
+  // ink line on the top
+  ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let j=1;j<pts.length;j++)ctx.lineTo(pts[j][0],pts[j][1]);
+  const calm=smooth(0.2,2.5,B);
+  ctx.globalAlpha=0.25+0.75*calm;inkStroke((0.7+2*d)*U+0.3);ctx.globalAlpha=1;
+  // light underline (sheen)
+  if(d>0.2){ctx.save();ctx.translate(0,(3+3*d)*U);ctx.strokeStyle=rgba('#ffffff',0.22);ctx.lineWidth=(1+2*d)*U;ctx.stroke();ctx.restore();}
+  // ripples / cat's paws
+  const rip=smooth(0.3,1.2,B)*(1-smooth(2.5,4,B));
+  if(rip>0.01&&i>0){
+    ctx.strokeStyle=rgba('#ffffff',0.55*rip);ctx.lineWidth=(0.8+1.2*d)*U;
+    for(const s of SCALES){ if(s.row!==i)continue;
+      const x=frac(s.x+t*0.004*(1+B))*W, gap=(i<NROWS-1?rowY[i+1]-rowY[i]:H-rowY[i]);
+      const y=wv.base+(0.2+s.dy*0.7)*gap, r=(5+8*d)*U*s.s*(0.6+B*0.3);
+      ctx.beginPath();ctx.arc(x,y,r,Math.PI*1.15,Math.PI*1.85);ctx.stroke();
+    }
+  }
+  // whitecaps + spray on crests
+  const pcap=tab(CAP,B); if(pcap>0&&wv.A>0.5){
+    const n0=Math.ceil((wv.k1*-80-wv.w1*t+wv.ph1)/(2*Math.PI)), n1=Math.floor((wv.k1*(W+80)-wv.w1*t+wv.ph1)/(2*Math.PI));
+    for(let n=n0;n<=n1;n++){
+      const hsh=hash(n,i*31+7); if(hsh>pcap)continue;
+      const x0=(2*Math.PI*n+wv.w1*t-wv.ph1)/wv.k1;
+      const th2=wv.k2*x0-wv.w2*t+wv.ph2;
+      const x=x0-wv.Q*wv.A2*Math.sin(th2), y=wv.base-wv.A-wv.A2*Math.cos(th2);
+      const life=0.55+0.45*Math.sin(t*0.9+hsh*40);
+      const cw=clamp(wv.L*0.13*(0.5+B*0.07)*life,2.5*U,180*U), ch=Math.max(1.8*U,wv.A*0.5*life);
+      ctx.beginPath();
+      ctx.moveTo(x-cw,y+ch*0.6);
+      ctx.quadraticCurveTo(x-cw*0.3,y-ch*0.9,x+cw*0.25,y-ch*0.5);
+      ctx.quadraticCurveTo(x+cw*0.7,y-ch*0.1,x+cw*0.55,y+ch*0.9);
+      ctx.quadraticCurveTo(x,y+ch*0.3,x-cw,y+ch*0.6);
+      ctx.fillStyle='#fbfaf4';ctx.fill();
+      if(d>0.25){ctx.globalAlpha=0.7;inkStroke((0.6+1.2*d)*U);ctx.globalAlpha=1;}
+      // spray blown downwind
+      if(B>4.6&&d>0.3){
+        const nd=Math.floor(clamp((B-4.4)*1.6,0,14)), reach=(14+B*9)*U*d;
+        ctx.fillStyle='#ffffff';
+        for(let j=0;j<nd;j++){
+          const u=frac(j/nd+t*(0.5+B*0.05)+hsh*3);
+          const sx=x+cw*0.3+u*reach, sy=y-ch-u*reach*0.25+u*u*reach*0.3;
+          ctx.globalAlpha=(1-u)*0.9;ctx.beginPath();ctx.arc(sx,sy,(1-u*0.6)*(1+1.6*d)*U*(0.6+hash(n,j)),0,7);ctx.fill();
+        }
+        ctx.globalAlpha=1;
+      }
+    }
+  }
+  // foam streaks along the wind
+  const st=smooth(6,9,B); if(st>0&&i>=3){
+    const cnt=Math.floor(st*(10+(B-7)*5)*d);
+    ctx.strokeStyle=rgba('#fbfaf4',0.75);ctx.lineWidth=(1+1.8*d)*U;
+    const gap=(i<NROWS-1?rowY[i+1]-rowY[i]:H-rowY[i]);
+    let k=0;
+    for(const s of STREAK){ if(s.row!==i)continue; if(k++>=cnt)break;
+      const len=(60+90*s.l)*U*d*(0.6+B*0.06), span=W+len*2;
+      const xs=frac(s.x+t*wv.c*0.5/span)*span-len;
+      ctx.beginPath();
+      for(let q=0;q<=8;q++){const x=xs+len*q/8, y=surf(wv,x)+wv.A*0.6+(0.15+s.dy*0.6)*gap; q?ctx.lineTo(x,y):ctx.moveTo(x,y);}
+      ctx.stroke();
+    }
+  }
+}
+function drawMirror(B){
+  const a=1-smooth(0.2,2.2,B); if(a<=0)return;
+  const sx=sunX(), sun=1-smooth(4,6.8,B);
+  ctx.fillStyle=rgba('#fff2c8',0.75*a*sun);
+  for(let k=0;k<22;k++){
+    const y=HZ+4+k*k*0.9*U+k*4*U, w=(16+k*4)*U*(0.6+0.4*Math.sin(t*1.4+k)), h=(1.4+k*0.2)*U;
+    if(y>H)break;
+    ctx.beginPath();ctx.ellipse(sx+Math.sin(t*0.7+k*1.3)*3*U*B,y,w,h,0,0,7);ctx.fill();
+  }
+  // mirrored hills, faint
+  ctx.save();ctx.globalAlpha=0.16*a;ctx.translate(0,2*HZ);ctx.scale(1,-0.55);ctx.translate(0,-HZ*0.18);
+  ctx.beginPath();ctx.moveTo(-5,HZ);for(let i=0;i<HILLS.length;i++)ctx.lineTo(i/(HILLS.length-1)*W*0.62,HZ-HILLS[i]*H*0.075);ctx.lineTo(W*0.62,HZ);ctx.closePath();
+  ctx.fillStyle='#8a3d2e';ctx.fill();ctx.restore();ctx.globalAlpha=1;
+}
+
+// ---------- props ----------
+function drawBoat(x,y,s,ang,sail,inPort){
+  ctx.save();ctx.translate(x,y);ctx.rotate(ang);ctx.scale(s,s);
+  const lw=2.4;
+  // mast + rigging
+  const mh=118;
+  ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(0,-10-mh);ctx.strokeStyle=INK;ctx.lineWidth=lw+0.6;ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,-10-mh*0.92);ctx.lineTo(56,-11);ctx.moveTo(0,-10-mh*0.92);ctx.lineTo(-44,-10);ctx.lineWidth=0.9;ctx.stroke();
+  // pennant
+  const fl=Math.sin(t*9)*0.25, ext=clamp(0.3+Bv*0.12,0.3,1);
+  ctx.beginPath();ctx.moveTo(0,-10-mh);ctx.quadraticCurveTo(10,-10-mh+3-6*(1-ext)+fl*6,22*ext+4,-6-mh+14*(1-ext)+fl*8);ctx.lineTo(0,-2-mh);ctx.closePath();
+  ctx.fillStyle='#e0674b';ctx.fill();inkStroke(1.4);
+  // boom
+  ctx.beginPath();ctx.moveTo(2,-26);ctx.lineTo(-46,-24);ctx.lineWidth=lw+0.8;ctx.strokeStyle=INK;ctx.stroke();
+  if(sail>0.04){
+    // mainsail (reefs by lowering the head)
+    const head=-26-100*sail, clew=-46;
+    ctx.beginPath();ctx.moveTo(-2,head);ctx.quadraticCurveTo(-8-24*sail,(head-24)/2,clew,-27);ctx.lineTo(-2,-28);ctx.closePath();
+    ctx.fillStyle='#fbf4e4';ctx.fill();inkStroke(lw);
+    for(let r=1;r<=2;r++){if(sail<0.95-r*0.2){ctx.beginPath();ctx.moveTo(-3,-30-r*6);ctx.lineTo(clew+6,-30-r*4);ctx.lineWidth=1;ctx.stroke();}}
+    // jib
+    const jib=sail>0.75?1:sail>0.3?0.55:0.35;
+    const jt=-14-92*jib;
+    ctx.beginPath();ctx.moveTo(4,jt);ctx.quadraticCurveTo(30+18*jib,(jt-12)/2+6,54,-14);ctx.quadraticCurveTo(30,-18,16,-16-6*jib);ctx.closePath();
+    ctx.fillStyle='#f2e4c6';ctx.fill();inkStroke(lw);
+  }else{
+    // furled sail on the boom
+    ctx.beginPath();ctx.ellipse(-22,-28,24,5,0,0,7);ctx.fillStyle='#3d6f8f';ctx.fill();inkStroke(1.8);
+  }
+  // hull
+  ctx.beginPath();ctx.moveTo(-50,-12);ctx.lineTo(60,-14);ctx.quadraticCurveTo(52,6,30,11);ctx.lineTo(-38,11);ctx.quadraticCurveTo(-50,4,-50,-12);ctx.closePath();
+  ctx.fillStyle='#fbfaf4';ctx.fill();inkStroke(lw);
+  ctx.beginPath();ctx.moveTo(-48,-3);ctx.lineTo(55,-4);ctx.strokeStyle='#e0674b';ctx.lineWidth=3.2;ctx.stroke();
+  // cabin + sailor
+  ctx.beginPath();ctx.moveTo(-16,-12);ctx.lineTo(-12,-20);ctx.lineTo(14,-20);ctx.lineTo(20,-13);ctx.fillStyle='#fbfaf4';ctx.fill();inkStroke(1.8);
+  if(!inPort){ctx.beginPath();ctx.arc(-32,-22,5.5,0,7);ctx.fillStyle='#e9b949';ctx.fill();inkStroke(1.6);ctx.beginPath();ctx.moveTo(-32,-16);ctx.lineTo(-33,-12);ctx.lineWidth=3;ctx.stroke();}
+  ctx.restore();
+}
+function drawLighthouse(x,y,s,B){
+  ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+  const storm=smooth(6.5,10,B);
+  if(storm>0){ // rotating beam
+    const a=t*0.9; const len=900;
+    ctx.save();ctx.translate(0,-112);ctx.rotate(Math.sin(a)*0.9-0.1);
+    const g=ctx.createLinearGradient(0,0,len,0);g.addColorStop(0,rgba('#fff3c4',0.55*storm));g.addColorStop(1,rgba('#fff3c4',0));
+    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(len,-60);ctx.lineTo(len,60);ctx.closePath();ctx.fillStyle=g;ctx.fill();ctx.restore();
+  }
+  ctx.beginPath();ctx.moveTo(-15,0);ctx.lineTo(-10,-98);ctx.lineTo(10,-98);ctx.lineTo(15,0);ctx.closePath();
+  ctx.fillStyle='#fbfaf4';ctx.fill();
+  ctx.save();ctx.clip();ctx.fillStyle='#d4553f';for(let k=0;k<3;k++)ctx.fillRect(-20,-22-k*30,40,13);ctx.restore();
+  inkStroke(2.4);
+  ctx.beginPath();ctx.rect(-12,-104,24,6);ctx.fillStyle='#3a3a44';ctx.fill();inkStroke(2);
+  ctx.beginPath();ctx.rect(-8,-120,16,16);ctx.fillStyle=storm>0?'#fff1b0':'#cfe6ea';ctx.fill();inkStroke(2);
+  ctx.beginPath();ctx.moveTo(-11,-120);ctx.lineTo(0,-132);ctx.lineTo(11,-120);ctx.closePath();ctx.fillStyle='#d4553f';ctx.fill();inkStroke(2);
+  ctx.restore();
+}
+function drawWindsock(x,y,s,B){
+  ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+  ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-64);ctx.strokeStyle=INK;ctx.lineWidth=3;ctx.stroke();
+  // a windsock is fully extended around 15 kn (~7.7 m/s)
+  const ext=clamp(Math.pow(vms(B)/7.7,0.85),0,1);
+  const fl=(REDUCED?0:Math.sin(t*(4+B*1.3))*0.07*(0.3+ext));
+  let ang=(1-ext)*Math.PI*0.44+fl; // 0 = horizontal downwind (to the right)
+  let px=2,py=-62;
+  for(let k=0;k<5;k++){
+    const w0=11-k*1.3, w1=11-(k+1)*1.3, L=10.5;
+    const a=ang*(1+k*0.12)+Math.sin(t*6+k)*0.04*ext;
+    const dx=Math.cos(a)*L, dy=Math.sin(a)*L, nx=-Math.sin(a), ny=Math.cos(a);
+    ctx.beginPath();ctx.moveTo(px+nx*w0/2,py+ny*w0/2);ctx.lineTo(px+dx+nx*w1/2,py+dy+ny*w1/2);ctx.lineTo(px+dx-nx*w1/2,py+dy-ny*w1/2);ctx.lineTo(px-nx*w0/2,py-ny*w0/2);ctx.closePath();
+    ctx.fillStyle=k%2?'#fbfaf4':'#e8742f';ctx.fill();inkStroke(1.6);
+    px+=dx;py+=dy;
+  }
+  ctx.restore();
+}
+function drawBreakwater(B,wvBack,wvFront){
+  const x0=W*0.765, top=rowY[3]-30*U, s=U;
+  // rocks
+  for(const r of ROCKS){
+    const x=x0+r.x*(W-x0+30)-6, rw=(22+12*r.w)*s, rh=(18+12*r.h)*s;
+    ctx.beginPath();ctx.ellipse(x,top+rh*0.55,rw,rh,0,0,7);
+    ctx.fillStyle=mix(mix('#b3a693','#8a7f71',r.c),'#5a5c60',smooth(6,11,B)*0.6);ctx.fill();inkStroke(1.8*s+0.4);
+  }
+  // quay slab
+  ctx.beginPath();ctx.rect(x0+18*s,top-10*s,W-x0,12*s);ctx.fillStyle='#d9cdb5';ctx.fill();inkStroke(2*s+0.4);
+  drawLighthouse(x0+34*s,top-10*s,s*1.05,B);
+  drawWindsock(W-26*s,top-10*s,s*1.05,B);
+  // splash on the outer face
+  const sp=smooth(5.5,9,B); if(sp>0){
+    for(let k=0;k<3;k++){
+      const ph=frac(t/(3.2-B*0.12)+k*0.37), hgt=sp*(30+B*9)*s*Math.sin(Math.PI*ph);
+      if(hgt<2)continue;
+      const cx=x0-(22-k*14)*s, circ=[];
+      for(let q=0;q<7;q++){
+        const a=-Math.PI/2+(q-3)*0.22+0.5, rr=(5+hash(k,q)*7)*s*(0.6+sp)*(1-ph*0.5);
+        circ.push([cx+Math.cos(a)*hgt*0.7+ph*hgt*0.5*(B/12), top+12*s+Math.sin(a)*hgt, rr]);
+      }
+      ctx.beginPath();for(const c of circ){ctx.moveTo(c[0]+c[2],c[1]);ctx.arc(c[0],c[1],c[2],0,7);}
+      ctx.strokeStyle=INK;ctx.lineWidth=2*(1.3*s+0.3);ctx.stroke();ctx.fillStyle='#fbfaf4';ctx.fill();
+    }
+  }
+  return top-10*s;
+}
+function drawFoiler(x,ySurf,s,B,ang){
+  const pumping=B<3.6;
+  const lift=(pumping?12+7*Math.sin(t*5.5):17+2*Math.sin(t*1.7))*1;
+  ctx.save();ctx.translate(x,ySurf);ctx.rotate(ang);ctx.scale(s,s);
+  // foil mast (part under water drawn faint)
+  ctx.beginPath();ctx.moveTo(6,-lift);ctx.lineTo(6,0);ctx.strokeStyle=INK;ctx.lineWidth=2.6;ctx.stroke();
+  ctx.globalAlpha=0.4;ctx.beginPath();ctx.moveTo(6,0);ctx.lineTo(6,16);ctx.moveTo(-6,16);ctx.lineTo(20,16);ctx.lineWidth=2.6;ctx.stroke();ctx.globalAlpha=1;
+  ctx.translate(0,-lift);
+  // board
+  ctx.beginPath();ctx.moveTo(-20,-5);ctx.lineTo(22,-6);ctx.quadraticCurveTo(28,-4,24,0);ctx.lineTo(-20,0);ctx.closePath();ctx.fillStyle='#fbfaf4';ctx.fill();inkStroke(2.2);
+  // rider: knees bent, leaning back upwind (left)
+  const crouch=pumping?4*Math.sin(t*5.5+1):0;
+  ctx.beginPath();ctx.moveTo(-6,-6);ctx.lineTo(-2,-20+crouch);ctx.lineTo(-6,-34+crouch);ctx.moveTo(10,-6);ctx.lineTo(4,-20+crouch);ctx.lineTo(-6,-34+crouch);
+  ctx.strokeStyle='#2b4a6b';ctx.lineWidth=5.5;ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-6,-34+crouch);ctx.lineTo(-10,-54+crouch);ctx.strokeStyle='#1b1a22';ctx.lineWidth=7;ctx.stroke();
+  ctx.beginPath();ctx.arc(-11,-62+crouch,6.2,0,7);ctx.fillStyle='#f0c7a0';ctx.fill();inkStroke(1.8);
+  // arms to wing handles
+  ctx.beginPath();ctx.moveTo(-10,-50+crouch);ctx.lineTo(4,-56+crouch);ctx.moveTo(-10,-50+crouch);ctx.lineTo(-24,-60+crouch);ctx.lineWidth=3;ctx.strokeStyle=INK;ctx.stroke();
+  // wing: inflatable leading edge + canopy, held in front
+  ctx.save();ctx.translate(-6,-66+crouch);ctx.rotate(-0.18+(pumping?0.12*Math.sin(t*5.5):0));
+  ctx.beginPath();ctx.moveTo(-34,8);ctx.quadraticCurveTo(-6,-46,36,-28);ctx.quadraticCurveTo(8,-10,-34,8);ctx.closePath();
+  ctx.fillStyle='#e0674b';ctx.fill();inkStroke(2.4);
+  ctx.beginPath();ctx.moveTo(-34,8);ctx.quadraticCurveTo(-6,-46,36,-28);ctx.strokeStyle='#fbe2b8';ctx.lineWidth=3.5;ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-4,-20);ctx.lineTo(8,8);ctx.lineWidth=2.2;ctx.strokeStyle=INK;ctx.stroke();
+  ctx.restore();
+  ctx.restore();
+}
+function drawKiter(x,ySurf,s,B,ang,kx,ky){
+  ctx.save();ctx.translate(x,ySurf);ctx.rotate(ang);ctx.scale(s,s);
+  // board + small wake
+  ctx.beginPath();ctx.moveTo(-22,-2);ctx.lineTo(22,-3);ctx.lineTo(20,2);ctx.lineTo(-20,2);ctx.closePath();ctx.fillStyle='#e9b949';ctx.fill();inkStroke(2);
+  ctx.fillStyle='rgba(255,255,255,.85)';for(let k=0;k<5;k++){ctx.beginPath();ctx.arc(-24-k*6,-2-k*2+Math.sin(t*8+k)*1.5,3-k*0.4,0,7);ctx.fill();}
+  // rider leaning back upwind
+  ctx.beginPath();ctx.moveTo(-10,-3);ctx.lineTo(-10,-18);ctx.lineTo(-16,-30);ctx.moveTo(8,-3);ctx.lineTo(0,-16);ctx.lineTo(-16,-30);
+  ctx.strokeStyle='#3b3b52';ctx.lineWidth=5.5;ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-16,-30);ctx.lineTo(-26,-48);ctx.strokeStyle='#1d7a74';ctx.lineWidth=7;ctx.stroke();
+  ctx.beginPath();ctx.arc(-29,-56,6,0,7);ctx.fillStyle='#e7b88f';ctx.fill();inkStroke(1.8);
+  ctx.beginPath();ctx.moveTo(-24,-44);ctx.lineTo(-6,-46);ctx.lineWidth=3;ctx.strokeStyle=INK;ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-6,-52);ctx.lineTo(-6,-40);ctx.lineWidth=2.4;ctx.stroke();
+  ctx.restore();
+  // lines to kite (in screen space)
+  const hx=x+(-6*Math.cos(ang)+46*Math.sin(ang))*s, hy=ySurf+(-46*Math.cos(ang))*s;
+  ctx.beginPath();ctx.moveTo(hx,hy-4*s);ctx.lineTo(kx-30*s,ky+6*s);ctx.moveTo(hx,hy+4*s);ctx.lineTo(kx+30*s,ky+6*s);
+  ctx.strokeStyle=rgba('#1b1a22',0.7);ctx.lineWidth=1;ctx.stroke();
+  // kite: C-shaped arc
+  ctx.save();ctx.translate(kx,ky);ctx.scale(s,s);ctx.rotate(0.15+Math.sin(t*0.8)*0.12);
+  ctx.beginPath();ctx.arc(0,30,62,-Math.PI*0.86,-Math.PI*0.14);ctx.arc(0,30,46,-Math.PI*0.2,-Math.PI*0.8,true);ctx.closePath();
+  ctx.fillStyle='#e9b949';ctx.fill();inkStroke(2.4);
+  for(let k=1;k<6;k++){const a=-Math.PI*0.86+k*(Math.PI*0.72/6);ctx.beginPath();ctx.moveTo(Math.cos(a)*46,30+Math.sin(a)*46);ctx.lineTo(Math.cos(a)*62,30+Math.sin(a)*62);ctx.lineWidth=1.3;ctx.stroke();}
+  ctx.beginPath();ctx.arc(0,30,62,-Math.PI*0.86,-Math.PI*0.14);ctx.strokeStyle='#e0674b';ctx.lineWidth=4;ctx.stroke();
+  ctx.restore();
+}
+function gullFly(x,y,s,flap){
+  ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+  ctx.beginPath();ctx.moveTo(-18,-3-9*flap);ctx.quadraticCurveTo(-8,-10*flap-6,0,0);ctx.quadraticCurveTo(8,-10*flap-6,18,-3-9*flap);
+  ctx.strokeStyle=INK;ctx.lineWidth=2.6;ctx.lineCap='round';ctx.stroke();
+  ctx.beginPath();ctx.ellipse(0,1,5,3,0,0,7);ctx.fillStyle='#fbfaf4';ctx.fill();inkStroke(1.4);
+  ctx.restore();
+}
+function gullSitting(x,y,s,i){
+  ctx.save();ctx.translate(x,y);ctx.scale(i%2?-s:s,s);
+  ctx.beginPath();ctx.ellipse(0,-7,10,6.5,-0.1,0,7);ctx.fillStyle='#fbfaf4';ctx.fill();inkStroke(1.6);
+  ctx.beginPath();ctx.ellipse(-2,-8,7,4,-0.15,0,7);ctx.fillStyle='#a9b0b8';ctx.fill();inkStroke(1.2);
+  ctx.beginPath();ctx.arc(8,-14,4.5,0,7);ctx.fillStyle='#fbfaf4';ctx.fill();inkStroke(1.4);
+  ctx.beginPath();ctx.moveTo(12,-14);ctx.lineTo(17,-13);ctx.lineTo(12,-12);ctx.fillStyle='#e9b949';ctx.fill();
+  ctx.beginPath();ctx.arc(9,-15,0.9,0,7);ctx.fillStyle=INK;ctx.fill();
+  ctx.restore();
+}
+function drawRain(B){
+  const a=smooth(8.5,10.5,B); if(a<=0)return;
+  const n=Math.floor(a*(80+(B-9)*45)), v=vms(B), sl=0.25+v*0.02;
+  ctx.strokeStyle=rgba('#e6ecf0',0.45*a);ctx.lineWidth=1.3*U;
+  ctx.beginPath();
+  for(let i=0;i<Math.min(n,RAIN.length);i++){const r=RAIN[i];
+    const y=frac(r.y+t*1.6)*H*1.1-H*0.05, x=frac(r.x+t*sl*0.4)*W*1.2-W*0.1, l=(18+14*r.l)*U;
+    ctx.moveTo(x,y);ctx.lineTo(x+l*sl,y+l);}
+  ctx.stroke();
+}
+
+// ---------- frame ----------
+function frame(now){
+  const dt=last?Math.min(0.05,(now-last)/1000):0; last=now;
+  if(!REDUCED)t+=dt;
+  if(playing){
+    playT+=dt*(REDUCED?0.35:1);
+    const ph=frac(playT/28); const tb=ph<0.5?24*ph:24*(1-ph);
+    target=tb; const r=Math.round(tb); if(r!==shown)setForce(r,true);
+  }
+  Bv=REDUCED?target:Bv+(target-Bv)*Math.min(1,dt*3);
+  step(dt);
+  draw();
+  requestAnimationFrame(frame);
+}
+function step(dt){
+  const B=Bv;
+  const portX=W*0.885, seaX=W*(W<700?0.42:0.4)+Math.sin(t*0.07)*W*0.03;
+  const tgt=B>=6.6?portX:seaX;
+  if(boatX===null||REDUCED||dt===0&&last===0)boatX=tgt;
+  else{const sp=W*0.075*dt;boatX+=clamp(tgt-boatX,-sp,sp);}
+  const k=REDUCED?1:Math.min(1,dt*1.6);
+  gullSit+=((B>=6.6?1:0)-gullSit)*k;
+  pF+=((B>=2.6&&B<=5.6?1:0)-pF)*k;
+  pK+=((B>=3.6&&B<=6.6?1:0)-pK)*k;
+}
+function draw(){
+  const B=Bv;
+  ctx.clearRect(0,0,W,H);
+  drawSky(B);drawSwooshes(B);drawClouds(B);drawHills(B);
+  const wv=[];for(let i=0;i<NROWS;i++)wv.push(rowWave(i,B));
+  ctx.fillStyle=mix(keyLerp(SEA_FAR,B),'#e8eef0',smooth(9.5,12,B)*0.3);ctx.fillRect(0,HZ,W,H-HZ);
+  drawRow(0,B,wv[0]);drawRow(1,B,wv[1]);
+  drawMirror(B);
+  drawRow(2,B,wv[2]);
+  // boat, on row 2
+  {
+    const inPort=smooth(W*0.72,W*0.86,boatX);
+    const sailBy=B<4.5?1:B<5.5?0.78:B<6.5?0.58:0.4;
+    const sail=sailBy*(1-inPort);
+    const wvb=wv[2], ys=lerp(surf(wvb,boatX),rowY[3]-16*U,inPort);
+    const slope=(surf(wvb,boatX+20*U)-surf(wvb,boatX-20*U))/(40*U);
+    const heel=Math.min(B,6.5)*0.035*(1-inPort)+Math.atan(slope)*0.8*(1-inPort*0.7);
+    drawBoat(boatX,ys+2*U,0.62*U,heel,sail,inPort>0.5);
+  }
+  const quayTop=drawBreakwater(B,wv[2],wv[3]);
+  // sitting gulls on the quay
+  const NG=4;
+  if(gullSit>0.6){ctx.globalAlpha=smooth(0.6,0.95,gullSit);for(let i=0;i<NG;i++)gullSitting(W*0.81+(i*26+ (i>1?60:0))*U+60*U,quayTop,0.85*U,i);ctx.globalAlpha=1;}
+  drawRow(3,B,wv[3]);
+  // kitesurfer, row 3
+  if(pK>0.01){
+    const kxBase=W*(W<700?0.62:0.57)+Math.sin(t*0.11)*W*0.03, off=(1-pK)*W*0.6;
+    const x=kxBase-off, wvk=wv[3], ys=surf(wvk,x);
+    const slope=(surf(wvk,x+15*U)-surf(wvk,x-15*U))/(30*U);
+    const kx=x+W*0.11+Math.sin(t*0.8)*20*U, ky=HZ*(0.42+0.06*Math.sin(t*0.5));
+    drawKiter(x,ys+2*U,0.72*U,B,Math.atan(slope)*0.6,kx,ky);
+  }
+  drawRow(4,B,wv[4]);
+  // wing foiler, row 4
+  if(pF>0.01){
+    const xb=W*(W<700?0.2:0.2)+Math.sin(t*0.09+1)*W*0.025, x=xb-(1-pF)*W*0.4, wvf=wv[4];
+    const ys=surf(wvf,x), slope=(surf(wvf,x+15*U)-surf(wvf,x-15*U))/(30*U);
+    drawFoiler(x,ys,0.85*U,B,Math.atan(slope)*0.5);
+  }
+  drawRow(5,B,wv[5]);drawRow(6,B,wv[6]);
+  // flying gulls
+  const fly=1-gullSit;
+  if(fly>0.02){
+    const v=vms(B);
+    for(let i=0;i<NG;i++){
+      const bx=W*(0.3+i*0.12)+Math.sin(t*0.25+i*2)*W*0.05, by=HZ*(0.28+0.12*Math.sin(t*0.37+i*1.3)+i*0.05);
+      // in a fresh breeze they hang in the wind, then get pushed downwind
+      const push=smooth(5,7,B)*(W*0.08*Math.sin(t*0.6+i)+W*0.05);
+      const sx=W*0.81+(i*26+(i>1?60:0))*U+60*U, sy=quayTop-8*U;
+      const x=lerp(bx+push,sx,gullSit), y=lerp(by,sy,gullSit)-Math.sin(Math.PI*gullSit)*HZ*0.2;
+      const flapRate=2+v*0.35+i*0.3, flap=REDUCED?0.4:Math.sin(t*flapRate+i);
+      ctx.globalAlpha=Math.min(1,fly*1.6);gullFly(x,y,0.75*U*(1+(i%2)*0.15),flap);ctx.globalAlpha=1;
+    }
+  }
+  drawRain(B);
+  // haze and spray in the air
+  const hz=smooth(8,12,B);
+  if(hz>0){
+    const g=ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,rgba('#c9cfd2',hz*0.15));g.addColorStop(0.45,rgba('#dfe4e6',hz*0.5));g.addColorStop(1,rgba('#eef1f2',hz*0.28));
+    ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  }
+  if(B>10.5){ // driving spray
+    const a=smooth(10.5,12,B);ctx.fillStyle=rgba('#ffffff',0.55*a);
+    for(let i=0;i<180;i++){const x=frac(hash(i,1)+t*(0.25+hash(i,2)*0.2))*W, y=HZ*0.6+hash(i,3)*(H-HZ*0.6);
+      ctx.beginPath();ctx.ellipse(x,y,(6+hash(i,4)*14)*U,1.4*U,0.08,0,7);ctx.fill();}
+  }
+  // frame vignette
+  const vg=ctx.createRadialGradient(W/2,H*0.55,Math.min(W,H)*0.4,W/2,H*0.55,Math.max(W,H)*0.8);
+  vg.addColorStop(0,'rgba(27,26,34,0)');vg.addColorStop(1,'rgba(27,26,34,0.18)');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+}
+
+// ---------- UI ----------
+const slider=document.getElementById('force'), playBtn=document.getElementById('play');
+const $=id=>document.getElementById(id);
+let shown=-1;
+const ticks=$('ticks');for(let b=0;b<=12;b++){const s=document.createElement('span');s.textContent=b;s.onclick=()=>{stopPlay();setForce(b);};ticks.appendChild(s);}
+const tbody=$('tbody');
+BF.forEach((r,b)=>{const tr=document.createElement('tr');tr.innerHTML=`<td class="b">${b}</td><td>${r.n}</td><td>${r.kn}</td><td>${r.kmh}</td><td>${r.ms}</td><td>${r.w} m${r.wm!=='—'&&r.wm!==r.w?' ('+r.wm+')':''}</td>`;tr.onclick=()=>{stopPlay();setForce(b);window.scrollTo({top:0,behavior:REDUCED?'auto':'smooth'});};tbody.appendChild(tr);});
+
+function setForce(b,fromPlay){
+  b=clamp(Math.round(b),0,12);
+  if(!fromPlay)target=b;
+  slider.value=b; shown=b;
+  const r=BF[b];
+  $('bNum').textContent=b;$('bName').textContent=r.n;$('bKn').textContent=r.kn+' knots · '+r.kmh+' km/h';
+  $('cName').firstChild.nodeValue=r.n+' ';$('cForce').textContent='force '+b;
+  $('nKn').textContent=r.kn;$('nKmh').textContent=r.kmh;$('nMs').textContent=r.ms;
+  $('nWave').textContent=r.w+' m';$('nWaveU').textContent=r.wm==='—'?'probable wave':'wave · max '+r.wm+' m';
+  $('cSea').textContent=r.plain;$('cWmo').textContent='WMO: "'+r.wmo+'"';$('cLand').textContent=r.land;$('cRule').textContent=r.rule;
+  [...ticks.children].forEach((s,i)=>s.classList.toggle('on',i===b));
+  [...tbody.children].forEach((s,i)=>s.classList.toggle('on',i===b));
+  drawChart(b);
+}
+function stopPlay(){playing=false;playBtn.textContent='▶ Play';playBtn.setAttribute('aria-pressed','false');}
+slider.addEventListener('input',()=>{stopPlay();setForce(+slider.value);});
+playBtn.addEventListener('click',()=>{
+  if(playing){stopPlay();target=shown;return;}
+  playing=true;playBtn.textContent='❚❚ Pause';playBtn.setAttribute('aria-pressed','true');
+  playT=(Bv/24)*28; // continue from the current force, going up
+});
+document.addEventListener('keydown',e=>{
+  if(e.target===slider||e.target.tagName==='INPUT')return;
+  let b=shown;
+  if(e.key==='ArrowRight'||e.key==='ArrowUp')b++;else if(e.key==='ArrowLeft'||e.key==='ArrowDown')b--;
+  else if(e.key==='Home')b=0;else if(e.key==='End')b=12;else if(e.key==='p'){playBtn.click();return;}else return;
+  e.preventDefault();stopPlay();setForce(b);
+});
+
+// ---------- chart ----------
+function drawChart(cur){
+  const svg=$('chart'), L=46,Rm=50,T=14,Bm=40,CW=600-L-Rm,CH=330-T-Bm, ymax=40;
+  const X=b=>L+(b+0.5)/13*CW, Y=v=>T+CH*(1-v/ymax), bw=CW/13*0.62;
+  let s='';
+  for(const v of [0,10,20,30,40]){s+=`<line x1="${L}" x2="${L+CW}" y1="${Y(v)}" y2="${Y(v)}" stroke="#d9cfbb" stroke-width="1"/><text x="${L-8}" y="${Y(v)+4}" text-anchor="end" font-size="12" fill="#5d5866">${v}</text>`;}
+  for(const k of [0,20,40,60,80]){s+=`<text x="${L+CW+8}" y="${Y(k/1.9438)+4}" font-size="12" fill="#5d5866">${k}</text>`;}
+  s+=`<text x="12" y="${T+CH/2}" font-size="12" fill="#5d5866" transform="rotate(-90 12 ${T+CH/2})" text-anchor="middle">m/s</text>`;
+  s+=`<text x="${600-8}" y="${T+CH/2}" font-size="12" fill="#5d5866" transform="rotate(90 ${600-8} ${T+CH/2})" text-anchor="middle">knots</text>`;
+  for(let b=0;b<=12;b++){
+    const [lo,hi]=MS[b], y1=Y(hi), y0=Y(lo), on=b===cur;
+    const h=Math.max(3,y0-y1);
+    s+=`<g class="bar" data-b="${b}" style="cursor:pointer"><rect x="${X(b)-CW/26}" y="${T}" width="${CW/13}" height="${CH}" fill="transparent"/>`;
+    s+=`<rect x="${X(b)-bw/2}" y="${y0-h}" width="${bw}" height="${h}" rx="4" fill="${on?'#e0674b':'#bfe3ea'}" stroke="#1b1a22" stroke-width="${on?2.4:1.5}"${b===12?' stroke-dasharray="4 3"':''}/>`;
+    s+=`<text x="${X(b)}" y="${T+CH+18}" text-anchor="middle" font-size="13" font-weight="${on?700:400}" fill="#1b1a22">${b}</text></g>`;
+  }
+  let p='';for(let i=0;i<=125;i++){const b=i/10;p+=(i?'L':'M')+(L+(b+0.5)/13*CW).toFixed(1)+' '+Y(vms(b)).toFixed(1);}
+  s+=`<path d="${p}" fill="none" stroke="#1b1a22" stroke-width="2.4" stroke-linecap="round"/>`;
+  s+=`<circle cx="${X(cur)}" cy="${Y(vms(cur))}" r="6" fill="#e9b949" stroke="#1b1a22" stroke-width="2.2"/>`;
+  s+=`<text x="${X(2.3)}" y="${Y(27)}" font-size="15" font-style="italic" font-family="Fraunces,Georgia,serif" fill="#1b1a22">v = 0.836 B<tspan dy="-6" font-size="10">3/2</tspan></text>`;
+  s+=`<text x="${X(2.3)}" y="${Y(27)+18}" font-size="12" fill="#5d5866">at B = ${cur}: ${vms(cur).toFixed(1)} m/s ≈ ${(vms(cur)*1.9438).toFixed(0)} kn</text>`;
+  s+=`<text x="${L+CW/2}" y="${330-4}" text-anchor="middle" font-size="12" fill="#5d5866">Beaufort force</text>`;
+  svg.innerHTML=s;
+  svg.querySelectorAll('.bar').forEach(g=>g.addEventListener('click',()=>{stopPlay();setForce(+g.dataset.b);}));
+}
+
+// ---------- start ----------
+(function init(){
+  const q=new URLSearchParams(location.search), b0=q.has('b')?clamp(+q.get('b')||0,0,12):4;
+  target=b0;Bv=b0;
+  resize();step(0);gullSit=Bv>=6.6?1:0;pF=Bv>=2.6&&Bv<=5.6?1:0;pK=Bv>=3.6&&Bv<=6.6?1:0;
+  setForce(b0);draw();
+  window.addEventListener('resize',()=>{resize();boatX=null;step(0);draw();});
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

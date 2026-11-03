@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>From cowries to crypto · lab · Corentin Bel</title>
+<meta name="description" content="An illustrated voyage through what people have used as money: clay debts, cowrie shells, the first coins, paper notes, stone discs, cigarettes, gold, the euro, Bitcoin and bank deposits. Then rate each one on the three jobs money does.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐚</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400;1,9..144,600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1b1a22; --paper:#f4ead5; --paper2:#efe1c3; --sand:#e6d2a6;
+  --coral:#c9573e; --teal:#2c7a80; --sea:#1f5f6e; --gold:#d3a43a; --muted:#6b5f52;
+  --card:#fbf5e8;
+  --serif:"Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans:"Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:var(--sans); color:var(--ink); line-height:1.55; font-size:16.5px;
+  background:linear-gradient(180deg,#f4e7c9 0%,#f2e6cf 30%,#e9e6d6 62%,#dde5e2 85%,#d7e0e3 100%);
+  overflow-x:hidden;
+}
+a{color:var(--sea)}
+.topbar{position:fixed;top:0;left:0;z-index:50;padding:9px 14px;font-size:13px;
+  background:rgba(244,234,213,.82);backdrop-filter:blur(6px);border-bottom-right-radius:12px;
+  border:1.5px solid rgba(27,26,34,.18);border-top:0;border-left:0}
+.topbar a{color:var(--ink);text-decoration:none;font-weight:600}
+.topbar a:hover{color:var(--coral)}
+.topbar span{color:var(--muted);margin:0 4px}
+
+/* hero */
+.hero{position:relative;max-width:1180px;margin:0 auto;padding:78px 24px 20px;display:grid;
+  grid-template-columns:1.1fr .9fr;gap:24px;align-items:center}
+.kicker{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--coral);font-weight:600}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(40px,6.4vw,78px);line-height:1.0;margin:.2em 0 .25em;letter-spacing:-.01em}
+h1 em{font-style:italic;font-weight:400;color:var(--teal)}
+.lede{font-size:18.5px;max-width:34em;margin:0 0 12px}
+.small{font-size:14px;color:var(--muted)}
+.hero svg{width:100%;height:auto;display:block}
+.scrollhint{display:inline-flex;align-items:center;gap:8px;margin-top:10px;font-size:13.5px;color:var(--muted)}
+.scrollhint b{display:inline-block;width:22px;height:34px;border:2px solid var(--ink);border-radius:12px;position:relative}
+.scrollhint b::after{content:"";position:absolute;left:8px;top:6px;width:2px;height:7px;background:var(--ink);border-radius:2px;animation:hint 1.8s infinite}
+@keyframes hint{0%{transform:translateY(0);opacity:1}100%{transform:translateY(12px);opacity:0}}
+
+.myth{max-width:880px;margin:14px auto 30px;padding:18px 22px;background:var(--card);border:2px solid var(--ink);
+  border-radius:16px 22px 14px 20px;box-shadow:5px 6px 0 rgba(27,26,34,.12);position:relative}
+.myth h2{font-family:var(--serif);font-size:22px;margin:0 0 6px}
+.myth p{margin:.4em 0}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  padding:2px 8px;border-radius:9px;border:1.5px solid var(--ink);background:#f7d9a3;margin-right:6px;vertical-align:2px}
+
+/* voyage */
+#voyage{position:relative;max-width:1180px;margin:0 auto;padding:10px 24px 40px}
+#trail{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:visible}
+.station{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:34px;align-items:center;
+  min-height:470px;padding:26px 0}
+.station:nth-child(even) .fig{order:2}
+.fig{position:relative;justify-self:center;width:min(100%,430px);aspect-ratio:4/3;border:0;padding:0;background:none;cursor:pointer;
+  border-radius:50%;transition:transform .35s ease}
+.fig::before{content:"";position:absolute;inset:6% 2% 4%;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(255,250,236,.95),rgba(255,250,236,.55) 70%,rgba(255,250,236,0));z-index:-1}
+.fig svg{width:100%;height:100%;display:block;overflow:visible}
+.fig:hover,.fig:focus-visible{transform:scale(1.035) rotate(-.6deg);outline:none}
+.fig:focus-visible::before{box-shadow:0 0 0 3px var(--coral)}
+.fig .clickme{position:absolute;left:50%;bottom:-2%;transform:translateX(-50%);font-size:12px;font-weight:600;background:var(--ink);color:#fbf5e8;
+  padding:4px 10px;border-radius:12px;opacity:.86}
+.txt{max-width:480px;background:rgba(251,245,232,.72);border-radius:16px;padding:10px 16px}
+.station:nth-child(even) .txt{justify-self:end}
+.date{font-family:var(--serif);font-style:italic;font-size:18px;color:var(--coral)}
+.place{font-size:12.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.txt h3{font-family:var(--serif);font-size:clamp(26px,3vw,34px);line-height:1.08;margin:.12em 0 .35em}
+.txt p{margin:.3em 0 .7em}
+.more{font:600 14px var(--sans);background:none;border:0;border-bottom:2px solid var(--coral);color:var(--ink);padding:2px 0;cursor:pointer}
+.more:hover{color:var(--coral)}
+.mini3{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.mini3 span{font-size:11.5px;border:1.4px solid rgba(27,26,34,.35);border-radius:9px;padding:1px 7px;color:var(--muted)}
+.mini3 i{font-style:normal;color:var(--ink);font-weight:600}
+.station .txt{transition:opacity .4s}
+#traveller{position:absolute;left:0;top:0;width:44px;height:44px;margin:-22px 0 0 -22px;z-index:4;pointer-events:none;
+  filter:drop-shadow(2px 3px 0 rgba(27,26,34,.25))}
+
+/* story overlay */
+#story{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:18px;
+  background:rgba(27,26,34,.45)}
+#story.open{display:flex}
+#story .card{background:var(--card);border:2.5px solid var(--ink);border-radius:18px 24px 16px 22px;max-width:640px;width:100%;
+  max-height:88vh;overflow:auto;padding:22px 26px 20px;box-shadow:7px 8px 0 rgba(27,26,34,.25);position:relative}
+#story .date,#story .place{padding-right:44px}
+#story h3{font-family:var(--serif);font-size:28px;margin:.1em 0 .3em;line-height:1.1}
+#story p{margin:.5em 0}
+#story .close{position:absolute;right:12px;top:10px;width:36px;height:36px;border-radius:50%;border:2px solid var(--ink);
+  background:#fff8ea;font:600 18px var(--sans);cursor:pointer;line-height:1}
+#story .src{font-size:13px;color:var(--muted);border-top:1.5px dashed rgba(27,26,34,.3);margin-top:12px;padding-top:8px}
+#story .nav{display:flex;justify-content:space-between;margin-top:10px}
+#story .nav button{font:600 13.5px var(--sans);background:none;border:1.8px solid var(--ink);border-radius:12px;padding:5px 12px;cursor:pointer}
+#story .nav button:hover{background:#f7d9a3}
+
+/* toy */
+#toy{max-width:1180px;margin:0 auto;padding:30px 24px 30px}
+#toy h2{font-family:var(--serif);font-size:clamp(32px,4.4vw,50px);margin:.1em 0 .2em;line-height:1.05}
+#toy .intro{max-width:46em}
+.jobs{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0 22px}
+.job{background:var(--card);border:2px solid var(--ink);border-radius:14px 18px 12px 16px;padding:12px 14px}
+.job b{font-family:var(--serif);font-size:18px;display:block}
+.job .dot{display:inline-block;width:12px;height:12px;border-radius:50%;border:1.6px solid var(--ink);margin-right:6px;vertical-align:-1px}
+.toygrid{display:grid;grid-template-columns:1.05fr 1fr;gap:26px;align-items:start}
+.radarbox{background:var(--card);border:2.5px solid var(--ink);border-radius:20px 26px 18px 24px;padding:10px;box-shadow:6px 7px 0 rgba(27,26,34,.12)}
+.radarbox svg{width:100%;height:auto;display:block}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 14px}
+.chip{font:600 13px var(--sans);border:1.8px solid var(--ink);background:#fff8ea;border-radius:14px;padding:5px 11px;cursor:pointer;color:var(--ink)}
+.chip.on{background:var(--ink);color:#fbf5e8}
+.chip.mod::after{content:" •";color:var(--coral)}
+.slider{margin:12px 0}
+.slider label{display:flex;justify-content:space-between;font-weight:600;font-size:14.5px}
+.slider label span{font-family:var(--serif);font-size:17px}
+input[type=range]{width:100%;accent-color:var(--coral);height:28px}
+.note{font-size:14.5px;background:#fff8ea;border-left:4px solid var(--teal);padding:8px 12px;border-radius:0 10px 10px 0;margin:10px 0}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.btn{font:600 13.5px var(--sans);border:1.8px solid var(--ink);background:none;border-radius:12px;padding:6px 12px;cursor:pointer;color:var(--ink)}
+.btn:hover{background:#f7d9a3}
+#verdict{font-family:var(--serif);font-size:19px;margin:14px 0 4px}
+.small-multiples{display:grid;grid-template-columns:repeat(10,1fr);gap:10px;margin-top:22px}
+.sm{background:rgba(251,245,232,.8);border:1.6px solid rgba(27,26,34,.35);border-radius:12px;padding:6px 4px 4px;text-align:center;cursor:pointer;font-size:12px;font-weight:600}
+.sm svg{width:100%;height:auto;display:block}
+.sm.on{border-color:var(--ink);background:#fff8ea;box-shadow:3px 3px 0 rgba(27,26,34,.15)}
+
+/* sources */
+footer{max-width:900px;margin:30px auto 0;padding:20px 24px 50px;font-size:14px}
+footer h2{font-family:var(--serif);font-size:24px;margin:.2em 0 .4em}
+footer ol{padding-left:1.3em}
+footer li{margin:.35em 0}
+footer .sign{margin-top:22px;color:var(--muted);font-style:italic;font-family:var(--serif)}
+
+@media (max-width:820px){
+  .hero{grid-template-columns:1fr;padding-top:58px;gap:0}
+  .hero svg{max-width:420px;margin:0 auto}
+  .station{grid-template-columns:1fr;gap:6px;min-height:0;padding:28px 0}
+  .station:nth-child(even) .fig{order:0}
+  .station:nth-child(even) .txt{justify-self:start}
+  .fig{width:min(100%,360px)}
+  .txt{background:rgba(251,245,232,.86);border-radius:14px;padding:6px 10px}
+  .jobs{grid-template-columns:1fr}
+  .toygrid{grid-template-columns:1fr}
+  .small-multiples{grid-template-columns:repeat(5,1fr)}.sm{font-size:10.5px}
+  body{font-size:16px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<nav class="topbar"><a href="../">← lab</a><span>·</span><a href="https://corentinbel.com">home</a></nav>
+
+<header class="hero">
+  <div>
+    <div class="kicker">a short voyage through money</div>
+    <h1>From cowries <em>to crypto</em></h1>
+    <p class="lede">I collect seashells. One small, glossy one, the money cowry, paid for things across three continents for centuries. That got me wondering what else people have agreed to treat as money, and why it worked.</p>
+    <p class="small">Ten stops, roughly in time order. Scroll to travel, click any object for its story, and at the end, judge them yourself.</p>
+    <div class="scrollhint"><b></b> scroll down</div>
+  </div>
+  <svg id="heroArt" viewBox="0 0 420 320" role="img" aria-label="Drawing of money cowrie shells on sand, top and underside"></svg>
+</header>
+
+<section class="myth">
+  <h2><span class="tag">contested</span>Did barter come first?</h2>
+  <p>The textbook story, going back to Adam Smith, runs: people bartered, barter was clumsy, so they picked a commodity as money, and credit came later. Anthropologists have looked hard for the barter economy at the start of that story and not found one. Caroline Humphrey wrote in 1985 that no example of a barter economy, pure and simple, has ever been described.</p>
+  <p>David Graeber (2011) went further: credit and debt came <em>first</em>, written in temple accounts long before coins. Many historians accept the critique of the barter myth; how far his own story holds is still argued. Here, treat it as a lens, not a verdict.</p>
+</section>
+
+<main id="voyage">
+  <svg id="trail" aria-hidden="true"></svg>
+  <svg id="traveller" viewBox="-30 -30 60 60" aria-hidden="true"></svg>
+  <div id="stations"></div>
+</main>
+
+<section id="toy">
+  <div class="kicker">the toy</div>
+  <h2>So, what is money?</h2>
+  <p class="intro">Economists usually say money does three jobs. Few things on this voyage do all three well. Pick a stop, and rate it from 0 to 5 on each job. The dashed shape is my rough take; the filled one is yours. Argue with me.</p>
+  <div class="jobs">
+    <div class="job"><b><span class="dot" style="background:#c9573e"></span>Medium of exchange</b>You can hand it over and people take it, without a second thought.</div>
+    <div class="job"><b><span class="dot" style="background:#2c7a80"></span>Unit of account</b>Prices, debts and wages are written in it. It is the ruler you measure value with.</div>
+    <div class="job"><b><span class="dot" style="background:#d3a43a"></span>Store of value</b>Put it away for a year and it still buys about as much.</div>
+  </div>
+  <div class="toygrid">
+    <div class="radarbox"><svg id="radar" viewBox="0 0 440 430" role="img" aria-label="Triangle chart of the three functions of money"></svg></div>
+    <div>
+      <div class="chips" id="chips"></div>
+      <div class="slider"><label for="s0">Medium of exchange <span id="v0">0</span></label><input id="s0" type="range" min="0" max="5" step="1"></div>
+      <div class="slider"><label for="s1">Unit of account <span id="v1">0</span></label><input id="s1" type="range" min="0" max="5" step="1"></div>
+      <div class="slider"><label for="s2">Store of value <span id="v2">0</span></label><input id="s2" type="range" min="0" max="5" step="1"></div>
+      <div class="note" id="mynote"></div>
+      <div class="btnrow"><button class="btn" id="reset1">Reset this one to my take</button><button class="btn" id="resetAll">Reset all</button></div>
+      <div id="verdict"></div>
+    </div>
+  </div>
+  <div class="small-multiples" id="sm"></div>
+</section>
+
+<footer>
+  <h2>Sources</h2>
+  <ol>
+    <li>Graeber, D. (2011). <em>Debt: The First 5,000 Years</em>. Melville House.</li>
+    <li>Humphrey, C. (1985). Barter and economic disintegration. <em>Man</em>, 20(1), 48–72.</li>
+    <li>Yang, B. (2019). <em>Cowrie Shells and Cowrie Money: A Global History</em>. Routledge.</li>
+    <li>Hogendorn, J. &amp; Johnson, M. (1986). <em>The Shell Money of the Slave Trade</em>. Cambridge University Press.</li>
+    <li>Friedman, M. (1991). <em>The Island of Stone Money</em>. Hoover Institution, Working Papers in Economics E-91-3. Retelling Furness, W. H. (1910), <em>The Island of Stone Money: Uap of the Carolines</em>.</li>
+    <li>Radford, R. A. (1945). The economic organisation of a P.O.W. camp. <em>Economica</em>, 12(48), 189–201.</li>
+    <li>McLeay, M., Radia, A. &amp; Thomas, R. (2014). Money creation in the modern economy, and Money in the modern economy: an introduction. <em>Bank of England Quarterly Bulletin</em>, 2014 Q1. <a href="https://www.bankofengland.co.uk/quarterly-bulletin/2014/q1/money-creation-in-the-modern-economy" rel="noopener">bankofengland.co.uk</a></li>
+    <li>Nakamoto, S. (2008). <em>Bitcoin: A Peer-to-Peer Electronic Cash System</em>. <a href="https://bitcoin.org/bitcoin.pdf" rel="noopener">bitcoin.org/bitcoin.pdf</a></li>
+    <li>European Central Bank, history of the euro: launch as book money on 1 January 1999, cash on 1 January 2002. <a href="https://www.ecb.europa.eu/euro/intro/html/index.en.html" rel="noopener">ecb.europa.eu</a></li>
+    <li>On Bretton Woods (1944) and the closing of the gold window (15 August 1971): Eichengreen, B. (2008). <em>Globalizing Capital: A History of the International Monetary System</em>, 2nd ed. Princeton University Press.</li>
+    <li>On early coinage in Lydia, and the Song jiaozi: von Glahn, R. (1996). <em>Fountain of Fortune: Money and Monetary Policy in China, 1000–1700</em>. University of California Press; Kroll, J. H. (2008). The monetary use of weighed bullion in archaic Greece, in Harris (ed.), <em>The Monetary Systems of the Greeks and Romans</em>, Oxford.</li>
+  </ol>
+  <p class="small">Dates for ancient stops are approximate and debated; I give round figures. The 0–5 ratings are my opinion, not data.</p>
+  <p class="sign">Drawn and written for the lab · Corentin Bel</p>
+</footer>
+
+<div id="story" role="dialog" aria-modal="true" aria-labelledby="storyTitle">
+  <div class="card">
+    <button class="close" aria-label="Close">×</button>
+    <div class="date" id="storyDate"></div>
+    <div class="place" id="storyPlace"></div>
+    <h3 id="storyTitle"></h3>
+    <div id="storyBody"></div>
+    <div class="src" id="storySrc"></div>
+    <div class="nav"><button id="prevS">← previous stop</button><button id="nextS">next stop →</button></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ---------- seeded randomness + ink helpers ---------- */
+function rng(seed){let s=seed>>>0;return function(){s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};}
+const INK="#1b1a22";
+const f1=v=>Math.round(v*10)/10;
+function smooth(p,closed){
+  const n=p.length;if(n<2)return"";
+  const P=i=>closed?p[(i+n)%n]:p[Math.max(0,Math.min(n-1,i))];
+  let d="M"+f1(p[0][0])+" "+f1(p[0][1]);
+  const last=closed?n:n-1;
+  for(let i=0;i<last;i++){
+    const p0=P(i-1),p1=P(i),p2=P(i+1),p3=P(i+2);
+    d+="C"+f1(p1[0]+(p2[0]-p0[0])/6)+" "+f1(p1[1]+(p2[1]-p0[1])/6)+" "+f1(p2[0]-(p3[0]-p1[0])/6)+" "+f1(p2[1]-(p3[1]-p1[1])/6)+" "+f1(p2[0])+" "+f1(p2[1]);
+  }
+  return d+(closed?"Z":"");
+}
+function blob(cx,cy,rx,ry,n,j,R,rot){
+  rot=rot||0;const p=[];
+  for(let i=0;i<n;i++){const a=i/n*Math.PI*2+rot,k=1+(R()-.5)*j;p.push([cx+Math.cos(a)*rx*k,cy+Math.sin(a)*ry*k]);}
+  return smooth(p,true);
+}
+function wline(x1,y1,x2,y2,R,j){
+  j=j==null?2:j;const mx=(x1+x2)/2+(R()-.5)*j*2,my=(y1+y2)/2+(R()-.5)*j*2;
+  return`M${f1(x1)} ${f1(y1)}Q${f1(mx)} ${f1(my)} ${f1(x2)} ${f1(y2)}`;
+}
+function wrect(x,y,w,h,R,j){ // wobbly rounded-ish rectangle
+  j=j||2;const p=[],r=()=>(R()-.5)*j*2;
+  const pts=[[x,y],[x+w/2,y],[x+w,y],[x+w,y+h/2],[x+w,y+h],[x+w/2,y+h],[x,y+h],[x,y+h/2]];
+  pts.forEach(q=>p.push([q[0]+r(),q[1]+r()]));
+  // corner-ish path with straight-ish segments
+  let d="M"+f1(p[0][0])+" "+f1(p[0][1]);
+  for(let i=1;i<=p.length;i++){const q=p[i%p.length];d+="L"+f1(q[0])+" "+f1(q[1]);}
+  return d+"Z";
+}
+const sh=(cx,cy,rx,ry,o)=>`<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#3a2a1a" opacity="${o||.13}"/>`;
+const st=(w)=>`stroke="${INK}" stroke-width="${w||2.4}" stroke-linejoin="round" stroke-linecap="round"`;
+
+/* ---------- cowrie drawing ---------- */
+function cowrie(id,cx,cy,s,rot,under,R,tint){
+  const g=`cw${id}`;
+  const p=[];const n=16;
+  for(let i=0;i<n;i++){const a=i/n*Math.PI*2;
+    // egg with slightly squared shoulders, like Monetaria moneta
+    let rx=30*(1+.06*Math.cos(2*a)),ry=21*(1+.12*Math.cos(4*a)*.6);
+    const k=1+(R()-.5)*.05;p.push([Math.cos(a)*rx*k,Math.sin(a)*ry*k*(a>Math.PI?1:1.02)]);}
+  const outline=smooth(p,true);
+  let o=`<defs><radialGradient id="${g}" cx="38%" cy="32%" r="80%"><stop offset="0" stop-color="#fffaf0"/><stop offset=".45" stop-color="${tint||"#f3e3b4"}"/><stop offset="1" stop-color="#cfae63"/></radialGradient></defs>`;
+  o+=`<g transform="translate(${cx} ${cy}) rotate(${rot}) scale(${s})">`;
+  o+=`<ellipse cx="3" cy="6" rx="31" ry="20" fill="#3a2a1a" opacity=".14"/>`;
+  o+=`<path d="${outline}" fill="url(#${g})" ${st(2.4/s)}/>`;
+  if(under){
+    // flat underside: aperture slit with teeth
+    o+=`<path d="M-24 1C-12 -3 12 4 24 0" fill="none" ${st(3/s)}/>`;
+    for(let i=-8;i<=8;i++){const x=i*2.7,y=(x/24)*1.2+Math.sin(x/9)*-1.5;
+      o+=`<path d="M${f1(x)} ${f1(y-1.5)}l${f1((R()-.5)*.8)} -5M${f1(x)} ${f1(y+1.5)}l${f1((R()-.5)*.8)} 5" stroke="${INK}" stroke-width="${1.2/s}" stroke-linecap="round" opacity=".8"/>`;}
+    o+=`<path d="M-27 -6C-18 -16 14 -17 26 -7" fill="none" stroke="#fff" stroke-width="${2/s}" opacity=".5"/>`;
+  }else{
+    o+=`<ellipse cx="-7" cy="-8" rx="13" ry="5" fill="#fff" opacity=".7" transform="rotate(-8)"/>`;
+    o+=`<path d="M-26 9C-14 16 12 17 26 8" fill="none" stroke="#a8843e" stroke-width="${1.3/s}" opacity=".6"/>`;
+    o+=`<circle cx="9" cy="-4" r="2" fill="#fff" opacity=".8"/>`;
+  }
+  return o+"</g>";
+}
+
+/* ---------- station illustrations (320x240) ---------- */
+const ART={
+clay(R){
+  let o=`<defs><linearGradient id="clayg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9a877"/><stop offset="1" stop-color="#a86f45"/></linearGradient>
+  <linearGradient id="silv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1f3f5"/><stop offset="1" stop-color="#9aa1aa"/></linearGradient></defs>`;
+  o+=sh(150,206,110,14);
+  o+=`<g transform="rotate(-5 120 120)"><path d="${wrect(48,40,140,160,R,3)}" fill="url(#clayg)" ${st(2.6)}/>`;
+  o+=`<path d="M56 50L180 48" stroke="#f3c999" stroke-width="3" opacity=".5"/>`;
+  for(let y=62;y<188;y+=17){ o+=`<path d="M56 ${y+9}L180 ${y+9}" stroke="#7a4a2a" stroke-width=".8" opacity=".45"/>`;
+    for(let x=60;x<174;x+=10+R()*9){ const v=R()<.3;
+      o+= v?`<path d="M${f1(x)} ${y}l-3 -1l3 6l3 -6z M${f1(x)} ${y+3}l0 6" fill="#6e4224" stroke="#6e4224" stroke-width="1.2" stroke-linecap="round"/>`
+           :`<path d="M${f1(x)} ${y+4}l-1 -3.5l5 3.5l-5 3.5z M${f1(x+3)} ${y+4}l6 0" fill="#6e4224" stroke="#6e4224" stroke-width="1.2" stroke-linecap="round"/>`; } }
+  o+=`</g>`;
+  // tally stick
+  o+=`<g transform="rotate(14 200 196)"><path d="M150 188L292 188L294 200L150 200Z" fill="#d8b37a" ${st(2.2)}/>`;
+  for(let i=0;i<9;i++){const x=162+i*13+(R()-.5)*3;o+=`<path d="M${f1(x)} 188l3 6l3 -6" fill="#8a6435" ${st(1.4)}/>`;}
+  o+=`<path d="M150 194L294 194" stroke="${INK}" stroke-width="1.2" stroke-dasharray="3 3" opacity=".6"/></g>`;
+  // silver rings & hacksilver
+  [[236,92,22],[262,120,16],[218,134,13]].forEach((c,i)=>{
+    o+=`<ellipse cx="${c[0]+2}" cy="${c[1]+c[2]*.55}" rx="${c[2]}" ry="${c[2]*.42}" fill="#3a2a1a" opacity=".12"/>`;
+    o+=`<ellipse cx="${c[0]}" cy="${c[1]}" rx="${c[2]}" ry="${c[2]*.55}" fill="none" stroke="${INK}" stroke-width="${c[2]*.42+2.4}"/>`;
+    o+=`<ellipse cx="${c[0]}" cy="${c[1]}" rx="${c[2]}" ry="${c[2]*.55}" fill="none" stroke="url(#silv)" stroke-width="${c[2]*.42}"/>`;
+    o+=`<path d="M${c[0]-c[2]*.6} ${c[1]-c[2]*.55}q${c[2]*.5} -${c[2]*.25} ${c[2]} -${c[2]*.05}" stroke="#fff" stroke-width="2" fill="none" opacity=".8"/>`;
+  });
+  o+=`<path d="M276 70l14 -5l4 10l-15 4z" fill="url(#silv)" ${st(2)}/>`;
+  o+=`<g font-family="Fraunces, Georgia, serif" font-style="italic" font-size="13" fill="${INK}"><text x="214" y="166">≈ 8 g of silver</text><text x="214" y="181">= 1 shekel</text></g>`;
+  return o;
+},
+cowrie(R){
+  let o=sh(160,200,120,13);
+  // string of cowries
+  o+=`<path d="M20 70C70 120 120 150 175 150S280 110 305 60" fill="none" stroke="#7b5a33" stroke-width="2.4"/>`;
+  for(let i=0;i<7;i++){const t=i/6,x=34+t*258,y=78+Math.sin(t*Math.PI)*70-(t>.6?(t-.6)*60:0)-t*6;
+    o+=cowrie("s"+i,x,y,.55,90+(R()-.5)*16,R()<.5,R);}
+  o+=cowrie("big1",110,192,1.25,-12,true,R);
+  o+=cowrie("big2",210,186,1.15,18,false,R);
+  // paper tag with 貝
+  o+=`<g transform="rotate(8 270 170)"><path d="${wrect(246,138,52,58,R,1.5)}" fill="#fbf2dc" ${st(2)}/>
+  <text x="272" y="182" text-anchor="middle" font-size="38" font-family="'Noto Serif CJK SC','Songti SC','SimSun',serif" fill="${INK}">貝</text>
+  <circle cx="272" cy="146" r="2.5" fill="none" ${st(1.5)}/></g>`;
+  return o;
+},
+lydia(R){
+  let o=`<defs><radialGradient id="elec" cx="40%" cy="35%" r="75%"><stop offset="0" stop-color="#fff2b8"/><stop offset=".5" stop-color="#e2c56a"/><stop offset="1" stop-color="#a88531"/></radialGradient></defs>`;
+  o+=sh(160,204,120,13);
+  // obverse lumpy coin
+  o+=`<path d="${blob(120,128,78,70,13,.11,R)}" fill="url(#elec)" ${st(2.8)}/>`;
+  o+=`<path d="${blob(120,128,64,57,11,.06,R)}" fill="none" stroke="#8c6e25" stroke-width="1.2" opacity=".55"/>`;
+  // lion head facing right
+  o+=`<g transform="translate(112 132)">`;
+  for(let i=0;i<14;i++){const a=Math.PI*.55+i/13*Math.PI*1.25,r1=26,r2=44+R()*6;
+    o+=`<path d="M${f1(Math.cos(a)*r1)} ${f1(Math.sin(a)*r1)}Q${f1(Math.cos(a+.18)*(r1+r2)/2)} ${f1(Math.sin(a+.18)*(r1+r2)/2)} ${f1(Math.cos(a)*r2)} ${f1(Math.sin(a)*r2)}" fill="none" stroke="#7a5d1c" stroke-width="5" stroke-linecap="round"/>`;}
+  o+=`<path d="M-24 -10C-22 -30 6 -34 20 -22L44 -12C50 -9 50 -2 44 0L22 2L42 10C46 14 42 20 36 20L14 18C6 30 -18 30 -24 14Z" fill="#c9a845" ${st(2.4)}/>`;
+  o+=`<path d="M22 2L42 10" ${st(2)}/><path d="M24 2L40 6L40 9L24 4Z" fill="#5a3d10"/>`;
+  o+=`<circle cx="12" cy="-14" r="3.2" fill="${INK}"/><circle cx="0" cy="-28" r="5" fill="#e9d07a" ${st(1.8)}/>`;
+  for(let i=0;i<7;i++){const a=-Math.PI*.95+i*Math.PI/6.5;o+=`<path d="M${f1(Math.cos(a)*7)} ${f1(-28+Math.sin(a)*7)}l${f1(Math.cos(a)*4)} ${f1(Math.sin(a)*4)}" ${st(1.5)}/>`;}
+  o+=`<path d="M30 -16l4 -3M36 -12l5 -2" ${st(1.3)}/></g>`;
+  o+=`<ellipse cx="88" cy="96" rx="20" ry="9" fill="#fff" opacity=".35" transform="rotate(-30 88 96)"/>`;
+  // reverse with incuse punch
+  o+=`<path d="${blob(250,150,46,42,11,.13,R)}" fill="url(#elec)" ${st(2.6)}/>`;
+  o+=`<path d="${wrect(232,134,34,30,R,2.5)}" fill="#6f5419" ${st(2)}/>`;
+  o+=`<path d="M238 140L260 158M260 140L238 158" stroke="#a88531" stroke-width="2.2" opacity=".7"/>`;
+  o+=`<text x="250" y="216" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-style="italic" font-size="13" fill="${INK}">reverse: a punch mark</text>`;
+  return o;
+},
+jiaozi(R){
+  let o=`<defs><linearGradient id="papr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#efe1bf"/><stop offset="1" stop-color="#d9c294"/></linearGradient>
+  <radialGradient id="iron" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#8d8a86"/><stop offset="1" stop-color="#4b4744"/></radialGradient></defs>`;
+  o+=sh(160,208,118,12);
+  // string of heavy iron cash
+  for(let i=0;i<6;i++){const x=228+(i%2)*10+(R()-.5)*4,y=196-i*14;
+    o+=`<ellipse cx="${x}" cy="${y}" rx="34" ry="11" fill="url(#iron)" ${st(2.2)}/><rect x="${x-5}" y="${y-3}" width="10" height="5" fill="#2a2724" rx="1"/>`;}
+  o+=`<path d="M233 112L233 40" stroke="#7b5a33" stroke-width="2.6"/><path d="M226 40q7 -12 14 0" fill="none" stroke="#7b5a33" stroke-width="2.6"/>`;
+  o+=`<text x="264" y="60" font-family="Fraunces, Georgia, serif" font-style="italic" font-size="12.5" fill="${INK}">iron cash:</text><text x="264" y="74" font-family="Fraunces, Georgia, serif" font-style="italic" font-size="12.5" fill="${INK}">heavy</text>`;
+  // the note
+  o+=`<g transform="rotate(-4 120 120)"><path d="${wrect(54,22,124,182,R,2)}" fill="url(#papr)" ${st(2.6)}/>`;
+  o+=`<path d="${wrect(64,32,104,162,R,1)}" fill="none" stroke="#3b2f2a" stroke-width="1.6"/>`;
+  for(let i=0;i<22;i++){const x=68+i*4.6;o+=`<path d="M${f1(x)} 36l2.3 3l2.3 -3" fill="none" stroke="#3b2f2a" stroke-width=".9"/>`;}
+  o+=`<text x="116" y="66" text-anchor="middle" font-size="24" font-family="'Noto Serif CJK SC','Songti SC','SimSun',serif" fill="${INK}" letter-spacing="6">交子</text>`;
+  o+=`<path d="M76 78L156 78" stroke="#3b2f2a" stroke-width="1.2"/>`;
+  // columns of pseudo-script
+  for(let c=0;c<6;c++){const x=84+c*13;for(let k=0;k<8;k++){const y=88+k*11;if(R()<.12)continue;
+    o+=`<path d="M${x-3} ${y}h${f1(4+R()*3)}M${x} ${y-3}v${f1(5+R()*2)}" stroke="#3b2f2a" stroke-width="1.3" stroke-linecap="round" opacity=".85"/>`;}}
+  // houses / scene band
+  o+=`<path d="M74 180l12 -10l12 10M98 180l14 -12l14 12M126 180l12 -9l12 9M70 182h90" fill="none" stroke="#3b2f2a" stroke-width="1.3"/>`;
+  // red seals
+  o+=`<rect x="128" y="128" width="30" height="30" fill="#c23a2c" opacity=".88" transform="rotate(6 143 143)"/>`;
+  o+=`<path d="M134 135h18M134 141h18M134 147h18M140 133v22" stroke="#efe1bf" stroke-width="1.6" transform="rotate(6 143 143)" opacity=".85"/>`;
+  o+=`<rect x="70" y="140" width="22" height="22" fill="#c23a2c" opacity=".8" transform="rotate(-8 81 151)"/>`;
+  o+=`<circle cx="81" cy="151" r="6" fill="none" stroke="#efe1bf" stroke-width="1.5" opacity=".9"/></g>`;
+  return o;
+},
+yap(R){
+  let o=`<defs><linearGradient id="seaY" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fb3b0"/><stop offset="1" stop-color="#1f5f6e"/></linearGradient>
+  <radialGradient id="lime" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#f6f1e2"/><stop offset="1" stop-color="#c7bea6"/></radialGradient></defs>`;
+  o+=`<path d="M0 176C60 170 110 182 160 176S260 170 320 178L320 240L0 240Z" fill="url(#seaY)" ${st(2.2)}/>`;
+  for(let i=0;i<6;i++){const x=20+i*52+R()*10;o+=`<path d="M${f1(x)} ${188+R()*8}q6 -4 12 0" fill="none" stroke="#e6f3ef" stroke-width="1.6" opacity=".8"/>`;}
+  // sunken stone (ghost)
+  o+=`<g opacity=".55"><ellipse cx="262" cy="222" rx="30" ry="9" fill="#b6c8c2" stroke="#e6f3ef" stroke-width="1.6" stroke-dasharray="4 3"/>`;
+  [[250,208],[258,198],[252,190]].forEach(b=>o+=`<circle cx="${b[0]}" cy="${b[1]}" r="2.6" fill="none" stroke="#e6f3ef" stroke-width="1.3"/>`);o+=`</g>`;
+  // island
+  o+=`<path d="M10 180C30 150 200 146 240 176L232 184L14 186Z" fill="#e7cf98" ${st(2.4)}/>`;
+  // palm
+  o+=`<path d="M210 168C214 130 206 96 196 70" fill="none" stroke="#7b5a33" stroke-width="7" stroke-linecap="round"/><path d="M210 168C214 130 206 96 196 70" fill="none" ${st(2)}/>`;
+  for(let i=0;i<6;i++){const a=-Math.PI*.95+i*.38+(R()-.5)*.1,L=38+R()*10,ex=196+Math.cos(a)*L,ey=70+Math.sin(a)*L*.7+12;
+    o+=`<path d="M196 70Q${f1(196+Math.cos(a)*L*.5)} ${f1(70+Math.sin(a)*L*.5-14)} ${f1(ex)} ${f1(ey)}Q${f1(196+Math.cos(a)*L*.5)} ${f1(70+Math.sin(a)*L*.5-2)} 196 72Z" fill="#4f8a3f" ${st(1.8)}/>`;}
+  // rai stone
+  o+=`<ellipse cx="104" cy="176" rx="70" ry="9" fill="#3a2a1a" opacity=".16"/>`;
+  o+=`<path d="${blob(102,104,66,70,14,.06,R)}" fill="url(#lime)" ${st(2.8)}/>`;
+  o+=`<path d="${blob(102,100,14,15,8,.1,R)}" fill="#7e7460" ${st(2.2)}/>`;
+  for(let i=0;i<26;i++){const a=R()*Math.PI*2,r=22+R()*38;o+=`<circle cx="${f1(102+Math.cos(a)*r)}" cy="${f1(104+Math.sin(a)*r)}" r="${f1(.8+R()*1.6)}" fill="#a99f86" opacity=".7"/>`;}
+  o+=`<path d="M60 74C70 58 90 50 110 50" fill="none" stroke="#fff" stroke-width="3" opacity=".6"/>`;
+  // carrying pole
+  o+=`<path d="M40 104L170 96" stroke="#8a6435" stroke-width="5" stroke-linecap="round"/><path d="M40 104L170 96" ${st(1.2)}/>`;
+  // tiny person for scale
+  o+=`<g transform="translate(166 132)"><circle cx="0" cy="0" r="5" fill="#8a5a3a" ${st(1.6)}/><path d="M0 5L0 26M0 12L-7 18M0 12L7 6M0 26L-5 40M0 26L5 40" fill="none" ${st(2)}/></g>`;
+  o+=`<text x="234" y="128" font-family="Fraunces, Georgia, serif" font-style="italic" font-size="12.5" fill="${INK}">a person,</text><text x="234" y="142" font-family="Fraunces, Georgia, serif" font-style="italic" font-size="12.5" fill="${INK}">for scale</text>`;
+  return o;
+},
+pow(R){
+  let o=sh(160,214,120,11);
+  // barbed wire
+  o+=`<path d="M0 26C80 34 240 18 320 28" fill="none" ${st(1.8)}/><path d="M0 34C90 40 230 28 320 36" fill="none" ${st(1.4)}/>`;
+  for(let i=0;i<9;i++){const x=16+i*36,y=27+Math.sin(i)*3;o+=`<path d="M${x-5} ${y-5}l10 10M${x+5} ${y-5}l-10 10" ${st(1.6)}/>`;}
+  // board
+  o+=`<path d="M40 54L190 50L192 174L42 178Z" fill="#3d4a3d" ${st(2.8)}/><path d="M44 58L186 55" stroke="#56655a" stroke-width="3"/>`;
+  o+=`<text x="114" y="78" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-style="italic" font-size="16" fill="#f1ede2">prices</text>`;
+  const items=[["tin",3],["bar",2],["shirt",5]];
+  items.forEach((it,k)=>{const y=98+k*26;
+    if(it[0]==="tin")o+=`<rect x="54" y="${y-9}" width="18" height="16" rx="2" fill="none" stroke="#f1ede2" stroke-width="1.6"/><path d="M54 ${y-4}h18" stroke="#f1ede2" stroke-width="1"/>`;
+    if(it[0]==="bar")o+=`<rect x="52" y="${y-6}" width="24" height="11" rx="1.5" fill="none" stroke="#f1ede2" stroke-width="1.6"/><path d="M60 ${y-6}v11M68 ${y-6}v11" stroke="#f1ede2" stroke-width="1"/>`;
+    if(it[0]==="shirt")o+=`<path d="M56 ${y-8}l5 -2l3 3l3 -3l5 2l3 6l-4 2v10h-14v-10l-4 -2z" fill="none" stroke="#f1ede2" stroke-width="1.5" stroke-linejoin="round"/>`;
+    o+=`<text x="84" y="${y+4}" font-family="Inter, sans-serif" font-size="12" fill="#f1ede2">=</text>`;
+    for(let c=0;c<it[1];c++){o+=`<rect x="${98+c*15}" y="${y-2}" width="12" height="4" fill="#f1ede2"/><rect x="${98+c*15}" y="${y-2}" width="3" height="4" fill="#e08a3a"/>`;}
+  });
+  o+=`<text x="114" y="170" text-anchor="middle" font-family="Inter, sans-serif" font-size="9.5" fill="#cfd6cb" opacity=".9">(illustrative)</text>`;
+  // parcel
+  o+=`<path d="M206 130L282 124L290 186L212 192Z" fill="#c9a774" ${st(2.6)}/><path d="M206 130L228 116L300 112L282 124" fill="#e0c18d" ${st(2.2)}/><path d="M282 124L300 112L306 172L290 186" fill="#ad8a58" ${st(2.2)}/>`;
+  o+=`<path d="M240 146h14v-10h10v10h14v10h-14v10h-10v-10h-14z" fill="#c23a2c" transform="rotate(-4 259 156)"/>`;
+  o+=`<text x="246" y="208" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-style="italic" font-size="12.5" fill="${INK}">Red Cross parcel</text>`;
+  // loose cigarettes
+  for(let i=0;i<6;i++){const x=40+i*28+R()*10,y=196+R()*14,a=(R()-.5)*60;
+    o+=`<g transform="rotate(${f1(a)} ${f1(x)} ${f1(y)})"><rect x="${f1(x-16)}" y="${f1(y-3.5)}" width="32" height="7" rx="2" fill="#fbf7ec" ${st(1.6)}/><rect x="${f1(x-16)}" y="${f1(y-3.5)}" width="9" height="7" rx="2" fill="#e08a3a" ${st(1.6)}/></g>`;}
+  return o;
+},
+gold(R){
+  let o=`<defs><linearGradient id="gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7dc84"/><stop offset="1" stop-color="#c08f26"/></linearGradient></defs>`;
+  o+=sh(160,206,124,12);
+  const bar=(x,y)=>`<path d="M${x} ${y}L${x+64} ${y}L${x+74} ${y+22}L${x-10} ${y+22}Z" fill="url(#gb)" ${st(2.2)}/><path d="M${x+4} ${y+4}L${x+44} ${y+4}" stroke="#fff6d0" stroke-width="2.2" opacity=".9"/>`;
+  [[40,176],[118,176],[78,150],[196,176],[156,150],[118,124]].forEach(b=>o+=bar(b[0],b[1]));
+  // tag
+  o+=`<g transform="rotate(-10 92 104)"><path d="${wrect(56,84,74,34,R,1.2)}" fill="#fbf2dc" ${st(2)}/><text x="93" y="106" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="600" font-size="15" fill="${INK}">$35 / oz</text></g>`;
+  o+=`<path d="M128 100Q150 112 140 124" fill="none" ${st(1.4)} stroke-dasharray="3 3"/>`;
+  // the gold window
+  o+=`<path d="M206 40L304 40L304 150L206 150Z" fill="#7a3d2c" ${st(2.6)}/>`;
+  o+=`<path d="M216 50L294 50L294 140L216 140Z" fill="#f1e2c0" ${st(2)}/>`;
+  o+=`<path d="M216 50L294 50L294 108L216 108Z" fill="#b98a5c" ${st(1.8)}/>`;
+  for(let y=58;y<108;y+=8)o+=`<path d="M218 ${y}L292 ${y}" stroke="#7a5534" stroke-width="1.3"/>`;
+  for(let x=226;x<294;x+=12)o+=`<path d="M${x} 108L${x} 140" ${st(1.6)}/>`;
+  o+=`<g transform="rotate(-5 255 98)"><rect x="226" y="86" width="58" height="22" rx="3" fill="#c23a2c" ${st(1.8)}/><text x="255" y="102" text-anchor="middle" font-family="Inter, sans-serif" font-weight="600" font-size="11.5" fill="#fff8ea" letter-spacing="1">CLOSED</text></g>`;
+  o+=`<text x="255" y="32" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-style="italic" font-size="13" fill="${INK}">15 August 1971</text>`;
+  return o;
+},
+euro(R){
+  let o=`<defs><radialGradient id="eg" cx="40%" cy="35%" r="75%"><stop offset="0" stop-color="#fbe9a6"/><stop offset="1" stop-color="#bf9a3a"/></radialGradient>
+  <radialGradient id="es" cx="40%" cy="35%" r="75%"><stop offset="0" stop-color="#f4f5f6"/><stop offset="1" stop-color="#9ba2aa"/></radialGradient></defs>`;
+  o+=sh(150,206,120,12);
+  // banknote behind
+  o+=`<g transform="rotate(-9 220 120)"><path d="${wrect(170,62,128,74,R,1.5)}" fill="#b9d3e6" ${st(2.4)}/>`;
+  o+=`<path d="M196 130L196 96Q212 76 228 96L228 130" fill="#e6f0f6" ${st(1.8)}/><path d="M204 130L204 102Q212 92 220 102L220 130" fill="none" ${st(1.4)}/>`;
+  o+=`<text x="276" y="88" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="600" font-size="20" fill="${INK}">20</text>`;
+  o+=`<path d="M240 118h48M240 126h36" stroke="${INK}" stroke-width="1.2" opacity=".5"/></g>`;
+  // 2 euro coin: silver outer, gold inner
+  const cx=118,cy=132;
+  o+=`<circle cx="${cx}" cy="${cy}" r="76" fill="url(#es)" ${st(2.8)}/>`;
+  for(let i=0;i<72;i++){const a=i/72*Math.PI*2;o+=`<path d="M${f1(cx+Math.cos(a)*73)} ${f1(cy+Math.sin(a)*73)}L${f1(cx+Math.cos(a)*76)} ${f1(cy+Math.sin(a)*76)}" stroke="${INK}" stroke-width=".9" opacity=".6"/>`;}
+  for(let i=0;i<12;i++){const a=i/12*Math.PI*2-Math.PI/2,x=cx+Math.cos(a)*62,y=cy+Math.sin(a)*62;
+    let d="";for(let k=0;k<10;k++){const b=k/10*Math.PI*2-Math.PI/2,r=k%2?2.4:5.6;d+=(k?"L":"M")+f1(x+Math.cos(b)*r)+" "+f1(y+Math.sin(b)*r);}
+    o+=`<path d="${d}Z" fill="#5d646c"/>`;}
+  o+=`<circle cx="${cx}" cy="${cy}" r="48" fill="url(#eg)" ${st(2.4)}/>`;
+  o+=`<text x="${cx-6}" y="${cy+24}" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="600" font-size="62" fill="#5a4413" opacity=".9">2</text>`;
+  o+=`<text x="${cx+24}" y="${cy+20}" font-family="Inter, sans-serif" font-weight="600" font-size="15" fill="#5a4413">€</text>`;
+  o+=`<ellipse cx="${cx-24}" cy="${cy-30}" rx="18" ry="7" fill="#fff" opacity=".45" transform="rotate(-30 ${cx-24} ${cy-30})"/>`;
+  o+=`<text x="232" y="190" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-style="italic" font-size="13" fill="${INK}">1 € = 6.55957 F</text>`;
+  return o;
+},
+bitcoin(R){
+  let o=sh(160,206,124,12);
+  const cube=(x,y,s,label,fill)=>{
+    let c=`<path d="M${x} ${y}L${x+s} ${y}L${x+s} ${y+s}L${x} ${y+s}Z" fill="${fill}" ${st(2.4)}/>`;
+    c+=`<path d="M${x} ${y}L${x+s*.3} ${y-s*.25}L${x+s*1.3} ${y-s*.25}L${x+s} ${y}Z" fill="#fff4dc" ${st(2.2)}/>`;
+    c+=`<path d="M${x+s} ${y}L${x+s*1.3} ${y-s*.25}L${x+s*1.3} ${y+s*.75}L${x+s} ${y+s}Z" fill="#b97a2a" ${st(2.2)}/>`;
+    c+=`<text x="${x+s/2}" y="${y+s*.62}" text-anchor="middle" font-family="Inter, sans-serif" font-weight="600" font-size="${s*.36}" fill="${INK}">${label}</text>`;
+    return c;};
+  const ys=[150,118,150,118];
+  for(let i=0;i<3;i++){const x1=40+i*72+50,y1=ys[i]+22,x2=40+(i+1)*72,y2=ys[i+1]+22;
+    o+=`<path d="M${x1} ${y1}C${x1+14} ${y1} ${x2-14} ${y2} ${x2} ${y2}" fill="none" stroke="#8a6435" stroke-width="5"/><path d="M${x1} ${y1}C${x1+14} ${y1} ${x2-14} ${y2} ${x2} ${y2}" fill="none" ${st(1.4)} stroke-dasharray="5 4"/>`;}
+  ["#0","#1","#2","…"].forEach((l,i)=>o+=cube(40+i*72,ys[i],50,l,i===0?"#f2c45a":"#f0d9a3"));
+  // headline scroll
+  o+=`<g transform="rotate(-3 120 60)"><path d="${wrect(30,30,204,48,R,1.4)}" fill="#fbf7ec" ${st(2)}/>`;
+  o+=`<text x="40" y="49" font-family="Georgia, serif" font-size="10.2" fill="${INK}">The Times 03/Jan/2009 Chancellor on</text><text x="40" y="64" font-family="Georgia, serif" font-size="10.2" fill="${INK}">brink of second bailout for banks</text></g>`;
+  o+=`<path d="M70 80Q62 120 66 146" fill="none" ${st(1.4)} stroke-dasharray="3 3"/>`;
+  // coin
+  o+=`<circle cx="276" cy="64" r="30" fill="#f2a93b" ${st(2.6)}/><circle cx="276" cy="64" r="23" fill="none" stroke="#c97f1c" stroke-width="2"/>`;
+  o+=`<text x="276" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-weight="600" font-size="34" fill="#fff8ea">₿</text>`;
+  o+=`<text x="70" y="224" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-style="italic" font-size="12.5" fill="${INK}">genesis block</text>`;
+  return o;
+},
+deposits(R){
+  let o=sh(160,208,124,12);
+  // ledger paper
+  o+=`<g transform="rotate(3 130 120)"><path d="${wrect(24,26,190,176,R,1.6)}" fill="#fbf7ec" ${st(2.6)}/>`;
+  for(let y=58;y<196;y+=17)o+=`<path d="M30 ${y}L208 ${y}" stroke="#9fc1c9" stroke-width="1"/>`;
+  o+=`<path d="M118 34L118 128" ${st(2)}/><path d="M30 56L208 56" ${st(2)}/>`;
+  o+=`<g font-family="Fraunces, Georgia, serif" font-style="italic" fill="${INK}"><text x="40" y="49" font-size="14">Assets</text><text x="128" y="49" font-size="14">Liabilities</text>`;
+  o+=`<text x="36" y="86" font-size="14.5">Loan to you</text><text x="62" y="106" font-size="17" fill="#2c7a80">+100</text>`;
+  o+=`<text x="126" y="86" font-size="14.5">Your deposit</text><text x="150" y="106" font-size="17" fill="#2c7a80">+100</text>`;
+  o+=`<text x="119" y="160" text-anchor="middle" font-size="13" fill="#6b5f52">the bank's books, right after</text><text x="119" y="177" text-anchor="middle" font-size="13" fill="#6b5f52">it lends you 100</text></g></g>`;
+  // card
+  o+=`<g transform="rotate(-14 252 150)"><rect x="196" y="112" width="112" height="72" rx="10" fill="#2c7a80" ${st(2.6)}/>`;
+  o+=`<path d="M196 160C230 146 270 172 308 150L308 174Q308 184 298 184L206 184Q196 184 196 174Z" fill="#1f5f6e"/>`;
+  o+=`<rect x="210" y="130" width="22" height="17" rx="3" fill="#e2c56a" ${st(1.6)}/><path d="M210 138h22M221 130v17" stroke="${INK}" stroke-width="1"/>`;
+  o+=`<path d="M290 126q6 7 0 14M297 122q9 11 0 22" fill="none" stroke="#fbf5e8" stroke-width="2" stroke-linecap="round"/>`;
+  o+=`<path d="M210 166h16M232 166h16M254 166h16" stroke="#fbf5e8" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="2 4"/></g>`;
+  return o;
+}
+};
+
+/* ---------- station data ---------- */
+const STATIONS=[
+{id:"clay",date:"c. 3000–1750 BCE",place:"Mesopotamia",title:"Silver by weight, debts in clay",
+ blurb:"In Sumer and Babylon, values were reckoned in silver shekels, a weight of about 8 grams, and in barley. Much of the economy ran on obligations written on clay: temple accounts, loans, rents, interest.",
+ story:["A shekel was a weight before it was ever a coin: roughly 8 grams of silver, 60 shekels to a mina. When silver did change hands, it was weighed out as rings, coils and cut scraps that archaeologists call hacksilver.",
+  "Scribes recorded loans, rents and interest on clay tablets. The laws of Hammurabi (around 1750 BCE) are usually read as capping interest at about 20 % on silver loans and 33⅓ % on barley loans.",
+  "David Graeber (2011) used records like these to argue that credit came first, and that the barter-then-coins-then-credit story has it backwards. That reading is influential and still debated.",
+  "A medieval echo: England's Exchequer recorded what it was owed on split wooden tally sticks until 1826. Burning the old stock in 1834 set fire to the Palace of Westminster."],
+ src:"Graeber 2011; Humphrey 1985. Weight of the shekel varied by period and city; about 8.3 g is a common figure.",
+ my:[3,5,4],note:"A superb ruler for keeping score. Awkward to weigh out at a market stall."},
+{id:"cowrie",date:"c. 1200 BCE – early 1900s",place:"Maldives · China · Bengal · West Africa",title:"The money cowry",
+ blurb:"A small glossy shell, Monetaria moneta, gathered in huge numbers in the Maldives and shipped across the Indian Ocean. Hard to fake, hard to break, easy to count.",
+ story:["Cowries turn up by the thousands in Shang-era tombs in China. Whether they were money there or prestige goods is debated. The shell left a trace in the script: 貝 (bèi, shell) sits inside characters for wealth 財, goods 貨, buy 買 and expensive 貴.",
+  "In Bengal, cowries paid for small purchases into the 1800s. In Yunnan, in southwest China, they worked as everyday money for centuries.",
+  "From the 1500s, European ships carried Maldivian cowries to West Africa, where they were used in trade, including the Atlantic slave trade. In the 1800s so many shells arrived, among them a second species from East Africa, that their value collapsed.",
+  "Holding one, you see the appeal: smooth, uniform, nearly indestructible, and impossible to manufacture. Its weakness was the same as any commodity money's: whoever could bring in more shells could print money."],
+ src:"Yang Bin 2019; Hogendorn & Johnson 1986. Dates are broad: cowrie use began, peaked and ended at very different times in different regions.",
+ my:[4,3,3],note:"Counted, not weighed: a big step for small trade. Lost value when shiploads flooded in."},
+{id:"lydia",date:"late 7th century BCE",place:"Lydia, western Anatolia",title:"Stamped lumps of electrum",
+ blurb:"Lydia, in what is now western Turkey, struck some of the earliest known coins: lumps of electrum, a natural gold and silver alloy, stamped with a lion's head. A stamp let you count pieces instead of weighing them.",
+ story:["Natural electrum varies in how much gold it holds, so a trusted mark of weight and issuer mattered. The other side carried just a rough punch mark.",
+  "Coins appeared in China (bronze spade and knife shapes) and in India (punch-marked silver) within a few centuries, probably independently.",
+  "Croesus, the Lydian king behind the phrase 'rich as Croesus', is traditionally credited with the first separate gold and silver coins, in the 6th century BCE.",
+  "A coin's value now rested on two things at once: the metal inside, and the authority on the outside. Much of monetary history is the tug of war between the two."],
+ src:"Dates for the first Lydian coins are debated within roughly 650–600 BCE. Kroll 2008 on weighed bullion before coinage.",
+ my:[5,4,4],note:"Portable, countable, durable. The first money you could keep in a purse without a scale."},
+{id:"jiaozi",date:"c. 1000–1024 CE",place:"Sichuan, Song China",title:"Paper promises",
+ blurb:"Sichuan used heavy iron coins. Merchants there began issuing paper deposit receipts, jiaozi, that passed from hand to hand instead. Around 1024 the Song state took over issuing them.",
+ story:["Iron cash was heavy for its value, so even a modest purchase meant hauling strings of coins. A folded receipt was simply easier.",
+  "The state notes were issued for fixed periods and, at first, in limited amounts. Later governments printed more to pay for wars, and paper money lost value: a lesson repeated many times since.",
+  "More than two centuries later, Marco Polo described paper money in Yuan China as a marvel."],
+ src:"von Glahn 1996. The exact year the state monopoly began is given as 1023 or 1024 depending on the source.",
+ my:[4,4,2],note:"Light and convenient. Only as good as the restraint of whoever prints it."},
+{id:"yap",date:"quarried over centuries; described in 1910",place:"Yap, Micronesia",title:"Stones that never move",
+ blurb:"Rai are carved limestone discs, the biggest about 3.6 m across, quarried on Palau roughly 400 km away and brought back by canoe. Ownership changed while the stone stayed put.",
+ story:["A stone's value depended on its size, its workmanship and the story of how hard it had been to bring home.",
+  "Milton Friedman (1991), retelling the ethnographer William Furness (1910), describes a family counted as rich because of a great stone lying on the sea floor, lost in a storm on its way home. Nobody alive had seen it; everyone agreed it was theirs.",
+  "Friedman's point was that gold sitting in a vault works the same way. He compares the Yap story to the Bank of France in the early 1930s having gold earmarked in the vaults of the Federal Reserve Bank of New York: the metal barely moved, yet it was treated as a loss of American gold.",
+  "Money, in this light, is a shared record of who owns what. The stone is just the part you can see."],
+ src:"Friedman 1991; Furness 1910. Sizes and distance are approximate.",
+ my:[1,2,4],note:"A brilliant store of wealth and status. Useless for buying lunch."},
+{id:"pow",date:"1940s",place:"prisoner-of-war camps, Germany and Italy",title:"Cigarettes behind barbed wire",
+ blurb:"R. A. Radford, an economist held as a prisoner of war, described how a full market grew out of Red Cross parcels, with prices quoted in cigarettes.",
+ story:["Everyone received roughly the same parcels; tastes differed. Swaps soon settled on one good that everyone accepted and could count: cigarettes.",
+  "Prices moved with the supply of money. When parcels arrived, cigarettes were plentiful and prices in cigarettes rose; as stocks were smoked, prices fell.",
+  "Radford also observed that the less desirable cigarettes tended to be passed on in trade while the good ones were smoked, which he linked to Gresham's law: bad money drives out good.",
+  "A money people also consume is a poor store of value. Every cigarette smoked shrank the money supply."],
+ src:"Radford 1945, Economica. The price board drawing is illustrative only.",
+ my:[5,5,1],note:"A textbook medium of exchange and unit of account. Went up in smoke as a store of value."},
+{id:"gold",date:"1870s → 1944 → 1971",place:"London · Bretton Woods · Washington",title:"Gold, then a promise of gold",
+ blurb:"Under the classical gold standard, notes were claims on gold. In July 1944, at Bretton Woods, 44 Allied nations pegged their currencies to the US dollar, and the dollar to gold at $35 an ounce. On 15 August 1971, Nixon closed that window.",
+ story:["The classical gold standard ran from roughly the 1870s to 1914. Rebuilt between the wars, it broke again in the 1930s.",
+  "Bretton Woods made the dollar the anchor: foreign central banks could turn dollars into US gold at $35 an ounce, a price set in 1934.",
+  "By the late 1960s far more dollars were held abroad than the US had gold to cover. On 15 August 1971 Nixon 'temporarily' suspended convertibility. By 1973 the major currencies floated.",
+  "Since then, money in most countries is backed by no commodity at all. Its value rests on central banks, on taxes being payable in it, and on trust."],
+ src:"Eichengreen 2008.",
+ my:[5,5,4],note:"All three jobs, at the price of tying the money supply to how much gold had been dug up."},
+{id:"euro",date:"1999 / 2002",place:"Europe",title:"A currency above states",
+ blurb:"The euro started on 1 January 1999 as book money in 11 countries. Notes and coins arrived on 1 January 2002, in 12. In France one euro was fixed at 6.55957 francs.",
+ story:["For three years the euro was real but invisible: bank transfers, bond prices, a second price on receipts. You could not hold one.",
+  "It is issued by a central bank, the ECB, that serves many governments rather than one, which is still unusual. About twenty countries use it today.",
+  "Coins share a common side and a national side. A 2 € coin struck in France spends the same in Lisbon or Helsinki."],
+ src:"ECB, history of the euro.",
+ my:[5,5,4],note:"Ordinary modern money, which is to say: remarkable."},
+{id:"bitcoin",date:"2008 / 2009",place:"the internet",title:"Money without a bank",
+ blurb:"On 31 October 2008, 'Satoshi Nakamoto' published a nine-page paper describing electronic cash with no trusted middleman. The first block was mined on 3 January 2009.",
+ story:["The idea: a public ledger, copied by thousands of computers, where adding a block costs real computing work. Rewriting history would mean redoing that work faster than everyone else combined.",
+  "The genesis block carries a newspaper headline: 'The Times 03/Jan/2009 Chancellor on brink of second bailout for banks'.",
+  "The supply is capped at 21 million coins. On 22 May 2010, 10,000 bitcoins bought two pizzas.",
+  "As money it is contested. Few prices are set in bitcoin and its value swings widely, so most people hold it as a speculative asset rather than spend it."],
+ src:"Nakamoto 2008.",
+ my:[2,1,2],note:"A clever ledger. So far, more an asset people hold than money people use. Your rating may differ."},
+{id:"deposits",date:"today",place:"everywhere",title:"Full circle: a bank's promise",
+ blurb:"Most money today is neither coin nor note. It is bank deposits: entries in a ledger. And as the Bank of England explained in 2014, most of those deposits are created when banks make loans.",
+ story:["The textbook picture: banks take in savers' deposits and lend them out. The Bank of England (2014) put it the other way round: when a bank lends you 100, it writes a new 100 into your account. A loan (the bank's asset) and a deposit (its liability) appear together.",
+  "In the UK at the time, notes and coins were only about 3 % of the money held by the public; the rest was bank deposits.",
+  "Banks cannot do this without limit. They need willing borrowers, they compete with each other, and they are held back by regulation and by the central bank's interest rate.",
+  "So we are back in Mesopotamia: money as a record of who owes whom, kept by a trusted scribe. The clay became a database."],
+ src:"McLeay, Radia & Thomas 2014, Bank of England Quarterly Bulletin 2014 Q1.",
+ my:[5,5,3],note:"Does all three jobs, though inflation slowly eats the third."}
+];
+const JOBS=["Medium of exchange","Unit of account","Store of value"];
+const JC=["#c9573e","#2c7a80","#d3a43a"];
+
+/* ---------- build stations ---------- */
+const host=document.getElementById("stations");
+STATIONS.forEach((s,i)=>{
+  const R=rng(1000+i*77);
+  const art=`<svg viewBox="0 0 320 240" role="img" aria-label="Drawing for ${s.title}">${ART[s.id](R)}</svg>`;
+  const el=document.createElement("article");
+  el.className="station";el.id="st-"+s.id;
+  el.innerHTML=`<button class="fig" data-i="${i}" aria-label="Open the story: ${s.title}">${art}<span class="clickme">story</span></button>
+   <div class="txt"><div class="date">${s.date}</div><div class="place">${s.place}</div><h3>${s.title}</h3><p>${s.blurb}</p>
+   <button class="more" data-i="${i}">Read the story →</button>
+   <div class="mini3">${["exchange","account","store"].map((j,k)=>`<span>${j} <i>${s.my[k]}</i>/5</span>`).join("")}</div></div>`;
+  host.appendChild(el);
+});
+
+/* hero */
+(function(){
+  const R=rng(7);let o=`<defs><linearGradient id="sandH" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ecd6a5"/><stop offset="1" stop-color="#d6b97c"/></linearGradient>
+  <linearGradient id="seaH" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7cc2bb"/><stop offset="1" stop-color="#2c7a80"/></linearGradient></defs>`;
+  const sand=blob(210,175,190,128,18,.08,R);
+  o+=`<clipPath id="sandClip"><path d="${sand}"/></clipPath><path d="${sand}" fill="url(#sandH)"/>`;
+  o+=`<g clip-path="url(#sandClip)"><path d="M0 0H420V112C340 96 290 128 210 116S80 104 0 124Z" fill="url(#seaH)" stroke="${INK}" stroke-width="2.4"/>
+  <path d="M10 134C90 116 150 128 214 126S340 108 410 120" fill="none" stroke="#fbf5e8" stroke-width="3" stroke-linecap="round" stroke-dasharray="14 8"/>
+  <path d="M40 80q14 -6 28 0M150 66q14 -6 28 0M280 74q14 -6 28 0" fill="none" stroke="#e6f3ef" stroke-width="2" opacity=".8"/></g>`;
+  o+=`<path d="${sand}" fill="none" ${st(2.8)}/>`;
+  for(let i=0;i<40;i++){const a=R()*Math.PI*2,r=R();o+=`<circle cx="${f1(210+Math.cos(a)*170*r)}" cy="${f1(190+Math.sin(a)*90*r)}" r="${f1(.8+R()*1.4)}" fill="#a98448" opacity=".55"/>`;}
+  // a scallop and a small spiral shell as collection company
+  o+=`<g transform="translate(320 228) rotate(12)"><path d="M0 18L-26 -10Q0 -30 26 -10Z" fill="#f2b8a0" ${st(2.2)}/>`;
+  for(let k=-3;k<=3;k++)o+=`<path d="M0 18L${k*7} -16" stroke="${INK}" stroke-width="1.2" opacity=".7"/>`;
+  o+=`<path d="M-6 18h12l-2 6h-8z" fill="#e59b80" ${st(1.8)}/></g>`;
+  o+=`<g transform="translate(92 248) rotate(-20)"><path d="M0 0C10 -6 22 -2 24 8C26 20 10 26 -2 22C-14 18 -16 2 -6 -6C4 -14 22 -12 30 -2" fill="#e8d6b8" ${st(2)}/><path d="M2 8C6 4 12 6 12 10C12 14 6 14 4 12" fill="none" ${st(1.4)}/><path d="M24 8L44 18L28 22Z" fill="#e8d6b8" ${st(2)}/></g>`;
+  o+=cowrie("h1",170,190,2.0,-14,false,R);
+  o+=cowrie("h2",262,170,1.65,22,true,R);
+  o+=cowrie("h3",210,262,.95,74,false,R,"#efd9a0");
+  document.getElementById("heroArt").innerHTML=o;
+  document.getElementById("traveller").innerHTML=`<circle r="27" fill="#fbf5e8" stroke="#c9573e" stroke-width="3"/>`+cowrie("tv",0,0,.62,0,false,rng(3));
+})();
+
+/* ---------- trail + traveller ---------- */
+const voyage=document.getElementById("voyage"),trail=document.getElementById("trail"),trav=document.getElementById("traveller");
+let samples=[],trailLen=0,pathEl=null,doneEl=null;
+function layoutTrail(){
+  const vb=voyage.getBoundingClientRect();
+  const W=vb.width,H=voyage.scrollHeight;
+  trail.setAttribute("viewBox",`0 0 ${W} ${H}`);trail.style.height=H+"px";
+  const pts=[[W/2,0]];
+  document.querySelectorAll(".station .fig").forEach(f=>{
+    const r=f.getBoundingClientRect();pts.push([r.left-vb.left+r.width/2,r.top-vb.top+r.height*.62]);});
+  pts.push([W/2,H]);
+  // insert midpoints that swing outward for a meandering tide line
+  const all=[pts[0]];
+  for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i];
+    const sw=(i%2?1:-1)*Math.min(W*.18,140);all.push([(a[0]+b[0])/2+sw*(W<820?.4:.25),(a[1]+b[1])/2]);all.push(b);}
+  const d=smooth(all,false);
+  trail.innerHTML=`<path d="${d}" fill="none" stroke="#c8ab73" stroke-width="16" stroke-linecap="round" opacity=".35"/>
+    <path id="trailPath" d="${d}" fill="none" stroke="${INK}" stroke-width="2.2" stroke-dasharray="2 9" stroke-linecap="round" opacity=".55"/>
+    <path id="trailDone" d="${d}" fill="none" stroke="#c9573e" stroke-width="3" stroke-linecap="round" opacity=".75"/>`;
+  pathEl=trail.querySelector("#trailPath");doneEl=trail.querySelector("#trailDone");
+  trailLen=pathEl.getTotalLength();samples=[];
+  const N=600;for(let k=0;k<=N;k++){const p=pathEl.getPointAtLength(trailLen*k/N);samples.push([p.x,p.y,trailLen*k/N]);}
+  doneEl.style.strokeDasharray=`${trailLen} ${trailLen}`;
+  onScroll();
+}
+function onScroll(){
+  if(!samples.length)return;
+  const vb=voyage.getBoundingClientRect();
+  const target=window.innerHeight*.55-vb.top;
+  // find first sample at or beyond target y (path is mostly monotonic in y)
+  let k=0;while(k<samples.length-1&&samples[k][1]<target)k++;
+  const p=samples[k],q=samples[Math.min(samples.length-1,k+2)],pp=samples[Math.max(0,k-2)];
+  const ang=Math.atan2(q[1]-pp[1],q[0]-pp[0])*180/Math.PI;
+  trav.style.transform=`translate(${p[0]}px,${p[1]}px) rotate(${ang}deg)`;
+  doneEl.style.strokeDashoffset=String(trailLen-p[2]);
+  // active station
+  document.querySelectorAll(".station").forEach(s=>{const r=s.getBoundingClientRect();
+    const on=r.top<window.innerHeight*.75&&r.bottom>window.innerHeight*.25;s.querySelector(".txt").style.opacity=on?1:.55;});
+}
+let ticking=false;
+window.addEventListener("scroll",()=>{if(!ticking){ticking=true;requestAnimationFrame(()=>{ticking=false;onScroll();});}},{passive:true});
+window.addEventListener("resize",()=>{clearTimeout(window._rt);window._rt=setTimeout(layoutTrail,120);});
+layoutTrail();
+window.addEventListener("load",layoutTrail);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(layoutTrail);
+
+/* ---------- story overlay ---------- */
+const story=document.getElementById("story");let cur=0,lastFocus=null;
+function openStory(i){
+  cur=(i+STATIONS.length)%STATIONS.length;const s=STATIONS[cur];
+  document.getElementById("storyDate").textContent=s.date;
+  document.getElementById("storyPlace").textContent=s.place;
+  document.getElementById("storyTitle").textContent=s.title;
+  document.getElementById("storyBody").innerHTML=s.story.map(p=>`<p>${p}</p>`).join("");
+  document.getElementById("storySrc").textContent="Source notes: "+s.src;
+  if(!story.classList.contains("open"))lastFocus=document.activeElement;
+  story.classList.add("open");story.querySelector(".close").focus();
+}
+function closeStory(){story.classList.remove("open");if(lastFocus)lastFocus.focus();}
+document.querySelectorAll("[data-i]").forEach(b=>b.addEventListener("click",()=>openStory(+b.dataset.i)));
+story.querySelector(".close").onclick=closeStory;
+story.addEventListener("click",e=>{if(e.target===story)closeStory();});
+document.getElementById("prevS").onclick=()=>openStory(cur-1);
+document.getElementById("nextS").onclick=()=>openStory(cur+1);
+document.addEventListener("keydown",e=>{if(!story.classList.contains("open"))return;
+  if(e.key==="Escape")closeStory();if(e.key==="ArrowRight")openStory(cur+1);if(e.key==="ArrowLeft")openStory(cur-1);});
+
+/* ---------- the toy ---------- */
+const yours=STATIONS.map(s=>s.my.slice());
+let sel=0;
+const RAD=document.getElementById("radar");
+const CX=220,CY=212,RR=150;
+const ang=k=>-Math.PI/2+k*2*Math.PI/3;
+const pt=(k,v)=>[CX+Math.cos(ang(k))*RR*v/5,CY+Math.sin(ang(k))*RR*v/5];
+function polyStr(v){return v.map((x,k)=>pt(k,Math.max(x,.15)).map(f1).join(",")).join(" ");}
+function drawRadar(){
+  const s=STATIONS[sel],v=yours[sel];
+  let o=`<defs><radialGradient id="rfill" cx="50%" cy="55%" r="60%"><stop offset="0" stop-color="#f7d9a3"/><stop offset="1" stop-color="#e9a77a"/></radialGradient></defs>`;
+  for(let g=1;g<=5;g++){o+=`<polygon points="${[0,1,2].map(k=>pt(k,g).map(f1).join(",")).join(" ")}" fill="${g===5?"#fff8ea":"none"}" stroke="${INK}" stroke-width="${g===5?2.4:1}" opacity="${g===5?1:.25}" stroke-linejoin="round"/>`;}
+  [0,1,2].forEach(k=>{const e=pt(k,5);o+=`<line x1="${CX}" y1="${CY}" x2="${f1(e[0])}" y2="${f1(e[1])}" stroke="${INK}" stroke-width="1" opacity=".3"/>`;});
+  o+=`<polygon points="${polyStr(v)}" fill="url(#rfill)" fill-opacity=".85" stroke="${INK}" stroke-width="2.6" stroke-linejoin="round"/>`;
+  o+=`<polygon points="${polyStr(s.my)}" fill="none" stroke="${INK}" stroke-width="2" stroke-dasharray="6 5" stroke-linejoin="round"/>`;
+  [0,1,2].forEach(k=>{const p=pt(k,v[k]);o+=`<circle cx="${f1(p[0])}" cy="${f1(p[1])}" r="12" fill="${JC[k]}" stroke="${INK}" stroke-width="2.2" data-k="${k}" class="handle" style="cursor:grab"/>`;});
+  const lab=[[CX,CY-RR-30,"middle"],[CX+RR*.87+4,CY+RR*.5+28,"end"],[CX-RR*.87-4,CY+RR*.5+28,"start"]];
+  [0,1,2].forEach(k=>{o+=`<text x="${lab[k][0]}" y="${lab[k][1]}" text-anchor="${lab[k][2]}" font-family="Inter, sans-serif" font-weight="600" font-size="14" fill="${JC[k]}">${JOBS[k]}</text>`;});
+  o+=`<text x="${CX}" y="${CY+RR*.5+52}" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-style="italic" font-size="19" fill="${INK}">${s.title}</text>`;
+  o+=`<g font-family="Inter, sans-serif" font-size="12" fill="#6b5f52"><line x1="96" y1="410" x2="122" y2="410" stroke="${INK}" stroke-width="2" stroke-dasharray="6 5"/><text x="128" y="414">my take</text><rect x="196" y="403" width="26" height="13" rx="3" fill="#efbf8e" stroke="${INK}" stroke-width="1.6"/><text x="228" y="414">yours (drag the dots)</text></g>`;
+  RAD.innerHTML=o;
+}
+function syncUI(){
+  const v=yours[sel];
+  for(let k=0;k<3;k++){document.getElementById("s"+k).value=v[k];document.getElementById("v"+k).textContent=v[k];}
+  document.getElementById("mynote").innerHTML=`<b>My take:</b> ${STATIONS[sel].note}`;
+  document.querySelectorAll(".chip").forEach((c,i)=>{c.classList.toggle("on",i===sel);c.classList.toggle("mod",yours[i].join()!==STATIONS[i].my.join());});
+  drawRadar();drawSM();verdict();
+}
+function verdict(){
+  const tot=yours.map(v=>v[0]+v[1]+v[2]);
+  const mx=Math.max(...tot),mn=Math.min(...tot);
+  const best=STATIONS.filter((s,i)=>tot[i]===mx).map(s=>shortName[s.id].toLowerCase());
+  const worst=STATIONS.filter((s,i)=>tot[i]===mn).map(s=>shortName[s.id].toLowerCase());
+  const changed=yours.filter((v,i)=>v.join()!==STATIONS[i].my.join()).length;
+  const lst=a=>a.length>2?a.slice(0,2).join(", ")+" and "+(a.length-2)+" more":a.join(" and ");
+  document.getElementById("verdict").textContent=`By ${changed?"your":"my"} ratings, the most complete money here is ${lst(best)}; the least is ${lst(worst)}.`+(changed?` You disagree with me on ${changed} stop${changed>1?"s":""}.`:"");
+}
+function drawSM(){
+  const box=document.getElementById("sm");
+  box.innerHTML=STATIONS.map((s,i)=>{
+    const c=50,r=36,P=(k,v)=>[c+Math.cos(ang(k))*r*v/5,c+4+Math.sin(ang(k))*r*v/5];
+    const poly=v=>v.map((x,k)=>P(k,Math.max(x,.2)).map(f1).join(",")).join(" ");
+    return`<div class="sm${i===sel?" on":""}" data-s="${i}"><svg viewBox="0 0 100 78"><polygon points="${[0,1,2].map(k=>P(k,5).map(f1).join(",")).join(" ")}" fill="#fff8ea" stroke="${INK}" stroke-width="1.4"/>
+      <polygon points="${poly(yours[i])}" fill="#efbf8e" stroke="${INK}" stroke-width="1.6" stroke-linejoin="round"/>
+      <polygon points="${poly(s.my)}" fill="none" stroke="${INK}" stroke-width="1.2" stroke-dasharray="3 3"/></svg>${shortName[s.id]}</div>`;}).join("");
+  box.querySelectorAll(".sm").forEach(d=>d.onclick=()=>{sel=+d.dataset.s;syncUI();});
+}
+const shortName={clay:"Clay & silver",cowrie:"Cowries",lydia:"Lydian coins",jiaozi:"Jiaozi",yap:"Yap stones",pow:"Cigarettes",gold:"Gold standard",euro:"Euro",bitcoin:"Bitcoin",deposits:"Bank deposits"};
+document.getElementById("chips").innerHTML=STATIONS.map((s,i)=>`<button class="chip" data-c="${i}">${shortName[s.id]}</button>`).join("");
+document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{sel=+c.dataset.c;syncUI();});
+for(let k=0;k<3;k++)document.getElementById("s"+k).addEventListener("input",e=>{yours[sel][k]=+e.target.value;syncUI();});
+document.getElementById("reset1").onclick=()=>{yours[sel]=STATIONS[sel].my.slice();syncUI();};
+document.getElementById("resetAll").onclick=()=>{STATIONS.forEach((s,i)=>yours[i]=s.my.slice());syncUI();};
+// drag the handles on the radar
+let drag=-1;
+function svgPt(e){const r=RAD.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return[(t.clientX-r.left)/r.width*440,(t.clientY-r.top)/r.height*430];}
+function onDrag(e){if(drag<0)return;e.preventDefault();const p=svgPt(e);
+  const ux=Math.cos(ang(drag)),uy=Math.sin(ang(drag));
+  const proj=((p[0]-CX)*ux+(p[1]-CY)*uy)/RR*5;
+  const v=Math.max(0,Math.min(5,Math.round(proj)));
+  if(v!==yours[sel][drag]){yours[sel][drag]=v;syncUI();}}
+RAD.addEventListener("mousedown",e=>{const h=e.target.closest(".handle");if(h){drag=+h.dataset.k;e.preventDefault();}});
+RAD.addEventListener("touchstart",e=>{const h=e.target.closest(".handle");if(h){drag=+h.dataset.k;e.preventDefault();}},{passive:false});
+window.addEventListener("mousemove",onDrag);window.addEventListener("touchmove",onDrag,{passive:false});
+window.addEventListener("mouseup",()=>drag=-1);window.addEventListener("touchend",()=>drag=-1);
+syncUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>how long does it stay? · lab · Corentin Bel</title>
+<meta name="description" content="An interactive pharmacokinetics bench: drop coffees, drinks and cigarettes on a day, watch caffeine, alcohol and nicotine rise and drain, and see what is still in you at bedtime.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏳</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400;1,9..144,600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f3e7d0; --paper2:#e9d7b5; --card:#fbf4e6; --ink:#1b1a22; --dim:#6b5f52; --faint:#b9a68a;
+  --caf:#7b4527; --caf-l:#d9a173; --caf-f:rgba(160,96,52,.20);
+  --alc:#a02c4a; --alc-l:#e98ea0; --alc-f:rgba(176,52,82,.18);
+  --nic:#3f7a6c; --nic-l:#9bc8b8; --nic-f:rgba(63,122,108,.16);
+  --night:#2a2c5e; --night-f:rgba(52,56,128,.09); --gold:#d39a2c; --wood:#9a6237; --wood2:#7b4a29;
+  --serif:"Fraunces",Georgia,"Times New Roman",serif;
+  --sans:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6;font-size:16px;overflow-x:hidden;
+  background-image:radial-gradient(ellipse at 50% -10%,#fbf1dc 0%,rgba(251,241,220,0) 60%),radial-gradient(ellipse at 50% 120%,#dcc49b 0%,rgba(220,196,155,0) 55%);background-attachment:fixed}
+a{color:var(--alc)}
+.top{position:absolute;top:0;left:0;right:0;padding:.8rem 1.2rem;font-size:.85rem;color:var(--dim);z-index:5}
+.top a{color:var(--dim);text-decoration:none}.top a:hover{color:var(--ink);text-decoration:underline}
+.wrap{max-width:1180px;margin:0 auto;padding:0 1.2rem}
+.prose{max-width:720px;margin:0 auto;padding:0 1.2rem}
+header.hero{padding-top:3.2rem;padding-bottom:.6rem}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(2.2rem,5.4vw,3.9rem);line-height:1.02;letter-spacing:-.01em}
+h1 em{font-style:italic;font-weight:400;color:var(--caf)}
+.lede{max-width:46rem;margin-top:.7rem;color:#3b3329;font-size:1.04rem}
+h2{font-family:var(--serif);font-weight:600;font-size:clamp(1.55rem,3.2vw,2.15rem);line-height:1.15;margin:0 0 .7rem}
+h2 em{font-style:italic;font-weight:400}
+h3{font-family:var(--serif);font-weight:600;font-size:1.15rem;margin:1.2rem 0 .3rem}
+p{margin:.65rem 0}
+.kicker{font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:.3rem;font-weight:600}
+section.ch{padding:3rem 0 1rem}
+.card{background:var(--card);border:2.2px solid var(--ink);border-radius:16px;box-shadow:5px 6px 0 rgba(27,26,34,.85)}
+/* bench */
+.bench{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:1.2rem;margin-top:1.2rem;align-items:start}
+.shelfcard{padding:.6rem .6rem .8rem}
+#vessels{width:100%;height:auto;display:block}
+.add{padding:.7rem .8rem .8rem;margin-top:1rem}
+.add .grp{margin:.35rem 0 .55rem}
+.add .gl{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--dim);display:flex;justify-content:space-between}
+.btns{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.3rem}
+.dose{display:flex;align-items:center;gap:.35rem;background:#fff9ee;border:1.8px solid var(--ink);border-radius:10px;padding:.18rem .5rem .18rem .25rem;font:600 .78rem/1.15 var(--sans);color:var(--ink);cursor:pointer;box-shadow:2px 2px 0 var(--ink);transition:transform .08s}
+.dose:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--ink)}
+.dose:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--ink)}
+.dose svg{width:26px;height:26px;flex:none}
+.dose small{display:block;font-weight:400;color:var(--dim);font-size:.68rem}
+.hint{font-size:.78rem;color:var(--dim);margin-top:.3rem}
+.chartcard{padding:.5rem .5rem .6rem;min-width:0}
+#chart{width:100%;display:block;touch-action:none;user-select:none;-webkit-user-select:none}
+.ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.4rem 1.1rem;padding:.6rem .6rem .1rem;border-top:1.5px dashed var(--faint);margin-top:.4rem}
+.ctl{font-size:.8rem}
+.ctl label{display:flex;justify-content:space-between;font-weight:600;gap:.5rem}
+.ctl label b{font-weight:600;color:var(--caf);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--ink);height:22px}
+.chips{display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.2rem}
+.chip{font:600 .72rem/1 var(--sans);padding:.34rem .5rem;border-radius:999px;border:1.5px solid var(--ink);background:#fff9ee;color:var(--ink);cursor:pointer}
+.chip.on{background:var(--ink);color:var(--paper)}
+.chip.caf.on{background:var(--caf)} .chip.alc.on{background:var(--alc)}
+.toolrow{display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;padding:.1rem .4rem .4rem}
+.toolrow .sp{flex:1}
+.summary{margin-top:.7rem;padding:.75rem .95rem;background:#2a2c5e;color:#f1ead8;border-radius:12px;border:2.2px solid var(--ink);font-size:.93rem;line-height:1.5}
+.summary b{color:#ffd88a;font-weight:600}
+.summary .sr{display:flex;gap:.6rem;align-items:baseline;margin:.15rem 0}
+.summary .dot{width:.7rem;height:.7rem;border-radius:50%;flex:none;border:1.5px solid #f1ead8;transform:translateY(1px)}
+.daylist{display:flex;flex-wrap:wrap;gap:.25rem;padding:.1rem .4rem .2rem;min-height:1.4rem}
+.dchip{font-size:.72rem;border:1.3px solid var(--ink);border-radius:999px;padding:.05rem .15rem .05rem .5rem;background:#fff;display:flex;align-items:center;gap:.25rem}
+.dchip button{border:none;background:none;cursor:pointer;font:600 .85rem/1 var(--sans);color:var(--dim);padding:0 .25rem}
+.dchip button:hover{color:var(--alc)}
+.dchip i{width:.55rem;height:.55rem;border-radius:50%;display:inline-block}
+/* aha */
+.twin{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem}
+.twin .card{padding:.7rem .8rem}
+.twin h3{margin:.1rem 0 .2rem}
+.twin svg{width:100%;display:block}
+.twin .big{font-family:var(--serif);font-size:1.25rem}
+.callout{border-left:4px solid var(--gold);background:rgba(255,248,232,.7);padding:.6rem .9rem;border-radius:0 10px 10px 0;margin:1rem 0}
+table.facts{border-collapse:collapse;width:100%;font-size:.88rem;margin:.6rem 0}
+table.facts td,table.facts th{border-bottom:1px solid var(--paper2);padding:.35rem .4rem;text-align:left;vertical-align:top}
+table.facts th{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.warn{margin:2rem auto 0;padding:1rem 1.2rem}
+.sources{font-size:.84rem;color:#40372d}
+.sources li{margin:.35rem 0 .35rem 1.1rem}
+footer{padding:2rem 0 3rem;color:var(--dim);font-size:.8rem;text-align:center}
+sup a{text-decoration:none;font-size:.72em}
+.eq{font-family:var(--serif);font-style:italic;font-size:1.08rem;text-align:center;margin:.8rem 0}
+@media (max-width:860px){
+  .bench{grid-template-columns:1fr}
+  .shelfcol{display:contents}
+  .shelfcard{order:1}.chartwrap{order:2}.add{order:3;margin-top:0}
+  .twin{grid-template-columns:1fr}
+  header.hero{padding-top:2.8rem}
+  .wrap{padding:0 .8rem}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>
+</head>
+<body>
+<nav class="top"><a href="../">← lab</a> · <a href="https://corentinbel.com">home</a></nav>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <defs>
+  <symbol id="i-coffee" viewBox="0 0 32 32"><path d="M7 11h15l-1.6 14.5c-.2 1.5-1.4 2.5-2.9 2.5h-6c-1.5 0-2.7-1-2.9-2.5z" fill="#fff" stroke="#1b1a22" stroke-width="1.8" stroke-linejoin="round"/><path d="M7.5 14h14" stroke="#7b4527" stroke-width="3"/><path d="M21.6 14.5c3.6-.6 4.6 4.6.6 5.6" fill="none" stroke="#1b1a22" stroke-width="1.8"/><path d="M12 8c-1-1.5 1-2.5 0-4M16 8c-1-1.5 1-2.5 0-4" fill="none" stroke="#b9a68a" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-espresso" viewBox="0 0 32 32"><ellipse cx="15" cy="26" rx="11" ry="2.6" fill="#fff" stroke="#1b1a22" stroke-width="1.8"/><path d="M8.5 16h12l-1 7.2c-.2 1-1 1.8-2 1.8h-6c-1 0-1.8-.8-2-1.8z" fill="#fff" stroke="#1b1a22" stroke-width="1.8" stroke-linejoin="round"/><ellipse cx="14.5" cy="16.2" rx="5.6" ry="1.2" fill="#7b4527"/><path d="M20.4 17.5c2.8-.2 3 3.6.1 4" fill="none" stroke="#1b1a22" stroke-width="1.6"/></symbol>
+  <symbol id="i-tea" viewBox="0 0 32 32"><path d="M6 13h17c0 7-3 13-8.5 13S6 20 6 13z" fill="#fff" stroke="#1b1a22" stroke-width="1.8" stroke-linejoin="round"/><path d="M7 15.5h15" stroke="#b5662b" stroke-width="2.4"/><path d="M22.5 15c3.2 0 3.2 5-.8 5" fill="none" stroke="#1b1a22" stroke-width="1.6"/><path d="M14 13V6" stroke="#1b1a22" stroke-width="1.2"/><rect x="11.5" y="3" width="5" height="4" rx=".6" fill="#d39a2c" stroke="#1b1a22" stroke-width="1.2"/></symbol>
+  <symbol id="i-cola" viewBox="0 0 32 32"><rect x="9" y="5" width="14" height="23" rx="3" fill="#c4373a" stroke="#1b1a22" stroke-width="1.8"/><path d="M9.5 8h13M9.5 25h13" stroke="#1b1a22" stroke-width="1.2"/><path d="M11 17c3-3 7 2 10-1" stroke="#fff" stroke-width="1.6" fill="none"/></symbol>
+  <symbol id="i-energy" viewBox="0 0 32 32"><rect x="10" y="3" width="12" height="26" rx="2.6" fill="#a7c93a" stroke="#1b1a22" stroke-width="1.8"/><path d="M10.5 6h11M10.5 26h11" stroke="#1b1a22" stroke-width="1.2"/><path d="M17.5 9l-4 7h3.2l-1.6 6 4.6-8h-3.3z" fill="#1b1a22"/></symbol>
+  <symbol id="i-choc" viewBox="0 0 32 32"><rect x="6" y="7" width="20" height="18" rx="2" fill="#5a3320" stroke="#1b1a22" stroke-width="1.8" transform="rotate(-8 16 16)"/><path d="M8 13.5l18-2.6M9 19.5l18-2.6M13 8l2.3 17M19.2 7.2l2.3 17" stroke="#1b1a22" stroke-width="1.2" transform="rotate(-1 16 16)"/></symbol>
+  <symbol id="i-beer" viewBox="0 0 32 32"><path d="M9 10h13l-1.3 17c-.1.6-.6 1-1.2 1H11.5c-.6 0-1.1-.4-1.2-1z" fill="#e7a93a" stroke="#1b1a22" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.3 10.5c-.8-3 2.6-4.6 4.4-3.1 1.2-2 4.6-2 5.6 0 2-1 4.6.6 3.8 3.1z" fill="#fffaf0" stroke="#1b1a22" stroke-width="1.6"/></symbol>
+  <symbol id="i-pint" viewBox="0 0 32 32"><path d="M8 7h16l-1.6 21H9.6z" fill="#d18a2c" stroke="#1b1a22" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 7h16l-.3 4H8.3z" fill="#fffaf0" stroke="#1b1a22" stroke-width="1.5"/><path d="M12 14v10" stroke="#f3c771" stroke-width="1.6"/></symbol>
+  <symbol id="i-wine" viewBox="0 0 32 32"><path d="M9 4h14c.6 6-1.8 11-7 11S8.4 10 9 4z" fill="#fff" stroke="#1b1a22" stroke-width="1.8"/><path d="M9.3 8.5h13.4c-.3 3.6-2.7 6.5-6.7 6.5s-6.4-2.9-6.7-6.5z" fill="#a02c4a"/><path d="M16 15v10M10.5 28c1.5-1.6 9.5-1.6 11 0z" fill="#fff" stroke="#1b1a22" stroke-width="1.8"/></symbol>
+  <symbol id="i-shot" viewBox="0 0 32 32"><path d="M9 12h14l-2 15H11z" fill="#fff" stroke="#1b1a22" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.5 15.5h13l-1.4 10.5H10.9z" fill="#e2b45a"/><path d="M10 12l-.6-3h13.2l-.6 3" fill="none" stroke="#1b1a22" stroke-width="1.3"/></symbol>
+  <symbol id="i-cig" viewBox="0 0 32 32"><g transform="rotate(-30 16 18)"><rect x="3" y="16" width="26" height="5" rx="1.2" fill="#fff" stroke="#1b1a22" stroke-width="1.6"/><rect x="3" y="16" width="8" height="5" fill="#d9944a" stroke="#1b1a22" stroke-width="1.6"/><path d="M27 16.5h2v4h-2z" fill="#e3492f"/></g><path d="M26 9c-2-2 2-3 0-5.5" fill="none" stroke="#9a9aa0" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 32 32"><path d="M20 4a12 12 0 1 0 8 19A10 10 0 0 1 20 4z" fill="#ffd88a" stroke="#1b1a22" stroke-width="1.8"/></symbol>
+ </defs>
+</svg>
+
+<header class="hero wrap">
+  <div class="kicker">pharmacokinetics bench · caffeine, alcohol, nicotine</div>
+  <h1>how long does it <em>stay?</em></h1>
+  <p class="lede">Everything you swallow or inhale starts leaving the moment it arrives. Some of it leaves like a leaking jug,
+    faster when full. Alcohol leaves like a queue at a single till. Drop a few cups, drinks or cigarettes on the day below,
+    drag them around, and watch what is still in the flasks at bedtime.</p>
+</header>
+
+<main>
+<section class="wrap" id="bench">
+  <div class="bench">
+    <div class="shelfcol">
+      <div class="card shelfcard"><svg id="vessels" viewBox="0 0 380 300" role="img" aria-label="Three glass flasks showing caffeine, blood alcohol and nicotine at the cursor time"></svg></div>
+      <div class="card add">
+        <div class="grp"><div class="gl"><span>caffeine</span><span>typical mg, varies a lot</span></div><div class="btns" id="b-caf"></div></div>
+        <div class="grp"><div class="gl"><span>alcohol</span><span>grams of ethanol</span></div><div class="btns" id="b-alc"></div></div>
+        <div class="grp"><div class="gl"><span>nicotine</span><span></span></div><div class="btns" id="b-nic"></div></div>
+        <p class="hint">A tap drops the item at the <b>cursor</b> time. Drag icons on the chart to move them; tap one, then its × to remove it.</p>
+      </div>
+    </div>
+    <div class="chartwrap">
+      <div class="card chartcard">
+        <div class="toolrow">
+          <span class="chip" data-preset="workday">a workday</span>
+          <span class="chip" data-preset="late">late espresso</span>
+          <span class="chip" data-preset="party">party night</span>
+          <span class="chip" data-preset="smoker">smoker's day</span>
+          <span class="chip" data-preset="clear">clear</span>
+          <span class="sp"></span>
+          <span class="chip" id="t-each" title="draw each dose's own curve">each dose</span>
+          <span class="chip" id="t-log" title="logarithmic y axis">log scale</span>
+        </div>
+        <svg id="chart" aria-label="Timeline of caffeine, blood alcohol and nicotine over 30 hours"></svg>
+        <div class="daylist" id="daylist"></div>
+        <div class="ctrls">
+          <div class="ctl"><label>bedtime <b id="v-bed"></b></label><input id="s-bed" type="range" min="20" max="27" step="0.25" value="23.5"></div>
+          <div class="ctl"><label>caffeine half-life <b id="v-hl"></b></label><input id="s-hl" type="range" min="1.5" max="15" step="0.5" value="5">
+            <div class="chips" id="c-met"></div></div>
+          <div class="ctl"><label>body weight <b id="v-w"></b></label><input id="s-w" type="range" min="45" max="120" step="1" value="70">
+            <div class="chips" id="c-sex"><span class="chip alc on" data-r="0.68">male body · r 0.68</span><span class="chip alc" data-r="0.55">female body · r 0.55</span></div></div>
+          <div class="ctl"><label>alcohol elimination <b id="v-beta"></b></label><input id="s-beta" type="range" min="0.10" max="0.25" step="0.01" value="0.15">
+            <div class="chips" id="c-food"><span class="chip alc on" data-food="0">empty stomach</span><span class="chip alc" data-food="1">with a meal</span></div></div>
+        </div>
+      </div>
+      <div class="summary" id="summary" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
+<section class="ch">
+  <div class="prose">
+    <div class="kicker">1 · the leaking jug</div>
+    <h2>Caffeine leaves by <em>fractions</em>, not by grams.</h2>
+    <p>Your liver clears caffeine mostly through one enzyme, CYP1A2. At everyday doses the enzyme is far from busy, so the rate at which
+      caffeine leaves is proportional to how much is there. Twice as much in the blood, twice as fast out. That is
+      <b>first-order elimination</b>, and it has a fixed <b>half-life</b>: the time to lose half of whatever is present, whatever the amount.</p>
+    <p class="eq">amount(t) = dose × ½<sup>t / half-life</sup></p>
+    <p>In healthy adults the half-life of caffeine averages about 5 hours, but it ranges from roughly 1.5 to 9.5 hours between people<sup><a href="#s2">2</a></sup>.
+      So a 16:00 coffee leaves about half its caffeine in you at 21:00 and a quarter at 02:00 for a typical person, and much more for a slow one.</p>
+    <p>Several things move the number a lot<sup><a href="#s2">2</a>,<a href="#s3">3</a></sup>:</p>
+    <table class="facts">
+      <tr><th>factor</th><th>effect on caffeine half-life</th></tr>
+      <tr><td>smoking</td><td>shorter, roughly by a third to a half. Chemicals in tobacco smoke (not nicotine itself) speed up CYP1A2. When people quit, caffeine lasts longer again.</td></tr>
+      <tr><td>oral contraceptives</td><td>roughly doubled.</td></tr>
+      <tr><td>pregnancy</td><td>lengthens progressively; in the third trimester it can reach around 15 hours.</td></tr>
+      <tr><td>genes (<i>CYP1A2</i> variants), liver disease, some drugs (e.g. fluvoxamine)</td><td>can make it much longer.</td></tr>
+    </table>
+    <p>Because each dose decays on its own clock, the curve in the chart is simply a <b>sum of exponentials</b>, one per cup. Switch on
+      <i>each dose</i> to see them stacked. Switch on <i>log scale</i> and every caffeine decay becomes a straight line with the same slope.
+      That straight line is what "first order" looks like.</p>
+    <div class="callout">The European Food Safety Authority considers up to 400 mg a day (and single doses up to 200 mg) not a safety concern for healthy adults,
+      and up to 200 mg a day during pregnancy. It also notes that around 100 mg close to bedtime can delay and shorten sleep in some adults<sup><a href="#s1">1</a></sup>.
+      In one controlled study, 400 mg taken even 6 hours before bed cut total sleep by more than an hour<sup><a href="#s4">4</a></sup>.</div>
+  </div>
+</section>
+
+<section class="ch">
+  <div class="prose">
+    <div class="kicker">2 · the queue at a single till</div>
+    <h2>Alcohol leaves by <em>grams per hour</em>. That is the surprise.</h2>
+    <p>Ethanol is cleared mainly by alcohol dehydrogenase in the liver. This enzyme is saturated at quite low blood levels,
+      somewhere around 0.1 to 0.2 g/L. Above that, it works flat out and cannot go faster: the blood level falls by a roughly
+      <b>constant amount per hour</b>, whatever you drank. That is <b>zero-order elimination</b><sup><a href="#s5">5</a></sup>.</p>
+    <p>In large forensic surveys the fall is about 0.10 to 0.25 g/L per hour, with 0.15 a common average for moderate drinkers
+      (heavy drinkers sit at the upper end)<sup><a href="#s5">5</a></sup>. For a 70 kg man that is roughly 7 grams of ethanol per hour, a bit less than one
+      French standard drink (10 g) per hour. Coffee, cold showers and sleep do not change this rate.</p>
+    <p>So a half-life makes no sense for alcohol. Doubling the dose of caffeine adds <i>one half-life</i> to the time it takes to clear.
+      Doubling the drinks <i>doubles</i> the time. Compare them here.</p>
+  </div>
+  <div class="wrap">
+    <div class="card" style="max-width:900px;margin:1rem auto 0;padding:.8rem 1rem">
+      <div class="ctl"><label>how many at once <b id="v-n"></b></label><input id="s-n" type="range" min="1" max="6" step="1" value="2"></div>
+      <div class="twin">
+        <div><h3 style="color:var(--caf)">cups of filter coffee (90 mg)</h3><svg id="aha-caf" viewBox="0 0 420 330"></svg><p class="hint" id="aha-caf-t"></p></div>
+        <div><h3 style="color:var(--alc)">standard drinks (10 g)</h3><svg id="aha-alc" viewBox="0 0 420 330"></svg><p class="hint" id="aha-alc-t"></p></div>
+      </div>
+      <p class="hint" style="text-align:center">Bars: time to clear for 1 to 6 at once (caffeine: below 50 mg; alcohol: back to about zero). One staircase flattens, the other climbs straight.
+        Uses your half-life, weight and elimination settings above.</p>
+    </div>
+  </div>
+  <div class="prose">
+    <h3>Blood alcohol, roughly: the Widmark formula</h3>
+    <p class="eq">BAC (g/L) ≈ grams of ethanol ÷ (r × body weight in kg) − β × hours</p>
+    <p>Erik Widmark worked this out in the 1930s<sup><a href="#s6">6</a></sup>. <i>r</i> is the share of the body that alcohol dilutes into, mostly water:
+      about 0.68 on average for men and 0.55 for women, which is why the same drink gives women a higher level. β is the hourly fall.
+      The bench adds a short absorption phase (slower with food) and lets elimination round off near zero, where the enzyme stops being saturated.
+      Real values for one person can differ by 20% or more in either direction. <b>Never use this to decide whether you can drive.</b></p>
+    <p>In France the legal limit is <b>0.5 g/L</b> of blood (0.25 mg/L of exhaled air), and <b>0.2 g/L</b> for probationary licence holders
+      and bus and coach drivers<sup><a href="#s7">7</a></sup>. A French standard drink holds about 10 g of ethanol: a 25 cl beer at 5%, a 10 cl glass of wine at 12%,
+      or a 3 cl shot at 40%<sup><a href="#s8">8</a></sup>.</p>
+  </div>
+</section>
+
+<section class="ch">
+  <div class="prose">
+    <div class="kicker">3 · the long shadow</div>
+    <h2>Nicotine is gone in hours. <em>Cotinine</em> is not.</h2>
+    <p>A cigarette delivers on average about 1 mg of nicotine into the body, with wide variation depending on how it is smoked.
+      Inhaled nicotine reaches the brain within seconds, and its half-life is about 2 hours. That short half-life is part of why
+      smokers light up again through the day: the level falls back quickly between cigarettes<sup><a href="#s9">9</a></sup>.</p>
+    <p>About 70 to 80% of nicotine is converted (mostly by CYP2A6) into cotinine, which has a half-life of about 16 hours<sup><a href="#s9">9</a></sup>.
+      It piles up across a day of smoking and is still there the next morning, which is why it is the standard biomarker of tobacco exposure.
+      The dashed line in the nicotine lane shows it.</p>
+  </div>
+</section>
+
+<section class="prose">
+  <div class="card warn">
+    <h3 style="margin-top:0">This is a teaching toy, not medical advice</h3>
+    <p>The curves are textbook one-compartment models with population-average numbers. They ignore a lot: absorption from food and drink,
+      tolerance, sleep, disease, medication, genetics, and the fact that "how much is in the blood" is not the same as "how impaired I am".
+      Use it to build intuition, not to time a drive, a dose or a pregnancy decision. If you want to know which substances actually do the most harm,
+      see the sibling page <a href="../substances/">what's actually dangerous?</a>.</p>
+  </div>
+</section>
+
+<section class="ch prose" id="sources">
+  <div class="kicker">sources</div>
+  <ol class="sources">
+    <li id="s1">EFSA Panel on Dietetic Products, Nutrition and Allergies (2015). Scientific Opinion on the safety of caffeine. <i>EFSA Journal</i> 13(5):4102. <a href="https://doi.org/10.2903/j.efsa.2015.4102">doi:10.2903/j.efsa.2015.4102</a>. Also the source of the typical caffeine contents used for the buttons.</li>
+    <li id="s2">Nehlig A. (2018). Interindividual differences in caffeine metabolism and factors driving caffeine consumption. <i>Pharmacological Reviews</i> 70(2):384–411. <a href="https://doi.org/10.1124/pr.117.014407">doi:10.1124/pr.117.014407</a></li>
+    <li id="s3">Abernethy D.R. &amp; Todd E.L. (1985). Impairment of caffeine clearance by chronic use of low-dose oestrogen-containing oral contraceptives. <i>European Journal of Clinical Pharmacology</i> 28:425–428.</li>
+    <li id="s4">Drake C., Roehrs T., Shambroom J. &amp; Roth T. (2013). Caffeine effects on sleep taken 0, 3, or 6 hours before going to bed. <i>Journal of Clinical Sleep Medicine</i> 9(11):1195–1200. <a href="https://doi.org/10.5664/jcsm.3170">doi:10.5664/jcsm.3170</a></li>
+    <li id="s5">Jones A.W. (2010). Evidence-based survey of the elimination rates of ethanol from blood with applications in forensic casework. <i>Forensic Science International</i> 200(1–3):1–20. <a href="https://doi.org/10.1016/j.forsciint.2010.02.021">doi:10.1016/j.forsciint.2010.02.021</a></li>
+    <li id="s6">Widmark E.M.P. (1932). <i>Die theoretischen Grundlagen und die praktische Verwendbarkeit der gerichtlich-medizinischen Alkoholbestimmung</i>. Berlin: Urban &amp; Schwarzenberg.</li>
+    <li id="s7">Sécurité routière (French road-safety agency). Alcool au volant: limits of 0.5 g/L, and 0.2 g/L for probationary licences and public-transport drivers. <a href="https://www.securite-routiere.gouv.fr">securite-routiere.gouv.fr</a></li>
+    <li id="s8">Santé publique France / Alcool Info Service. The "verre standard" of about 10 g of pure alcohol. <a href="https://www.alcool-info-service.fr">alcool-info-service.fr</a></li>
+    <li id="s9">Benowitz N.L., Hukkanen J. &amp; Jacob P. (2009). Nicotine chemistry, metabolism, kinetics and biomarkers. <i>Handbook of Experimental Pharmacology</i> 192:29–60. <a href="https://doi.org/10.1007/978-3-540-69248-5_2">doi:10.1007/978-3-540-69248-5_2</a></li>
+  </ol>
+  <p class="hint">Model details: caffeine and nicotine use first-order absorption and elimination (caffeine peak about 45–60 min after a drink; nicotine within minutes).
+    Alcohol uses Widmark's r with Michaelis–Menten elimination (K<sub>m</sub> 0.05 g/L, tuned so the fall equals your β at 0.5 g/L). Cotinine formation is 75% of nicotine cleared, half-life 16 h.
+    Each day starts empty at 06:00.</p>
+</section>
+</main>
+<footer>a page from <a href="../">the lab</a> · Corentin Bel</footer>
+
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+const INK="#1b1a22", C={caf:"#7b4527",alc:"#a02c4a",nic:"#3f7a6c",cafL:"#d9a173",alcL:"#e98ea0",nicL:"#9bc8b8",night:"#2a2c5e"};
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const REDUCED=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- items ---------- */
+const ITEMS={
+  coffee:{sub:"caf",name:"filter coffee",note:"200 ml · 90 mg",amt:90},
+  espresso:{sub:"caf",name:"espresso",note:"60 ml · 80 mg",amt:80},
+  tea:{sub:"caf",name:"black tea",note:"220 ml · 50 mg",amt:50},
+  cola:{sub:"caf",name:"cola",note:"355 ml · 40 mg",amt:40},
+  energy:{sub:"caf",name:"energy drink",note:"250 ml · 80 mg",amt:80},
+  choc:{sub:"caf",name:"dark chocolate",note:"50 g · 25 mg",amt:25},
+  beer:{sub:"alc",name:"small beer",note:"25 cl 5% · 10 g",amt:250*0.05*0.789},
+  pint:{sub:"alc",name:"pint",note:"50 cl 5% · 20 g",amt:500*0.05*0.789},
+  wine:{sub:"alc",name:"wine",note:"10 cl 12% · 9.5 g",amt:100*0.12*0.789},
+  shot:{sub:"alc",name:"shot",note:"3 cl 40% · 9.5 g",amt:30*0.40*0.789},
+  cig:{sub:"nic",name:"cigarette",note:"≈ 1 mg absorbed",amt:1}
+};
+const ICON={coffee:"i-coffee",espresso:"i-espresso",tea:"i-tea",cola:"i-cola",energy:"i-energy",choc:"i-choc",beer:"i-beer",pint:"i-pint",wine:"i-wine",shot:"i-shot",cig:"i-cig"};
+const PRESETS={
+  workday:[["coffee",8],["espresso",13.5],["tea",16],["beer",19.5],["wine",20.75]],
+  late:[["coffee",8],["espresso",13.5],["espresso",17.5],["coffee",20.5]],
+  party:[["coffee",9],["cola",15],["wine",20],["wine",21],["pint",22.5],["shot",24],["energy",24.25],["pint",25]],
+  smoker:[["coffee",7.5],["cig",7.75],["cig",10],["coffee",12.5],["cig",13],["cig",15.5],["cig",18],["beer",19.5],["cig",20],["cig",22]],
+  clear:[]
+};
+const MET=[["fast",3],["typical",5],["slow",8],["smoker",3.2],["on the pill",10],["late pregnancy",15]];
+
+/* ---------- state ---------- */
+const T0=6,T1=36,DT=1/60,NPT=Math.round((T1-T0)/DT)+1;
+let uid=1;
+const S={doses:[],cursor:14,bed:23.5,hl:5,w:70,r:0.68,beta:0.15,food:0,each:false,log:false,sel:null,met:"typical"};
+const PBED={party:26.5,late:23.5,workday:23.5,smoker:23.5};
+function setPreset(k){if(PBED[k]){S.bed=PBED[k];const sb=document.getElementById("s-bed");if(sb)sb.value=S.bed;}S.doses=PRESETS[k].map(([it,t])=>({id:uid++,it,t}));S.sel=null;}
+setPreset("workday");
+
+/* ---------- models ---------- */
+const KA_CAF=4.0, KA_NIC=20, K_NIC=Math.LN2/2, K_COT=Math.LN2/16, F_COT=0.75*176.2/162.2, KM=0.05;
+function bateman(D,ka,k,dt){if(dt<0)return 0;if(Math.abs(ka-k)<1e-6)return D*k*dt*Math.exp(-k*dt);return D*ka/(ka-k)*(Math.exp(-k*dt)-Math.exp(-ka*dt));}
+function cafAt(D,dt,hl){return bateman(D,KA_CAF,Math.LN2/hl,dt);}
+function alcStep(C,G,dt,p){ // C g/L, G gut grams
+  const ka=p.food?Math.LN2/0.6:Math.LN2/0.25;
+  const a=G*(1-Math.exp(-ka*dt));G-=a;C+=a/(p.r*p.w);
+  const vmax=p.beta*(0.5+KM)/0.5;
+  C-=vmax*C/(KM+C)*dt; if(C<0)C=0; return [C,G];
+}
+function simulate(){
+  const t=new Float64Array(NPT),caf=new Float64Array(NPT),alc=new Float64Array(NPT),nic=new Float64Array(NPT),cot=new Float64Array(NPT);
+  const per=[];
+  for(let i=0;i<NPT;i++)t[i]=T0+i*DT;
+  const k=Math.LN2/S.hl;
+  for(const d of S.doses){const it=ITEMS[d.it];
+    if(it.sub==="caf"){const a=new Float64Array(NPT);for(let i=0;i<NPT;i++){a[i]=cafAt(it.amt,t[i]-d.t,S.hl);caf[i]+=a[i];}per.push({sub:"caf",a});}
+    if(it.sub==="nic"){const a=new Float64Array(NPT);for(let i=0;i<NPT;i++){a[i]=bateman(it.amt,KA_NIC,K_NIC,t[i]-d.t);nic[i]+=a[i];}per.push({sub:"nic",a});}
+  }
+  // alcohol + cotinine, stepped
+  const al=S.doses.filter(d=>ITEMS[d.it].sub==="alc").map(d=>({i:Math.round((d.t-T0)/DT),g:ITEMS[d.it].amt}));
+  let Cb=0,G=0,cotA=0;
+  for(let i=0;i<NPT;i++){
+    for(const a of al) if(a.i===i) G+=a.g;
+    if(i>0){[Cb,G]=alcStep(Cb,G,DT,S);
+      const nicElim=K_NIC*nic[i-1]*DT; cotA+=F_COT*nicElim; cotA*=Math.exp(-K_COT*DT);}
+    alc[i]=Cb;cot[i]=cotA;
+  }
+  return {t,caf,alc,nic,cot,per};
+}
+let SIM=simulate();
+const idx=t=>Math.max(0,Math.min(NPT-1,Math.round((t-T0)/DT)));
+function fmtT(t){let h=((t%24)+24)%24;let hh=Math.floor(h+1e-9),mm=Math.round((h-hh)*60);if(mm===60){hh=(hh+1)%24;mm=0;}return String(hh).padStart(2,"0")+":"+String(mm).padStart(2,"0");}
+function fmtDay(t){return fmtT(t)+(t>=24?" (next day)":"");}
+
+/* ---------- buttons ---------- */
+function buildButtons(){
+  for(const [k,it] of Object.entries(ITEMS)){
+    const b=document.createElement("button");b.className="dose";b.type="button";
+    b.innerHTML=`<svg><use href="#${ICON[k]}"/></svg><span>${it.name}<small>${it.note}</small></span>`;
+    b.addEventListener("click",()=>{S.doses.push({id:uid++,it:k,t:Math.min(T1-0.5,S.cursor)});S.sel=null;update();});
+    $("#b-"+it.sub).appendChild(b);
+  }
+  const cm=$("#c-met");
+  for(const [n,h] of MET){const c=document.createElement("span");c.className="chip caf"+(n==="typical"?" on":"");c.textContent=n;c.dataset.hl=h;c.dataset.n=n;
+    c.addEventListener("click",()=>{S.hl=h;S.met=n;$("#s-hl").value=h;update();});cm.appendChild(c);}
+  document.querySelectorAll("[data-preset]").forEach(c=>c.addEventListener("click",()=>{setPreset(c.dataset.preset);update();}));
+  document.querySelectorAll("#c-sex .chip").forEach(c=>c.addEventListener("click",()=>{S.r=+c.dataset.r;update();}));
+  document.querySelectorAll("#c-food .chip").forEach(c=>c.addEventListener("click",()=>{S.food=+c.dataset.food;update();}));
+  $("#t-each").addEventListener("click",()=>{S.each=!S.each;update();});
+  $("#t-log").addEventListener("click",()=>{S.log=!S.log;update();});
+  $("#s-bed").addEventListener("input",e=>{S.bed=+e.target.value;update();});
+  $("#s-hl").addEventListener("input",e=>{S.hl=+e.target.value;S.met=null;update();});
+  $("#s-w").addEventListener("input",e=>{S.w=+e.target.value;update();});
+  $("#s-beta").addEventListener("input",e=>{S.beta=+e.target.value;update();});
+  $("#s-n").addEventListener("input",drawAha);
+}
+
+/* ---------- chart ---------- */
+const chart=$("#chart");
+let G={}; // geometry
+const LANES=[
+  {key:"caf",title:"caffeine in your body",unit:"mg",col:C.caf,fill:"var(--caf-f)",min:150,step:50,logMin:1},
+  {key:"alc",title:"blood alcohol (Widmark, rough)",unit:"g/L",col:C.alc,fill:"var(--alc-f)",min:0.6,step:0.2,logMin:0.01},
+  {key:"nic",title:"nicotine · cotinine (dashed)",unit:"mg",col:C.nic,fill:"var(--nic-f)",min:1.5,step:0.5,logMin:0.01}
+];
+function niceMax(v,l){if(S.log)return Math.pow(10,Math.ceil(Math.log10(Math.max(v,l.min)*1.05)));let m=Math.max(l.min,v*1.15);return Math.ceil(m/l.step)*l.step;}
+function drawChart(){
+  const W=chart.clientWidth||900, phone=W<560;
+  const padL=phone?40:52,padR=phone?8:14,top=46,laneH=phone?118:142,gap=phone?14:16;
+  const H=top+3*laneH+2*gap+22;
+  chart.setAttribute("viewBox",`0 0 ${W} ${H}`);chart.setAttribute("height",H);
+  const x=t=>padL+(t-T0)/(T1-T0)*(W-padL-padR);
+  G={W,H,padL,padR,top,laneH,gap,x,inv:px=>T0+(px-padL)/(W-padL-padR)*(T1-T0),lanes:[]};
+  const fs=phone?10:11.5;
+  let o=`<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0v6" stroke="rgba(42,44,94,.10)" stroke-width="3"/></pattern></defs>`;
+  // hour labels
+  const step=phone?6:3;
+  for(let h=6;h<=36;h+=step){const lab=h%24===0?"midnight":String(h%24).padStart(2,"0")+"h";
+    o+=`<text x="${x(h)}" y="${top-8}" text-anchor="middle" font-size="${fs}" fill="#6b5f52" font-family="Inter,sans-serif">${lab}</text>`;}
+  const sim=SIM;
+  LANES.forEach((L,li)=>{
+    const y0=top+li*(laneH+gap), y1=y0+laneH;
+    const series=sim[L.key]; let mx=0;for(const v of series)mx=Math.max(mx,v);
+    if(L.key==="nic")for(const v of sim.cot)mx=Math.max(mx,v);
+    const ymax=niceMax(mx,L), plotTop=y0+24, plotBot=y1-4;
+    const y=S.log?v=>{const lv=Math.log10(Math.max(v,L.logMin));const a=Math.log10(L.logMin),b=Math.log10(ymax);return plotBot-(lv-a)/(b-a)*(plotBot-plotTop);}
+                 :v=>plotBot-v/ymax*(plotBot-plotTop);
+    G.lanes.push({y0,y1,y,L});
+    // frame + night
+    o+=`<rect x="${padL}" y="${y0}" width="${W-padL-padR}" height="${laneH}" rx="9" fill="#fffaf0" stroke="${INK}" stroke-width="1.8"/>`;
+    const nx0=x(S.bed),nx1=x(Math.min(T1,31));
+    o+=`<rect x="${nx0}" y="${y0+1}" width="${Math.max(0,nx1-nx0)}" height="${laneH-2}" fill="url(#hatch)"/>`;
+    // grid
+    const ticks=[];
+    if(S.log){for(let e=Math.log10(L.logMin);e<=Math.log10(ymax)+1e-9;e++)ticks.push(Math.pow(10,e));}
+    else{const n=Math.round(ymax/L.step),every=n>6?Math.ceil(n/4):1;for(let i=0;i<=n;i+=every)ticks.push(i*L.step);}
+    for(const v of ticks){const yy=y(v);if(yy<plotTop-1)continue;
+      o+=`<line x1="${padL}" x2="${W-padR}" y1="${yy}" y2="${yy}" stroke="#e7d9bf" stroke-width="1"/>`;
+      o+=`<text x="${padL-5}" y="${yy+3.5}" text-anchor="end" font-size="${fs-1}" fill="#6b5f52" font-family="Inter,sans-serif">${fmtV(v,L)}</text>`;}
+    // thresholds
+    if(L.key==="alc"){[[0.5,"0.5 g/L · France limit"],[0.2,"0.2 · new drivers"]].forEach(([v,lab])=>{if(v>ymax)return;const yy=y(v);
+      o+=`<line x1="${padL}" x2="${W-padR}" y1="${yy}" y2="${yy}" stroke="${C.alc}" stroke-dasharray="5 4" stroke-width="1.2" opacity=".7"/><text x="${W-padR-6}" y="${yy-4}" text-anchor="end" font-size="${fs-1}" fill="${C.alc}" font-family="Inter,sans-serif">${lab}</text>`;});}
+    if(L.key==="caf"&&100<=ymax){const yy=y(100);o+=`<line x1="${padL}" x2="${W-padR}" y1="${yy}" y2="${yy}" stroke="${C.caf}" stroke-dasharray="5 4" stroke-width="1.2" opacity=".6"/><text x="${W-padR-6}" y="${yy-4}" text-anchor="end" font-size="${fs-1}" fill="${C.caf}" font-family="Inter,sans-serif">100 mg · may disturb sleep (EFSA)</text>`;}
+    // per-dose
+    if(S.each&&L.key!=="alc"){sim.per.filter(p=>p.sub===L.key).forEach((p,k)=>{o+=`<path d="${pathOf(sim.t,p.a,x,y,true,plotBot)}" fill="${k%2?"rgba(217,161,115,.18)":"rgba(123,69,39,.10)"}" stroke="${L.col}" stroke-width="1" stroke-dasharray="3 3" opacity=".9"/>`;});}
+    // total
+    o+=`<path d="${pathOf(sim.t,series,x,y,true,plotBot)}" fill="${L.fill}"/>`;
+    o+=`<path d="${pathOf(sim.t,series,x,y,false)}" fill="none" stroke="${L.col}" stroke-width="2.6" stroke-linejoin="round"/>`;
+    if(L.key==="nic")o+=`<path d="${pathOf(sim.t,sim.cot,x,y,false)}" fill="none" stroke="${L.col}" stroke-width="2" stroke-dasharray="7 4"/>`;
+    if(S.each&&L.key==="alc"&&sim.alc.some(v=>v>0))o+=`<text x="${W-padR-8}" y="${y0+16}" text-anchor="end" font-size="${fs}" fill="${C.alc}" font-family="Fraunces,Georgia,serif" font-style="italic">${phone?"no per-drink curves (see text)":"no per-drink curves: the liver works through drinks one after another"}</text>`;
+    o+=`<text x="${padL+10}" y="${y0+16}" font-size="${fs+1}" font-weight="600" fill="${L.col}" font-family="Inter,sans-serif">${L.title}</text>`;
+  });
+  // bedtime marker
+  const bx=x(S.bed);
+  o+=`<line x1="${bx}" x2="${bx}" y1="${top-24}" y2="${H-20}" stroke="${C.night}" stroke-width="1.6" stroke-dasharray="2 3"/>`;
+  o+=`<g data-bed="1" style="cursor:ew-resize"><circle cx="${bx}" cy="${top-34}" r="14" fill="transparent"/><use href="#i-moon" x="${bx-10}" y="${top-45}" width="20" height="20"/><text x="${bx+13}" y="${top-30}" font-size="${fs}" fill="${C.night}" font-weight="600" font-family="Inter,sans-serif">bed ${fmtT(S.bed)}</text></g>`;
+  // cursor
+  const cx=x(S.cursor), ci=idx(S.cursor);
+  o+=`<line x1="${cx}" x2="${cx}" y1="${top}" y2="${H-20}" stroke="${INK}" stroke-width="1.4"/>`;
+  G.lanes.forEach(({y,L})=>{const v=SIM[L.key][ci];o+=`<circle cx="${cx}" cy="${y(v)}" r="4.2" fill="#fff" stroke="${L.col}" stroke-width="2.2"/>`;});
+  const lab=fmtT(S.cursor);
+  o+=`<g><rect x="${cx-24}" y="${H-19}" width="48" height="17" rx="8" fill="${INK}"/><text x="${cx}" y="${H-6.5}" text-anchor="middle" font-size="11" fill="#f3e7d0" font-family="Inter,sans-serif" font-weight="600">${lab}</text></g>`;
+  // tokens
+  const sz=phone?20:24, rows={};
+  [...S.doses].sort((a,b)=>a.t-b.t).forEach(d=>{const it=ITEMS[d.it];const li=LANES.findIndex(l=>l.key===it.sub);const ln=G.lanes[li];
+    const r=rows[li]||(rows[li]=[]);let level=0;while(r.some(q=>q.level===level&&Math.abs(q.t-d.t)<(sz/(W-padL-padR))*(T1-T0)*1.05))level++;r.push({t:d.t,level});
+    const tx=x(d.t),ty=ln.y0+laneH-sz-6-level*(sz*0.8);
+    o+=`<g data-dose="${d.id}" style="cursor:grab"><line x1="${tx}" x2="${tx}" y1="${ty+sz}" y2="${ln.y1}" stroke="${INK}" stroke-width="1" opacity=".35"/><circle cx="${tx}" cy="${ty+sz/2}" r="${sz/2+3}" fill="${S.sel===d.id?"#ffd88a":"#fff9ee"}" stroke="${INK}" stroke-width="1.6"/><use href="#${ICON[d.it]}" x="${tx-sz/2+1}" y="${ty+1}" width="${sz-2}" height="${sz-2}"/></g>`;
+    if(S.sel===d.id)o+=`<g data-del="${d.id}" style="cursor:pointer"><circle cx="${tx+sz/2+6}" cy="${ty-4}" r="9" fill="${C.alc}" stroke="${INK}" stroke-width="1.5"/><path d="M${tx+sz/2+2.5} ${ty-7.5}l7 7m0-7l-7 7" stroke="#fff" stroke-width="2"/></g>`;
+  });
+  chart.innerHTML=o;
+}
+function fmtV(v,L){if(v===0)return"0";if(L.key==="caf")return v>=1?Math.round(v):v.toFixed(1);if(v===0)return"0";return v<0.1?v.toFixed(2).replace(/0+$/,""):(+v.toFixed(2)).toString();}
+function pathOf(t,a,x,y,closed,bot){let d="",step=2;for(let i=0;i<NPT;i+=step){d+=(i?"L":"M")+x(t[i]).toFixed(1)+" "+y(a[i]).toFixed(1);}
+  if(closed)d+=`L${x(t[NPT-1]).toFixed(1)} ${bot}L${x(t[0]).toFixed(1)} ${bot}Z`;return d;}
+
+/* pointer handling */
+let drag=null;
+function ptT(e){const r=chart.getBoundingClientRect();return G.inv((e.clientX-r.left)*(G.W/r.width));}
+const snap=t=>Math.max(T0,Math.min(T1-0.25,Math.round(t*12)/12));
+chart.addEventListener("pointerdown",e=>{
+  const del=e.target.closest("[data-del]"),dose=e.target.closest("[data-dose]"),bed=e.target.closest("[data-bed]");
+  if(del){S.doses=S.doses.filter(d=>d.id!==+del.dataset.del);S.sel=null;update();e.preventDefault();return;}
+  chart.setPointerCapture(e.pointerId);
+  if(dose){drag={type:"dose",id:+dose.dataset.dose,x0:e.clientX,moved:false};}
+  else if(bed){drag={type:"bed"};}
+  else{drag={type:"cur"};S.cursor=snap(ptT(e));S.sel=null;update(true);}
+  e.preventDefault();
+});
+chart.addEventListener("pointermove",e=>{
+  if(!drag)return;const t=snap(ptT(e));
+  if(drag.type==="dose"){if(Math.abs(e.clientX-drag.x0)>4)drag.moved=true;if(drag.moved){const d=S.doses.find(d=>d.id===drag.id);if(d){d.t=t;S.sel=null;update();}}}
+  else if(drag.type==="bed"){S.bed=Math.max(20,Math.min(27,Math.round(t*4)/4));$("#s-bed").value=S.bed;update();}
+  else{S.cursor=t;update(true);}
+});
+const endDrag=()=>{if(drag&&drag.type==="dose"&&!drag.moved){S.sel=S.sel===drag.id?null:drag.id;update(true);}drag=null;};
+chart.addEventListener("pointerup",endDrag);chart.addEventListener("pointercancel",()=>{drag=null;});
+
+/* ---------- vessels ---------- */
+const V=$("#vessels");
+let VES=[];
+function wobPath(pts,seed,amp){const R=rng(seed);let d="";pts.forEach((p,i)=>{const jx=(R()-.5)*amp,jy=(R()-.5)*amp;d+=(i?"L":"M")+(p[0]+jx).toFixed(1)+" "+(p[1]+jy).toFixed(1);});return d;}
+function buildVessels(){
+  const R=rng(1729);let o=`<defs>
+   <linearGradient id="glass" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".25" stop-color="#fff" stop-opacity=".15"/><stop offset=".8" stop-color="#fff" stop-opacity=".05"/><stop offset="1" stop-color="#fff" stop-opacity=".35"/></linearGradient>
+   <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2c3e"/><stop offset="1" stop-color="#5a4038"/></linearGradient>
+   <linearGradient id="lq-caf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a7663a"/><stop offset="1" stop-color="#5a2f18"/></linearGradient>
+   <linearGradient id="lq-alc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c8475f"/><stop offset="1" stop-color="#6e1830"/></linearGradient>
+   <linearGradient id="lq-nic" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6fa797"/><stop offset="1" stop-color="#2d5a50"/></linearGradient>
+  </defs>`;
+  // back wall: apothecary cabinet
+  o+=`<rect x="0" y="0" width="380" height="300" rx="10" fill="url(#wall)"/>`;
+  for(let i=0;i<9;i++){const xx=8+i*42+R()*6;o+=`<path d="${wobPath([[xx,0],[xx+1,228]],i+7,1.2)}" stroke="rgba(0,0,0,.18)" stroke-width="2"/>`;}
+  // little background jars
+  for(let i=0;i<7;i++){const xx=14+i*52+R()*10,h=20+R()*16,w=16+R()*10,yy=42;const cols=["#c9a86a","#8fae8b","#b77b66","#9a8fbf","#d8c27a"];
+    o+=`<rect x="${xx}" y="${yy-h}" width="${w}" height="${h}" rx="4" fill="${cols[i%5]}" opacity=".55" stroke="${INK}" stroke-width="1.4"/><rect x="${xx-1}" y="${yy-h-4}" width="${w+2}" height="5" rx="1.5" fill="#6b4a2f" stroke="${INK}" stroke-width="1.2"/><rect x="${xx+3}" y="${yy-h*0.65}" width="${w-6}" height="${h*0.35}" fill="#f3e7d0" opacity=".85"/>`;}
+  o+=`<path d="${wobPath([[0,44],[380,44]],3,1)}" stroke="${INK}" stroke-width="2.4"/><rect x="0" y="44" width="380" height="7" fill="#7b4a29"/>`;
+  // candle glow
+  o+=`<radialGradient id="glow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffd88a" stop-opacity=".35"/><stop offset="1" stop-color="#ffd88a" stop-opacity="0"/></radialGradient><circle cx="350" cy="120" r="80" fill="url(#glow)"/>`;
+  // shelf
+  const shelfY=232;
+  o+=`<rect x="0" y="${shelfY}" width="380" height="16" fill="#9a6237"/><path d="${wobPath([[0,shelfY],[380,shelfY]],11,1.3)}" stroke="${INK}" stroke-width="2.4"/><path d="${wobPath([[0,shelfY+16],[380,shelfY+16]],12,1.3)}" stroke="${INK}" stroke-width="2"/>`;
+  for(let i=0;i<5;i++)o+=`<path d="${wobPath([[R()*300,shelfY+5+R()*6],[R()*300+60,shelfY+5+R()*6]],20+i,0.8)}" stroke="#7b4a29" stroke-width="1"/>`;
+  o+=`<rect x="0" y="${shelfY+16}" width="380" height="${300-shelfY-16}" fill="#2f2330"/>`;
+  // vessels definitions: [key, outline points, body top, body bottom, cx]
+  const defs=[
+    {key:"caf",cx:70, pts:[[58,96],[58,128],[22,224],[118,224],[82,128],[82,96]], top:128,bot:224,full:300,unit:"mg",marks:[[100,"100"],[200,"200"]],grad:"lq-caf"},
+    {key:"alc",cx:190,circle:true,r:46,cy:178,neck:[[178,92],[178,134],[202,134],[202,92]],top:132,bot:224,full:1.0,unit:"g/L",marks:[[0.2,"0.2"],[0.5,"0.5"]],grad:"lq-alc"},
+    {key:"nic",cx:310,pts:[[290,84],[290,220],[330,220],[330,84]],top:96,bot:220,full:2,unit:"mg",marks:[[0.5,"0.5"],[1,"1"],[1.5,"1.5"]],grad:"lq-nic"}
+  ];
+  VES=defs;
+  defs.forEach((d,i)=>{
+    let shape;
+    if(d.circle){
+      shape=`M${d.neck[0][0]} ${d.neck[0][1]}L${d.neck[1][0]} ${d.neck[1][1]}A${d.r} ${d.r} 0 1 0 ${d.neck[2][0]} ${d.neck[2][1]}L${d.neck[3][0]} ${d.neck[3][1]}Z`;
+    } else shape=wobPath(d.pts,40+i,0.6)+"Z";
+    o+=`<clipPath id="clip-${d.key}"><path d="${shape}"/></clipPath>`;
+    o+=`<path d="${shape}" fill="rgba(255,250,240,.10)"/>`;
+    o+=`<g clip-path="url(#clip-${d.key})"><path id="liq-${d.key}" fill="url(#${d.grad})"/><path id="wav-${d.key}" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/></g>`;
+    o+=`<path d="${shape}" fill="url(#glass)" stroke="${INK}" stroke-width="2.6" stroke-linejoin="round"/>`;
+    // lip
+    const lx=d.circle?d.neck[0][0]:d.pts[0][0], rx=d.circle?d.neck[3][0]:d.pts[d.pts.length-1][0], ly=d.circle?d.neck[0][1]:d.pts[0][1];
+    o+=`<rect x="${lx-5}" y="${ly-5}" width="${rx-lx+10}" height="7" rx="3" fill="#fff9ee" stroke="${INK}" stroke-width="2"/>`;
+    // marks
+    d.marks.forEach(([v,lab])=>{const yy=d.bot-(v/d.full)*(d.bot-d.top);const xr=d.circle?d.cx+30:(d.key==="nic"?330:d.cx+ (d.bot-yy)*0.0+14);
+      o+=`<path d="M${xr-10} ${yy}h10" stroke="${INK}" stroke-width="1.4"/><text x="${xr+3}" y="${yy+3.5}" font-size="9" fill="#f3e7d0" font-family="Inter,sans-serif">${lab}</text>`;});
+    // label tag
+    const names={caf:"caffeine",alc:"alcohol",nic:"nicotine"};
+    o+=`<g transform="translate(${d.cx},266)"><rect x="-52" y="-14" width="104" height="38" rx="6" fill="#f3e7d0" stroke="${INK}" stroke-width="1.8"/><text y="1" text-anchor="middle" font-size="12" font-family="Fraunces,Georgia,serif" font-style="italic" fill="${C[d.key]}">${names[d.key]}</text><text id="val-${d.key}" y="17" text-anchor="middle" font-size="12.5" font-weight="600" font-family="Inter,sans-serif" fill="${INK}"></text></g>`;
+  });
+  o+=`<text id="ves-time" x="190" y="72" text-anchor="middle" font-size="13" fill="#ffd88a" font-family="Fraunces,Georgia,serif" font-style="italic"></text>`;
+  V.innerHTML=o;
+}
+let phase=0;
+function drawLiquids(){
+  const ci=idx(S.cursor);
+  VES.forEach(d=>{
+    const v=SIM[d.key][ci];const f=Math.min(1.06,v/d.full);
+    const lvl=d.bot-f*(d.bot-d.top);const amp=v>0.001*d.full?2.2:0;
+    let w="";for(let x=d.cx-70;x<=d.cx+70;x+=5){const yy=lvl+Math.sin(x*0.09+phase+(d.cx))*amp;w+=(w?"L":"M")+x+" "+yy.toFixed(2);}
+    $("#liq-"+d.key).setAttribute("d",w+`L${d.cx+70} 240L${d.cx-70} 240Z`);
+    $("#wav-"+d.key).setAttribute("d",w);
+  });
+}
+function updateVesselText(){
+  const ci=idx(S.cursor);
+  $("#val-caf").textContent=Math.round(SIM.caf[ci])+" mg";
+  $("#val-alc").textContent=SIM.alc[ci].toFixed(2)+" g/L";
+  $("#val-nic").textContent=SIM.nic[ci].toFixed(2)+" mg";
+  $("#ves-time").textContent="at "+fmtDay(S.cursor);
+}
+function animate(){phase+=0.045;drawLiquids();if(!REDUCED)requestAnimationFrame(animate);}
+
+/* ---------- summary ---------- */
+function crossDown(arr,thr,from){for(let i=Math.max(from,1);i<NPT;i++)if(arr[i-1]>=thr&&arr[i]<thr)return T0+i*DT;return null;}
+function summary(){
+  const bi=idx(S.bed);const s=SIM;let h="";
+  const caf=s.caf[bi],tot=S.doses.filter(d=>ITEMS[d.it].sub==="caf").reduce((a,d)=>a+ITEMS[d.it].amt,0);
+  const esp=caf/80;
+  h+=`<div class="sr"><span class="dot" style="background:${C.cafL}"></span><span>At bedtime (<b>${fmtT(S.bed)}</b>) about <b>${Math.round(caf)} mg</b> of caffeine is still in you`+
+     (tot?`, out of ${Math.round(tot)} mg taken today${caf>=8?`. That is like drinking <b>${esp<1?(esp>=0.45?"half":"a fraction of")+" an espresso":(Math.round(esp*2)/2)+" espresso"+(esp>=1.25?"s":"")}</b> as you get into bed`:""}.`:". Add a coffee to see it.")+
+     (tot>400?` Today's total is above EFSA's 400 mg/day reference for adults.`:"")+`</span></div>`;
+  let amx=0,ami=0;s.alc.forEach((v,i)=>{if(v>amx){amx=v;ami=i;}});
+  if(amx>0.005){const t05=amx>=0.5?crossDown(s.alc,0.5,ami):null,t02=amx>=0.2?crossDown(s.alc,0.2,ami):null,t0=crossDown(s.alc,0.01,ami);
+    h+=`<div class="sr"><span class="dot" style="background:${C.alcL}"></span><span>Blood alcohol peaks near <b>${amx.toFixed(2)} g/L</b> at ${fmtT(T0+ami*DT)}`+
+      (t05?`, is back under 0.5 at <b>${fmtDay(t05)}</b>`:"")+(t02?`, under 0.2 at <b>${fmtDay(t02)}</b>`:"")+
+      (t0?` and near zero at <b>${fmtDay(t0)}</b>.`:`, and is not gone by noon tomorrow.`)+` A rough average only; never use it to decide whether to drive.</span></div>`;}
+  const nicTot=S.doses.filter(d=>d.it==="cig").length;
+  if(nicTot){h+=`<div class="sr"><span class="dot" style="background:${C.nicL}"></span><span>${nicTot} cigarette${nicTot>1?"s":""}: nicotine at bedtime ${s.nic[bi].toFixed(2)} mg, but cotinine ${s.cot[bi].toFixed(1)} mg, and still ${s.cot[idx(32)].toFixed(1)} mg at 08:00 next morning.</span></div>`;}
+  $("#summary").innerHTML=h;
+}
+
+/* ---------- aha ---------- */
+function drawAha(){
+  const n=+$("#s-n").value;$("#v-n").textContent=n;
+  const W=420,H=200,pl=34,pr=10,pt=10,pb=26;
+  const mk=(key,col,fill)=>{
+    const tmax=30,res=[];
+    for(let k=1;k<=6;k++){const arr=[];let tc=null;
+      if(key==="caf"){for(let i=0;i<=600;i++){const t=i*tmax/600;const v=cafAt(90*k,t,S.hl);arr.push(v);if(tc===null&&t>1.5&&v<50)tc=t;}}
+      else{let Cb=0,Gt=10*k,pk=0;for(let i=0;i<=600;i++){const t=i*tmax/600;if(i>0){[Cb,Gt]=alcStep(Cb,Gt,tmax/600,S);}arr.push(Cb);pk=Math.max(pk,Cb);if(tc===null&&t>0.3&&Cb<0.01&&pk>0)tc=t;}}
+      res.push({arr,tc});}
+    const ymax=key==="caf"?600:Math.max(1.4,Math.ceil(Math.max(...res[5].arr)*5)/5);
+    const x=t=>pl+t/tmax*(W-pl-pr), y=v=>pt+(1-v/ymax)*(H-pt-pb);
+    let o=`<rect x="${pl}" y="${pt}" width="${W-pl-pr}" height="${H-pt-pb}" fill="#fffaf0" stroke="${INK}" stroke-width="1.6" rx="6"/>`;
+    for(let h=0;h<=30;h+=6)o+=`<text x="${x(h)}" y="${H-10}" text-anchor="middle" font-size="10" fill="#6b5f52" font-family="Inter,sans-serif">${h} h</text>`;
+    const thr=key==="caf"?50:0;
+    if(key==="caf")o+=`<line x1="${pl}" x2="${W-pr}" y1="${y(50)}" y2="${y(50)}" stroke="${col}" stroke-dasharray="4 3"/><text x="${pl+4}" y="${y(50)-4}" font-size="9.5" fill="${col}" font-family="Inter,sans-serif">50 mg</text>`;
+    o+=`<text x="${pl-4}" y="${pt+9}" text-anchor="end" font-size="9.5" fill="#6b5f52" font-family="Inter,sans-serif">${key==="caf"?ymax:ymax.toFixed(1)}</text><text x="${pl-4}" y="${H-pb}" text-anchor="end" font-size="9.5" fill="#6b5f52" font-family="Inter,sans-serif">0</text>`;
+    // bars (time to clear) along the bottom-ish as a staircase on the right side? draw as horizontal bars inside plot top area
+    o+=`<text x="${pl}" y="${H+14}" font-size="10" font-weight="600" fill="#6b5f52" font-family="Inter,sans-serif">time to clear</text>`;
+    res.forEach((r,k)=>{const yy=H+22+k*17;const on=k+1===n;const xe=r.tc===null?x(30):x(r.tc);
+      o+=`<text x="${pl-6}" y="${yy+10}" text-anchor="end" font-size="10" fill="${on?INK:"#6b5f52"}" font-weight="${on?600:400}" font-family="Inter,sans-serif">${k+1}×</text>`;
+      o+=`<rect x="${pl}" y="${yy}" width="${xe-pl}" height="12" fill="${on?col:fill}" opacity="${on?0.95:0.6}" rx="3" stroke="${on?INK:"none"}" stroke-width="1.3"/>`;
+      o+=`<text x="${Math.min(xe+5,W-30)}" y="${yy+10}" font-size="10" fill="${on?INK:"#6b5f52"}" font-family="Inter,sans-serif">${r.tc===null?">30 h":r.tc.toFixed(1)+" h"}</text>`;});
+    res.forEach((r,k)=>{const on=k+1===n;let d="";r.arr.forEach((v,i)=>{d+=(i?"L":"M")+x(i*tmax/600).toFixed(1)+" "+y(Math.min(v,ymax)).toFixed(1);});
+      o+=`<path d="${d}" fill="none" stroke="${col}" stroke-width="${on?2.8:1.1}" opacity="${on?1:0.35}"/>`;});
+    const cur=res[n-1];if(cur.tc!==null){o+=`<circle cx="${x(cur.tc)}" cy="${y(thr)}" r="4.5" fill="#fff" stroke="${INK}" stroke-width="2"/>`;}
+    return {o,res};
+  };
+  const a=mk("caf",C.caf,C.cafL),b=mk("alc",C.alc,C.alcL);
+  $("#aha-caf").innerHTML=a.o;$("#aha-alc").innerHTML=b.o;
+  const f=v=>v===null?"over 30 h":v.toFixed(1)+" h";
+  const dc=a.res[n-1].tc,db=b.res[n-1].tc;
+  $("#aha-caf-t").innerHTML=`${n} × 90 mg: below 50 mg after <b>${f(dc)}</b>. Each doubling adds one half-life (${S.hl} h).`;
+  const per=(b.res[5].tc&&b.res[0].tc)?((b.res[5].tc-b.res[0].tc)/5).toFixed(1):"?";
+  $("#aha-alc-t").innerHTML=`${n} × 10 g: back near zero after <b>${f(db)}</b>. Each extra drink adds about ${per} h.`;
+}
+
+/* ---------- update ---------- */
+function syncUI(){
+  $("#v-bed").textContent=fmtT(S.bed);$("#v-hl").textContent=S.hl+" h";$("#v-w").textContent=S.w+" kg";$("#v-beta").textContent=S.beta.toFixed(2)+" g/L/h";
+  document.querySelectorAll("#c-met .chip").forEach(c=>c.classList.toggle("on",c.dataset.n===S.met));
+  document.querySelectorAll("#c-sex .chip").forEach(c=>c.classList.toggle("on",+c.dataset.r===S.r));
+  document.querySelectorAll("#c-food .chip").forEach(c=>c.classList.toggle("on",+c.dataset.food===S.food));
+  $("#t-each").classList.toggle("on",S.each);$("#t-log").classList.toggle("on",S.log);
+  const dl=$("#daylist");dl.innerHTML="";
+  [...S.doses].sort((a,b)=>a.t-b.t).forEach(d=>{const it=ITEMS[d.it];const s=document.createElement("span");s.className="dchip";
+    s.innerHTML=`<i style="background:${C[it.sub]}"></i>${fmtT(d.t)} ${it.name}<button type="button" aria-label="remove ${it.name}">×</button>`;
+    s.querySelector("button").addEventListener("click",()=>{S.doses=S.doses.filter(q=>q.id!==d.id);update();});dl.appendChild(s);});
+  if(!S.doses.length)dl.innerHTML=`<span class="hint">empty day. Add something from the shelf.</span>`;
+}
+let ahaKey="";
+function update(cursorOnly){
+  if(!cursorOnly)SIM=simulate();
+  drawChart();updateVesselText();if(REDUCED||cursorOnly)drawLiquids();
+  if(!cursorOnly){syncUI();summary();const k=[S.hl,S.w,S.r,S.beta,S.food].join();if(k!==ahaKey){ahaKey=k;drawAha();}}
+}
+buildButtons();buildVessels();
+(function(){const q=new URLSearchParams(location.search);if(q.has("preset")&&PRESETS[q.get("preset")])setPreset(q.get("preset"));if(q.has("each"))S.each=true;if(q.has("log"))S.log=true;if(q.has("at"))S.cursor=+q.get("at")||S.cursor;})();
+update();drawLiquids();
+if(!REDUCED)requestAnimationFrame(animate);
+let rz;window.addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>update(true),80);});
+</script>
+</body>
+</html>
