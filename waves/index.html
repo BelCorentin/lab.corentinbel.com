@@ -1,0 +1,1350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>the perfect wave · lab.corentinbel.com</title>
+<meta name="description" content="A raymarched WebGL ocean driven by real swell physics — period, height, wind and seabed slope — with an Iribarren-number breaker diagram teaching what makes a wave spill, plunge or surge.">
+<style>
+  :root {
+    --bg:#050a10; --fg:#e8f2f0; --dim:#8aa3ac; --faint:#5c7078;
+    --accent:#6ea8ff; --teal:#8ceedd; --amber:#ffc46b; --coral:#ff9d7a; --purple:#b48ce8;
+    --glass:rgba(6,16,22,.7); --border:rgba(142,238,221,.16); --radius:14px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; overflow:hidden; }
+  body {
+    background:var(--bg); color:var(--fg);
+    font-family:ui-sans-serif,system-ui,"Inter","Helvetica Neue",sans-serif;
+  }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+
+  canvas#ocean, canvas#fallback {
+    position:fixed; inset:0; width:100%; height:100%; display:block;
+  }
+  #fallback { display:none; }
+
+  .glass {
+    background:var(--glass); border:1px solid var(--border); border-radius:var(--radius);
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  }
+
+  /* ---------- chrome (auto-hides on idle) ---------- */
+  #chrome { position:fixed; inset:0; pointer-events:none; z-index:5; transition:opacity .6s ease; }
+  #chrome.idle { opacity:0; }
+  #chrome.idle .glass, #chrome.idle header { pointer-events:none; }
+  body.no-motion #chrome { transition:none; }
+
+  header {
+    position:fixed; top:0; left:0; right:0; z-index:6;
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:1.2rem 1.6rem; pointer-events:auto; mix-blend-mode:screen;
+  }
+  header h1 { font-weight:300; font-size:1.05rem; letter-spacing:.05em; }
+  header h1 b { font-weight:650; }
+  header .sub { font-size:.72rem; color:var(--dim); letter-spacing:.05em; margin-top:.2rem; }
+  header nav { display:flex; gap:1.1rem; align-self:center; }
+  header nav a { pointer-events:auto; color:var(--dim); font-size:.85rem; }
+  header nav a:hover { color:var(--accent); }
+
+  #verdict {
+    position:fixed; left:1.4rem; top:5rem; z-index:6; max-width:min(480px, 88vw);
+    padding:.6rem .9rem; font-size:.85rem; line-height:1.5; pointer-events:none;
+  }
+  #verdict b { color:var(--teal); }
+  #verdict.spilling b { color:var(--teal); }
+  #verdict.plunging b { color:var(--amber); }
+  #verdict.surging b { color:var(--coral); }
+
+  /* ---------- control dock ---------- */
+  #dock {
+    position:fixed; left:50%; bottom:.9rem; transform:translateX(-50%); z-index:6;
+    width:min(880px, calc(100vw - 1.4rem));
+    padding:.85rem 1.1rem 1rem; pointer-events:auto;
+  }
+  #dockTop { display:flex; justify-content:space-between; align-items:center; margin-bottom:.55rem; }
+  #dockTop .title { font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); }
+  #dockBtns { display:flex; gap:.5rem; }
+  #dockBtns button {
+    font: inherit; font-size:.74rem; color:var(--dim); background:none;
+    border:1px solid var(--border); border-radius:999px; padding:.32rem .8rem;
+    cursor:pointer; transition:color .2s, border-color .2s;
+  }
+  #dockBtns button:hover { color:var(--fg); border-color:var(--accent); }
+  #dockBtns button.on { color:var(--bg); background:var(--teal); border-color:var(--teal); }
+
+  #sliders {
+    display:grid; grid-template-columns:repeat(5, 1fr); gap:.9rem 1rem;
+  }
+  body.barrel #sliders { grid-template-columns:repeat(6, 1fr); }
+  .sl.viewSl { display:none; }
+  body.barrel .sl.viewSl { display:flex; }
+  .sl { display:flex; flex-direction:column; gap:.3rem; }
+  .sl label { font-size:.68rem; color:var(--dim); display:flex; justify-content:space-between; }
+  .sl label b { color:var(--fg); font-weight:600; }
+  .sl label i { color:var(--faint); font-style:normal; cursor:help; }
+  .sl input[type=range] {
+    -webkit-appearance:none; appearance:none; width:100%; height:3px; border-radius:3px;
+    background:linear-gradient(90deg, var(--accent), var(--teal)); outline:none; cursor:pointer;
+  }
+  .sl input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance:none; width:13px; height:13px; border-radius:50%;
+    background:var(--fg); border:2px solid var(--bg); cursor:pointer;
+  }
+  .sl input[type=range]::-moz-range-thumb {
+    width:11px; height:11px; border-radius:50%; background:var(--fg); border:2px solid var(--bg); cursor:pointer;
+  }
+
+  #readouts {
+    display:flex; flex-wrap:wrap; gap:.4rem .9rem; margin-top:.75rem;
+    font-size:.72rem; color:var(--dim);
+  }
+  #readouts b { color:var(--fg); }
+
+  @media (max-width:820px) {
+    #sliders, body.barrel #sliders { grid-template-columns:repeat(2, 1fr); }
+    #verdict { top:auto; bottom:15.5rem; left:.7rem; right:.7rem; max-width:none; }
+    #dock { width:calc(100vw - .8rem); bottom:.5rem; max-height:46vh; overflow-y:auto; }
+  }
+
+  /* ---------- cross-section diagram ---------- */
+  #crossWrap {
+    position:fixed; right:1rem; top:5rem; z-index:6; padding:.7rem .8rem .55rem;
+    width:min(300px, 42vw); pointer-events:auto;
+  }
+  #crossWrap .cxTitle { font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--dim); margin-bottom:.4rem; }
+  canvas#cross { width:100%; height:132px; display:block; border-radius:8px; }
+  @media (max-width:820px) { #crossWrap { display:none; } }
+
+  /* ---------- explainer popover ---------- */
+  #explain {
+    position:fixed; z-index:8; max-width:280px; padding:.7rem .85rem; font-size:.78rem;
+    line-height:1.5; color:var(--dim); pointer-events:none; opacity:0; transition:opacity .15s;
+    transform:translateY(6px);
+  }
+  #explain.show { opacity:1; }
+
+  /* ---------- debug ---------- */
+  #debug {
+    position:fixed; top:5rem; left:1.4rem; z-index:9; display:none;
+    font:11px/1.5 ui-monospace,Menlo,Consolas,monospace; color:var(--teal);
+    padding:.5rem .7rem; white-space:pre;
+  }
+  #debug.show { display:block; }
+
+  #err {
+    position:fixed; top:5rem; left:50%; transform:translateX(-50%); z-index:9;
+    max-width:min(560px,92vw); display:none; padding:.7rem 1rem; font-size:.78rem;
+    line-height:1.5; color:#f0c9ce; background:rgba(46,12,18,.88); border:1px solid #5a2a33;
+    border-radius:12px; white-space:pre-wrap;
+  }
+  #err.show { display:block; }
+
+  @media (prefers-reduced-motion: reduce) { #chrome, #explain { transition:none; } }
+</style>
+</head>
+<body>
+
+<canvas id="ocean"></canvas>
+<canvas id="fallback"></canvas>
+
+<div id="chrome">
+  <header>
+    <div>
+      <h1><b id="pageTitle">the perfect wave</b></h1>
+      <div class="sub" id="pageSub">what makes a wave beautiful — period, power, depth, break</div>
+    </div>
+    <nav>
+      <a href="https://lab.corentinbel.com">← lab</a>
+      <a href="https://corentinbel.com">home</a>
+    </nav>
+  </header>
+
+  <div id="verdict" class="glass"></div>
+
+  <div id="crossWrap" class="glass">
+    <div class="cxTitle">side view — approaching the seabed</div>
+    <canvas id="cross" width="560" height="264"></canvas>
+  </div>
+
+  <div id="dock" class="glass">
+    <div id="dockTop">
+      <div class="title">swell controls</div>
+      <div id="dockBtns">
+        <button id="oceanBtn" type="button" class="on">open ocean</button>
+        <button id="barrelBtn" type="button">the barrel</button>
+        <button id="storyBtn" type="button">▶ story</button>
+      </div>
+    </div>
+    <div id="sliders">
+      <div class="sl">
+        <label for="T">period T <i title="Seconds between wave crests. Longer period = the swell travelled further and carries more energy.">?</i> <b id="Tval"></b></label>
+        <input id="T" type="range" min="4" max="20" step="0.5" value="10">
+      </div>
+      <div class="sl">
+        <label for="H">height H <i title="Deep-water wave height in metres, crest to trough / 2 amplitude.">?</i> <b id="Hval"></b></label>
+        <input id="H" type="range" min="0.3" max="5" step="0.1" value="2">
+      </div>
+      <div class="sl">
+        <label for="wind">wind <i title="Local chop stacked on top of the groundswell — texture, not the swell's own energy.">?</i> <b id="windVal"></b></label>
+        <input id="wind" type="range" min="0" max="30" step="1" value="8">
+      </div>
+      <div class="sl">
+        <label for="slope">seabed slope <i title="How steeply the bottom rises toward shore. Steep + long-period = surging. Gentle + short-period = spilling. In between = plunging barrels. In barrel view: also the reef's own slope, and steers how hollow the tube throws.">?</i> <b id="slopeVal"></b></label>
+        <input id="slope" type="range" min="0.005" max="0.15" step="0.005" value="0.04">
+      </div>
+      <div class="sl">
+        <label for="sun">light <i title="Time of day — pure aesthetics, no physics attached.">?</i> <b id="sunVal"></b></label>
+        <input id="sun" type="range" min="0" max="1" step="0.01" value="0.32">
+      </div>
+      <div class="sl viewSl">
+        <label for="view">camera <i title="Barrel view only: from the shoulder looking down the line, to inside the tube looking out.">?</i> <b id="viewVal"></b></label>
+        <input id="view" type="range" min="0" max="1" step="0.01" value="0.25">
+      </div>
+    </div>
+    <div id="readouts"></div>
+  </div>
+</div>
+
+<div id="explain" class="glass"></div>
+<div id="debug" class="glass"></div>
+<div id="err" class="glass"></div>
+
+<noscript><div class="glass" style="position:fixed;inset:2rem;display:grid;place-items:center;text-align:center;padding:2rem;">This piece needs JavaScript.</div></noscript>
+
+<script>
+"use strict";
+/* ==================================================================
+   the perfect wave — raymarched WebGL ocean + real swell physics.
+
+   Hero: a single fragment shader (Seascape-lineage: sum of choppy
+   sine octaves as a heightfield, raymarched with binary-search
+   refinement, finite-difference normals, Fresnel + subsurface +
+   specular shading). Driven live by five sliders that are real
+   physics inputs, not just visual knobs. A 2D side-on diagram
+   teaches shoaling & the Iribarren breaker classification, which
+   the 3D shader does not attempt to render (open-ocean swell has
+   no shore to break on) — keeps the hard-to-verify part (breaking
+   geometry) in the medium (2D canvas) where the math is exactly
+   checkable by hand.
+   ================================================================== */
+
+const G = 9.81;      // m/s^2
+const RHO = 1025;    // kg/m^3, seawater
+
+/* ---------------- physics (pure functions — node-testable) ---------------- */
+function wavelengthDeep(T) { return (G * T * T) / (2 * Math.PI); }
+function celerityDeep(T, L) { return L / T; }
+function iribarren(slope, H, L0) { return slope / Math.sqrt(H / L0); }
+function breakerType(xi) {
+  if (xi < 0.5) return 'spilling';
+  if (xi < 3.3) return 'plunging';
+  return 'surging';
+}
+function breakDepth(H) { return H / 0.78; } // H/d ~= 0.78 at breaking
+function wavePowerKw(H, T) {
+  return (RHO * G * G * H * H * T) / (64 * Math.PI) / 1000; // kW per metre of crest
+}
+
+/* ==================================================================
+   GL setup — WebGL2 preferred, WebGL1 fallback, Canvas2D last resort.
+   ================================================================== */
+const oceanCv = document.getElementById('ocean');
+const fallbackCv = document.getElementById('fallback');
+let gl = null, glVersion = 0;
+try { gl = oceanCv.getContext('webgl2', { antialias:false, alpha:false, powerPreference:'high-performance' }); if (gl) glVersion = 2; } catch (e) {}
+if (!gl) {
+  try {
+    gl = oceanCv.getContext('webgl', { antialias:false, alpha:false }) ||
+         oceanCv.getContext('experimental-webgl', { antialias:false, alpha:false });
+    if (gl) glVersion = 1;
+  } catch (e) {}
+}
+
+function showErr(msg) {
+  const el = document.getElementById('err');
+  el.textContent = msg; el.classList.add('show');
+}
+const debugOn = new URLSearchParams(location.search).get('debug') === '1';
+
+/* ---------------- shared GLSL core (used by both ocean & barrel programs) ---------------- */
+const SHARED_GLSL = `
+const float PI = 3.14159265;
+
+uniform vec2  u_res;
+uniform float u_time;
+uniform vec3  u_sunDir;
+uniform vec3  u_sunColor;
+uniform vec3  u_skyTop;
+uniform vec3  u_skyHorizon;
+uniform vec3  u_seaBase;
+uniform vec3  u_seaWater;
+
+float hash(vec2 p) {
+  float h = dot(p, vec2(127.1, 311.7));
+  return fract(sin(h) * 43758.5453123);
+}
+float vnoise(vec2 p) {
+  vec2 i = floor(p); vec2 f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return -1.0 + 2.0 * mix(
+    mix(hash(i + vec2(0.0,0.0)), hash(i + vec2(1.0,0.0)), u.x),
+    mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);
+}
+float diffuseTerm(vec3 n, vec3 l, float p) { return pow(dot(n, l) * 0.4 + 0.6, p); }
+float specularTerm(vec3 n, vec3 l, vec3 e, float s) {
+  float nrm = (s + 8.0) / (PI * 8.0);
+  return pow(max(dot(reflect(e, n), l), 0.0), s) * nrm;
+}
+vec3 skyColor(vec3 e) {
+  float t = pow(1.0 - max(e.y, 0.0), 3.0);
+  vec3 col = mix(u_skyTop, u_skyHorizon, t);
+  float sun = pow(max(dot(e, u_sunDir), 0.0), 340.0);
+  float halo = pow(max(dot(e, u_sunDir), 0.0), 8.0) * 0.25;
+  col += u_sunColor * (sun * 3.0 + halo);
+  return col;
+}
+`;
+
+/* ---------------- ocean-only GLSL (heightfield raymarch) ---------------- */
+const OCEAN_GLSL = `
+#define MAX_RIPPLES 6
+const int NUM_STEPS = 8;
+const int ITER_GEOMETRY = 3;
+const int ITER_FRAGMENT = 5;
+
+uniform float u_freq;
+uniform float u_height;
+uniform float u_choppy;
+uniform float u_speed;
+uniform vec3  u_ripples[MAX_RIPPLES];
+uniform int   u_rippleCount;
+
+mat2 octave_m = mat2(1.6, 1.2, -1.2, 1.6);
+
+float seaOctave(vec2 uv, float choppy) {
+  uv += vnoise(uv);
+  vec2 wv = 1.0 - abs(sin(uv));
+  vec2 swv = abs(cos(uv));
+  wv = mix(wv, swv, wv);
+  return pow(1.0 - pow(wv.x * wv.y, 0.65), choppy);
+}
+
+// far-field solution of the 2D wave equation for an impulsive point
+// source (cylindrical wave): amplitude decays ~1/sqrt(r), a genuine
+// ripple, not a fake ring sprite.
+float rippleHeight(vec2 p, float time) {
+  float h = 0.0;
+  for (int i = 0; i < MAX_RIPPLES; i++) {
+    if (i >= u_rippleCount) break;
+    vec3 rp = u_ripples[i];
+    float age = time - rp.z;
+    if (age < 0.0) continue;
+    float r = distance(p, rp.xy);
+    float speed = 3.4;
+    float k = 1.6;
+    float front = age * speed;
+    float band = smoothstep(front - 2.2, front, r) * (1.0 - smoothstep(front, front + 2.2, r));
+    float decay = exp(-age * 0.55) / sqrt(r + 1.0);
+    h += 0.55 * decay * band * sin(k * r - speed * age * k);
+  }
+  return h;
+}
+
+float map(vec3 p) {
+  float freq = u_freq, amp = u_height, choppy = u_choppy;
+  vec2 uv = p.xz; uv.x *= 0.75;
+  float d, h = 0.0;
+  for (int i = 0; i < ITER_GEOMETRY; i++) {
+    d  = seaOctave((uv + u_time * u_speed) * freq, choppy);
+    d += seaOctave((uv - u_time * u_speed) * freq, choppy);
+    h += d * amp;
+    uv *= octave_m; freq *= 1.9; amp *= 0.22;
+    choppy = mix(choppy, 1.0, 0.2);
+  }
+  h += rippleHeight(p.xz, u_time);
+  return p.y - h;
+}
+float mapDetailed(vec3 p) {
+  float freq = u_freq, amp = u_height, choppy = u_choppy;
+  vec2 uv = p.xz; uv.x *= 0.75;
+  float d, h = 0.0;
+  for (int i = 0; i < ITER_FRAGMENT; i++) {
+    d  = seaOctave((uv + u_time * u_speed) * freq, choppy);
+    d += seaOctave((uv - u_time * u_speed) * freq, choppy);
+    h += d * amp;
+    uv *= octave_m; freq *= 1.9; amp *= 0.22;
+    choppy = mix(choppy, 1.0, 0.2);
+  }
+  h += rippleHeight(p.xz, u_time);
+  return p.y - h;
+}
+vec3 seaNormal(vec3 p, float eps) {
+  vec3 n;
+  n.y = mapDetailed(p);
+  n.x = mapDetailed(vec3(p.x + eps, p.y, p.z)) - n.y;
+  n.z = mapDetailed(vec3(p.x, p.y, p.z + eps)) - n.y;
+  n.y = eps;
+  return normalize(n);
+}
+float traceHeightfield(vec3 ori, vec3 dir, out vec3 p) {
+  float tm = 0.0, tx = 1000.0;
+  float hx = map(ori + dir * tx);
+  if (hx > 0.0) { p = ori + dir * tx; return tx; }
+  float hm = map(ori + dir * tm);
+  float tmid = 0.0;
+  for (int i = 0; i < NUM_STEPS; i++) {
+    tmid = mix(tm, tx, hm / (hm - hx));
+    p = ori + dir * tmid;
+    float hmid = map(p);
+    if (hmid < 0.0) { tx = tmid; hx = hmid; } else { tm = tmid; hm = hmid; }
+  }
+  return tmid;
+}
+
+vec3 seaColor(vec3 p, vec3 n, vec3 l, vec3 eye, vec3 dist) {
+  float fresnel = clamp(1.0 - dot(n, -eye), 0.0, 1.0);
+  fresnel = 0.02 + 0.98 * pow(fresnel, 5.0);
+
+  vec3 reflected = skyColor(reflect(eye, n));
+  float diff = diffuseTerm(n, l, 80.0);
+  vec3 refracted = u_seaBase + diff * u_seaWater * 0.18;
+
+  float crest = clamp(p.y * 1.6, 0.0, 1.0);
+  vec3 subsurface = u_seaWater * crest * max(0.0, dot(l, -eye)) * 1.4;
+
+  vec3 color = mix(refracted, reflected, fresnel) + subsurface;
+
+  float atten = max(1.0 - dot(dist, dist) * 0.0009, 0.0);
+  color += u_seaWater * (p.y - u_height * 0.3) * 0.2 * atten;
+  color += vec3(specularTerm(n, l, eye, 90.0)) * u_sunColor;
+
+  float foam = smoothstep(0.55, 0.92, 1.0 - n.y) * clamp(u_choppy / 6.0, 0.0, 1.0);
+  color = mix(color, vec3(0.92, 0.95, 0.93), foam * 0.5);
+
+  return color;
+}
+
+vec3 render(vec2 uv) {
+  vec3 ori = vec3(0.0, 3.6, u_time * 1.1);
+  vec3 fwd = normalize(vec3(0.0, -0.06, -1.0));
+  vec3 right = normalize(cross(fwd, vec3(0.0, 1.0, 0.0)));
+  vec3 camUp = cross(right, fwd);
+  vec3 dir = normalize(uv.x * right + uv.y * camUp + 1.5 * fwd);
+
+  vec3 p;
+  traceHeightfield(ori, dir, p);
+  vec3 dist = p - ori;
+  vec3 n = seaNormal(p, dot(dist, dist) * 1e-5 + 1e-4);
+
+  vec3 color = mix(
+    skyColor(dir),
+    seaColor(p, n, u_sunDir, dir, dist),
+    pow(smoothstep(0.0, -0.02, dir.y), 0.25)
+  );
+
+  float fog = 1.0 - exp(-max(length(dist), 0.0) * 0.0025);
+  color = mix(color, u_skyHorizon, clamp(fog, 0.0, 0.55));
+
+  return clamp(color, 0.0, 1.0);
+}
+`;
+
+const UV_CALC = `
+  vec2 uv = gl_FragCoord.xy / u_res.xy;
+  uv = uv * 2.0 - 1.0;
+  uv.x *= u_res.x / u_res.y;
+`;
+
+const FRAG_300 = `#version 300 es
+precision highp float;
+out vec4 outColor;
+${SHARED_GLSL}
+${OCEAN_GLSL}
+void main() {
+${UV_CALC}
+  outColor = vec4(render(uv), 1.0);
+}
+`;
+const FRAG_100 = `precision highp float;
+${SHARED_GLSL}
+${OCEAN_GLSL}
+void main() {
+${UV_CALC}
+  gl_FragColor = vec4(render(uv), 1.0);
+}
+`;
+
+/* ==================================================================
+   Barrel program — the wave viewed as a tube crashing on a reef.
+
+   A heightfield (y = h(x,z)) cannot represent an overhang: a plumb
+   line through a barrel crosses the water surface 3+ times. So this
+   view uses a different technique entirely — a signed-distance-field
+   raymarched with sphere tracing (not the binary-search heightfield
+   trace above).
+
+   The wave is ONE continuous body running along x (so there is a wave
+   line all the way to the horizon, not a floating object):
+
+     * away from the peel it is a half-submerged cylinder — the
+       un-broken swell;
+     * inside a travelling band around the peel front that cylinder
+       SINKS while iq's "arc" primitive (a thickened, partial ring —
+       the one shape that can overhang) rises in its place, so the
+       section goes hollow, stands up and throws its lip shoreward.
+
+   The two share a centre and an outer radius, so the silhouette is
+   continuous through the transition: only the hollow appears.
+
+   Verified before shipping by rendering this exact math on the CPU and
+   LOOKING at the pixels (scratchpad/barrel_render.js + sheet.js).
+   That is what caught the original bug: the sea's "rise" plateau sat
+   at the arc's own centre height, so the entire lower half of the ring
+   — the room, the mouth, the underside of the lip — was buried inside
+   the solid sea half-space, and smin2 with k larger than the shell's
+   own thickness melted what stuck out into a smooth mound. It rendered
+   as a featureless blob. The older topology check passed it anyway,
+   because the "3+ vertical crossings" it counted came from a SEALED
+   air bubble inside that mound — real overhang topology, invisible
+   from outside. Counting crossings proves a void exists; it cannot
+   prove you can see into it.
+   ================================================================== */
+const BARREL_GLSL = `
+uniform float u_choppy;
+uniform float u_bR;
+uniform float u_aperHalf;
+uniform float u_wLip;
+uniform float u_peelSpeed;
+uniform float u_peelLen;
+uniform float u_reefSlope;
+uniform float u_view;
+
+// how far the lip is thrown shoreward (radians of cross-section rotation)
+const float BARREL_TILT = -0.90;
+// cross-section geometry, in units of u_bR
+const float B_ZC     =  0.00;   // wave line, in z
+const float B_YC     =  0.62;   // centre of the ring / of the swell
+const float B_TROUGH = -0.34;   // trough drawn down in front of the wave
+const float B_SEAZ0  = -2.20;   // where the surface starts dropping into it
+const float B_SEAZ1  = -0.60;
+const float B_KFRAC  =  0.11;   // smooth-union radius (MUST stay well under u_wLip)
+const float B_LIPK   =  0.90;   // Lipschitz guard on the heightfield term
+const float B_SINK   =  2.60;   // how far the swell sinks under the barrel
+const float B_ZSHIFT =  0.22;   // the section moves shoreward as it breaks...
+const float B_YLIFT  =  0.20;   // ...and stands up...
+const float B_RGROW  =  0.12;   // ...and grows, so the lip pitches out past the swell
+const float B_TDIG   =  0.55;   // trough is dug deeper in front of the breaking part
+// travelling peel band, as fractions of u_peelLen
+const float B_ARC_A = 0.05, B_ARC_B = 0.55;   // the tube opens
+const float B_SWL_A = 0.25, B_SWL_B = 0.75;   // the swell sinks (deliberately later,
+                                              // so the ends of the tube close over)
+const float B_OUT_A = 1.45, B_OUT_B = 2.10;   // both undo: back to un-broken swell
+
+float smin2(float a, float b, float k) {
+  float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+  return mix(b, a, h) - k * h * (1.0 - h);
+}
+// iq's exact 2D "arc" SDF: sc = (sin(aperHalf), cos(aperHalf)) sets how
+// much of the ring is solid, measured from the top; ra = radius, rb =
+// thickness. This is the one primitive that can represent an
+// overhanging lip and a room underneath it.
+float sdArc(vec2 p, vec2 sc, float ra, float rb) {
+  p.x = abs(p.x);
+  return ((sc.y * p.x > sc.x * p.y) ? length(p - sc * ra) : abs(length(p) - ra)) - rb;
+}
+vec2 rot2(vec2 p, float a) {
+  float c = cos(a), s = sin(a);
+  return vec2(p.x * c - p.y * s, p.x * s + p.y * c);
+}
+// 0 = un-broken swell, 1 = fully open tube, for a section at offset u
+// down the line from the peel front.
+float barrelArcT(float u) {
+  return smoothstep(u_peelLen * B_ARC_A, u_peelLen * B_ARC_B, u)
+       * (1.0 - smoothstep(u_peelLen * B_OUT_A, u_peelLen * B_OUT_B, u));
+}
+float barrelSwellT(float u) {
+  return smoothstep(u_peelLen * B_SWL_A, u_peelLen * B_SWL_B, u)
+       * (1.0 - smoothstep(u_peelLen * B_OUT_A, u_peelLen * B_OUT_B, u));
+}
+// reef: clamped so it can never breach the surface and read as a beach
+float reefTop(float z, float peelPos) {
+  return min(-u_bR * 0.55,
+             -u_bR * 1.90 + max(0.0, z - u_bR * 1.40) * u_reefSlope * 6.0);
+}
+// sea + swell + shell union (no rock) — used both for tracing and for the
+// water/rock material test at the hit point.
+float sdWaterOnly(vec3 p, float peelPos, float noiseAmt) {
+  float u = p.x - peelPos;
+  float a = barrelArcT(u);
+  float sw = barrelSwellT(u);
+  float zc = u_bR * B_ZC, yc = u_bR * B_YC;
+
+  // open water: still-water level offshore, trough in front of the wave.
+  // No "rise" term — the wave's whole mass above the waterline is the
+  // swell/arc, which is what keeps the room from being flooded.
+  float base = mix(0.0, u_bR * B_TROUGH * (1.0 + B_TDIG * a),
+                   smoothstep(u_bR * B_SEAZ0, u_bR * B_SEAZ1, p.z));
+  float sdSea = (p.y - base - noiseAmt) * B_LIPK;
+
+  // un-broken swell: an infinite cylinder along x. An exact SDF, so it can
+  // be as steep as it likes; its radius and centre match the arc's outer
+  // envelope so the silhouette does not jump as the section goes hollow.
+  float swR = u_bR + u_wLip;
+  float swY = yc - u_bR * B_SINK * sw;
+  float sdSwell = length(vec2(p.z - zc, p.y - swY)) - swR - noiseAmt * B_LIPK;
+
+  // the tube
+  float az = zc + u_bR * B_ZSHIFT * a;
+  float ay = yc + u_bR * B_YLIFT * a;
+  float ar = u_bR * (1.0 + B_RGROW * a);
+  vec2 lq = rot2(vec2(p.z - az, p.y - ay), BARREL_TILT);
+  vec2 sc = vec2(sin(u_aperHalf), cos(u_aperHalf));
+  // fade the shell in/out by shrinking it toward a point, not by mixing its
+  // distance toward a sentinel: a linear mix toward a large constant
+  // dominates for any factor < ~0.99 and erases the overhang entirely.
+  float sdShell = sdArc(lq, sc * a, ar * a, u_wLip * a);
+
+  float k = u_bR * B_KFRAC + 0.02;
+  return smin2(smin2(sdSea, sdSwell, k), sdShell, k);
+}
+float sdBarrel(vec3 p, float peelPos) {
+  return min(sdWaterOnly(p, peelPos, 0.0), p.y - reefTop(p.z, peelPos));
+}
+// noise only ever perturbs the NORMAL estimate, never the traced surface —
+// displacing the marched SDF risks breaking the distance-underestimate the
+// sphere tracer relies on. nf fades it with distance: at grazing angles the
+// Fresnel term is hypersensitive to the normal, and un-faded noise aliases
+// the whole open ocean into grey static.
+float sdBarrelDetailed(vec3 p, float peelPos, float nf) {
+  vec2 q = p.xz / max(u_bR, 0.15);
+  float bumpN = (vnoise(q * 1.6) * 0.5 + vnoise(q * 4.6) * 0.25)
+                * u_choppy * 0.055 * u_bR * nf;
+  return min(sdWaterOnly(p, peelPos, bumpN), p.y - reefTop(p.z, peelPos));
+}
+vec3 barrelNormal(vec3 p, float eps, float peelPos, float nf) {
+  vec2 e = vec2(eps, 0.0);
+  vec3 grad = vec3(
+    sdBarrelDetailed(p + e.xyy, peelPos, nf) - sdBarrelDetailed(p - e.xyy, peelPos, nf),
+    sdBarrelDetailed(p + e.yxy, peelPos, nf) - sdBarrelDetailed(p - e.yxy, peelPos, nf),
+    sdBarrelDetailed(p + e.yyx, peelPos, nf) - sdBarrelDetailed(p - e.yyx, peelPos, nf)
+  );
+  return normalize(grad);
+}
+// sphere trace: capped steps, capped distance, conservative 0.6x step, so
+// worst case is a miss, never a hang. Simulating this exact tracer on the
+// CPU over the full slider grid: median 17 steps, p99 114, and raising the
+// cap from 100 to 160 changed no pixel visibly — 128 is comfortable margin.
+float traceBarrel(vec3 ori, vec3 dir, float peelPos, out vec3 hitP, out bool hit) {
+  float t = 0.0;
+  hit = false;
+  hitP = ori;
+  for (int i = 0; i < 128; i++) {
+    vec3 p = ori + dir * t;
+    float d = sdBarrel(p, peelPos);
+    if (d < 0.002 * max(t, 1.0)) { hitP = p; hit = true; break; }
+    t += d * 0.6;
+    if (t > 80.0) break;
+  }
+  return t;
+}
+vec3 barrelShade(vec3 p, vec3 n, vec3 eye, float peelPos, bool isRock, float aT) {
+  vec3 l = u_sunDir;
+  if (isRock) {
+    float diff = diffuseTerm(n, l, 4.0);
+    vec3 rock = vec3(0.06, 0.07, 0.07) + vnoise(p.xz * 2.0) * 0.02;
+    vec3 wet = mix(rock, rock * 1.5 + u_seaWater * 0.08, 0.4);
+    return wet * (0.25 + diff * 0.6);
+  }
+
+  // where this point sits on the ring: how near the thrown tip of the lip,
+  // and whether it is on the concave (room) side.
+  float zc = u_bR * (B_ZC + B_ZSHIFT * aT);
+  float yc = u_bR * (B_YC + B_YLIFT * aT);
+  float arcR = u_bR * (1.0 + B_RGROW * aT);
+  vec2 lq = rot2(vec2(p.z - zc, p.y - yc), BARREL_TILT);
+  float rad = length(lq);
+  float ang = atan(abs(lq.x) + 1e-5, lq.y);          // 0 at the crest, PI at the bottom
+  float tipT   = clamp(1.0 - (u_aperHalf - ang) / 0.75, 0.0, 1.0)
+               * smoothstep(arcR * 0.55, arcR * 1.0, rad);
+  float inRoom = smoothstep(u_bR * 0.05, u_bR * 0.30, arcR - rad)
+               * clamp((u_aperHalf - ang) / 0.4, 0.0, 1.0) * aT;
+
+  float fres0 = clamp(1.0 - dot(n, -eye), 0.0, 1.0);
+  float fresnel = 0.02 + 0.98 * pow(fres0, 5.0);
+  vec3 reflected = skyColor(reflect(eye, n));
+
+  // body: deep navy down in the trough, lit teal up in the standing water
+  float hAbove = clamp((p.y + 0.34 * u_bR) / (2.2 * u_bR), 0.0, 1.0);
+  vec3 body = mix(u_seaBase, u_seaWater * vec3(0.60, 1.00, 0.92),
+                  pow(hAbove, 1.4) * 0.62 * (1.0 - inRoom * 0.45));
+  float diff = diffuseTerm(n, l, 8.0);
+  vec3 color = mix(body + u_seaWater * diff * 0.10, reflected,
+                   fresnel * (1.0 - inRoom * 0.75));
+
+  // Beer-Lambert transmission through the lip — the green flash. The optical
+  // thickness now genuinely falls to zero at the thrown tip. (It used to be
+  // computed as wLip - |length(lq) - bR|, which is identically 0 at every hit
+  // point, since a hit is by definition ON that surface — so the exponential
+  // collapsed to exp(0) and the term was a flat backlight, not transmission.)
+  float thick = u_wLip * (1.0 - tipT) + 0.02 * u_bR;
+  float sig = 3.2 / max(u_bR, 0.15);
+  float backlit = max(0.0, dot(l, -eye)) * clamp(0.35 - dot(n, l), 0.0, 1.0) * 2.2;
+  float glow = (backlit + inRoom * 0.55) * (0.35 + 0.65 * tipT);
+  vec3 transmit = u_sunColor * exp(-sig * vec3(1.55, 0.34, 0.50) * thick)
+                * glow * vec3(0.55, 1.00, 0.90);
+  color += transmit * vec3(0.85, 1.00, 0.95);
+
+  color += vec3(specularTerm(n, l, eye, 120.0)) * u_sunColor * 0.18;
+
+  // foam. Noise keyed on (x, y+z) so it does not stripe along the extrusion.
+  vec2 qn = vec2(p.x, p.y + p.z) / max(u_bR, 0.15);
+  float fn = vnoise(qn * 2.2) * 0.6 + vnoise(qn * 6.0) * 0.4;
+  float chop = clamp(u_choppy / 6.0, 0.35, 1.0);
+  float lipFoam = tipT * clamp(0.45 + fn * 0.9, 0.0, 1.0) * chop;
+  // whitewater only at the wave's own base and only inside the breaking band
+  // (gated by aT), otherwise it paints the whole open ocean white
+  float baseFoam = (1.0 - smoothstep(0.02 * u_bR, 0.40 * u_bR, abs(p.y + 0.22 * u_bR)))
+                 * clamp(0.30 + fn * 0.8, 0.0, 1.0)
+                 * (1.0 - smoothstep(u_bR * 0.85, u_bR * 1.55, abs(p.z - zc)))
+                 * aT * chop;
+  float foam = clamp(lipFoam * 0.80 + baseFoam * 0.85, 0.0, 1.0);
+  color = mix(color, vec3(0.92, 0.96, 0.97), foam * 0.85);
+
+  return color;
+}
+vec3 renderBarrel(vec2 uv) {
+  float peelPos = u_time * u_peelSpeed;
+
+  // Camera. x in units of u_peelLen, y/z in units of u_bR.
+  //   view = 0 : from the shoulder, side-on, looking down the line
+  //   view = 1 : right at the mouth of the tube, looking into it
+  // The whole interpolated path is kept OUTSIDE the shell's outer radius
+  // (u_bR*(1+B_RGROW) + u_wLip) measured from the barrel's own centre, so no
+  // slider position can put the eye inside the water — the black-screen
+  // failure mode. Nearest approach is the view=1 end at 1.75*u_bR against an
+  // outer radius of 1.42*u_bR; re-check it if any of the B_* constants move.
+  vec3 ori0  = vec3(peelPos + u_peelLen * 1.570, u_bR * 1.657, u_bR * 2.936);
+  vec3 look0 = vec3(peelPos + u_peelLen * 1.050, u_bR * 0.950, u_bR * 0.000);
+  vec3 ori1  = vec3(peelPos + u_peelLen * 1.200, u_bR * 0.520, u_bR * 1.940);
+  vec3 look1 = vec3(peelPos + u_peelLen * 0.450, u_bR * 0.800, u_bR * 0.300);
+  vec3 ori    = mix(ori0, ori1, u_view);
+  vec3 lookAt = mix(look0, look1, u_view);
+  // The camera rides the peel front exactly, so without this the whole scene is
+  // frozen. A slow bounded drift along the tube axis lets the section peel
+  // through the frame. Amplitudes are small enough that the clearance check
+  // above still holds -- it is swept over the full bob phase.
+  float bob1 = sin(u_time * 0.37), bob2 = sin(u_time * 0.23 + 1.7);
+  ori.x    += u_peelLen * 0.22 * bob1;
+  ori.y    += u_bR * 0.10 * bob2;
+  lookAt.x += u_peelLen * 0.10 * bob1;
+
+  vec3 fwd = normalize(lookAt - ori);
+  vec3 right = normalize(cross(fwd, vec3(0.0, 1.0, 0.0)));
+  vec3 camUp = cross(right, fwd);
+  vec3 dir = normalize(uv.x * right * 0.95 + uv.y * camUp * 0.95 + fwd * 1.25);
+
+  vec3 p; bool hit;
+  float t = traceBarrel(ori, dir, peelPos, p, hit);
+
+  vec3 color;
+  if (!hit) {
+    color = skyColor(dir);
+  } else {
+    float nf = exp(-t * 0.09 / max(u_bR, 0.2));
+    vec3 n = barrelNormal(p, max(0.01, t * 0.004), peelPos, nf);
+    float dRock = p.y - reefTop(p.z, peelPos);
+    float dWater = sdWaterOnly(p, peelPos, 0.0);
+    color = barrelShade(p, n, dir, peelPos, dRock < dWater, barrelArcT(p.x - peelPos));
+  }
+
+  float fog = 1.0 - exp(-max(t, 0.0) * 0.010 / max(u_bR, 0.2));
+  color = mix(color, u_skyHorizon, clamp(fog, 0.0, 0.45));
+  return clamp(color, 0.0, 1.0);
+}
+`;
+
+const FRAG_BARREL_300 = `#version 300 es
+precision highp float;
+out vec4 outColor;
+${SHARED_GLSL}
+${BARREL_GLSL}
+void main() {
+${UV_CALC}
+  outColor = vec4(renderBarrel(uv), 1.0);
+}
+`;
+const FRAG_BARREL_100 = `precision highp float;
+${SHARED_GLSL}
+${BARREL_GLSL}
+void main() {
+${UV_CALC}
+  gl_FragColor = vec4(renderBarrel(uv), 1.0);
+}
+`;
+const VERT_300 = `#version 300 es
+void main() {
+  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
+  gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+}
+`;
+const VERT_100 = `attribute vec2 a_pos;
+void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
+`;
+
+function compile(gl, type, src) {
+  const sh = gl.createShader(type);
+  gl.shaderSource(sh, src);
+  gl.compileShader(sh);
+  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+    const log = gl.getShaderInfoLog(sh);
+    gl.deleteShader(sh);
+    throw new Error('shader compile failed: ' + log);
+  }
+  return sh;
+}
+function link(gl, vs, fs) {
+  const prog = gl.createProgram();
+  gl.attachShader(prog, vs); gl.attachShader(prog, fs);
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+    const log = gl.getProgramInfoLog(prog);
+    gl.deleteProgram(prog);
+    throw new Error('program link failed: ' + log);
+  }
+  return prog;
+}
+
+let prog = null, uniforms = {}, quadBuf = null;
+if (gl) {
+  try {
+    const vs = compile(gl, gl.VERTEX_SHADER, glVersion === 2 ? VERT_300 : VERT_100);
+    const fs = compile(gl, gl.FRAGMENT_SHADER, glVersion === 2 ? FRAG_300 : FRAG_100);
+    prog = link(gl, vs, fs);
+    gl.useProgram(prog);
+    ['u_res','u_time','u_freq','u_height','u_choppy','u_speed','u_sunDir','u_sunColor',
+     'u_skyTop','u_skyHorizon','u_seaBase','u_seaWater','u_ripples','u_rippleCount'
+    ].forEach(n => { uniforms[n] = gl.getUniformLocation(prog, n); });
+
+    if (glVersion === 1) {
+      quadBuf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+    }
+  } catch (e) {
+    showErr('WebGL' + glVersion + ' shader failed to build — falling back to a 2D canvas ocean.\\n' + e.message);
+    gl = null; prog = null;
+  }
+}
+
+const usingGL = !!(gl && prog);
+oceanCv.style.display = usingGL ? 'block' : 'none';
+fallbackCv.style.display = usingGL ? 'none' : 'block';
+
+/* ---------------- barrel program — optional, non-fatal if it fails ---------------- */
+let progBarrel = null, barrelUniforms = {};
+if (usingGL) {
+  try {
+    const vsB = compile(gl, gl.VERTEX_SHADER, glVersion === 2 ? VERT_300 : VERT_100);
+    const fsB = compile(gl, gl.FRAGMENT_SHADER, glVersion === 2 ? FRAG_BARREL_300 : FRAG_BARREL_100);
+    progBarrel = link(gl, vsB, fsB);
+    gl.useProgram(progBarrel);
+    ['u_res','u_time','u_choppy','u_sunDir','u_sunColor','u_skyTop','u_skyHorizon',
+     'u_seaBase','u_seaWater','u_bR','u_aperHalf','u_wLip','u_peelSpeed','u_peelLen','u_reefSlope','u_view'
+    ].forEach(n => { barrelUniforms[n] = gl.getUniformLocation(progBarrel, n); });
+    gl.useProgram(prog);
+  } catch (e) {
+    // barrel view is a companion feature — never let its failure take
+    // down the ocean, which already shipped and works.
+    progBarrel = null;
+    if (debugOn) showErr('Barrel shader failed to build (ocean view unaffected):\\n' + e.message);
+  }
+}
+const barrelReady = !!progBarrel;
+document.getElementById('barrelBtn').style.display = barrelReady ? '' : 'none';
+
+/* ==================================================================
+   Canvas2D fallback — layered-sine ocean, same physics inputs.
+   ================================================================== */
+const fctx = usingGL ? null : fallbackCv.getContext('2d');
+
+/* ==================================================================
+   Mode: open ocean <-> the barrel — same canvas, same physics state,
+   different program/shader. Barrel mode requires GL (no Canvas2D
+   fallback for it — if there's no WebGL at all, or the barrel shader
+   failed to compile, the toggle is hidden and the ocean just ships).
+   ================================================================== */
+let mode = 'ocean';
+const oceanBtn = document.getElementById('oceanBtn');
+const barrelBtn = document.getElementById('barrelBtn');
+const storyBtnEl = document.getElementById('storyBtn');
+function setMode(m) {
+  if (m === 'barrel' && !barrelReady) return;
+  mode = m;
+  document.body.classList.toggle('barrel', mode === 'barrel');
+  oceanBtn.classList.toggle('on', mode === 'ocean');
+  barrelBtn.classList.toggle('on', mode === 'barrel');
+  storyBtnEl.style.display = mode === 'barrel' ? 'none' : '';
+  if (mode === 'barrel' && typeof storyOn !== 'undefined' && storyOn) stopStory();
+  document.getElementById('pageTitle').textContent = mode === 'barrel' ? 'the barrel' : 'the perfect wave';
+  document.getElementById('pageSub').textContent = mode === 'barrel'
+    ? 'the same swell, close up — tubing and crashing on a reef'
+    : 'what makes a wave beautiful — period, power, depth, break';
+  document.getElementById('crossWrap').querySelector('.cxTitle').textContent = mode === 'barrel'
+    ? 'side view — same physics, informing the barrel'
+    : 'side view — approaching the seabed';
+  wake();
+}
+oceanBtn.addEventListener('click', () => setMode('ocean'));
+barrelBtn.addEventListener('click', () => setMode('barrel'));
+
+/* ==================================================================
+   State, sliders, smoothing, time-of-day palette
+   ================================================================== */
+const SLIDER_KEYS = ['T','H','wind','slope','sun','view'];
+const state = {
+  T: 10, H: 2, wind: 8, slope: 0.04, sun: 0.32, view: 0.25,
+};
+const target = Object.assign({}, state);
+const els = {
+  T: document.getElementById('T'), H: document.getElementById('H'),
+  wind: document.getElementById('wind'), slope: document.getElementById('slope'),
+  sun: document.getElementById('sun'), view: document.getElementById('view'),
+};
+SLIDER_KEYS.forEach(k => {
+  els[k].value = state[k];
+  els[k].addEventListener('input', () => { target[k] = parseFloat(els[k].value); });
+});
+
+const PALETTES = [ // dawn, midday, dusk — sky top/horizon, sea base/water, sun color
+  { top:[0.05,0.09,0.20], hor:[0.85,0.55,0.35], base:[0.00,0.06,0.13], water:[0.35,0.55,0.45], sun:[1.0,0.78,0.5] },
+  { top:[0.30,0.55,0.85], hor:[0.75,0.88,0.92], base:[0.00,0.10,0.19], water:[0.30,0.62,0.55], sun:[1.0,0.97,0.9] },
+  { top:[0.06,0.03,0.14], hor:[0.55,0.30,0.35], base:[0.00,0.05,0.10], water:[0.30,0.30,0.42], sun:[1.0,0.6,0.55] },
+];
+function mixv(a, b, t) { return [0,1,2].map(i => a[i] + (b[i]-a[i]) * t); }
+function paletteAt(t) {
+  t = Math.max(0, Math.min(1, t));
+  return t < 0.5 ? lerpPal(PALETTES[0], PALETTES[1], t*2) : lerpPal(PALETTES[1], PALETTES[2], (t-0.5)*2);
+}
+function lerpPal(a, b, t) {
+  return { top:mixv(a.top,b.top,t), hor:mixv(a.hor,b.hor,t), base:mixv(a.base,b.base,t),
+           water:mixv(a.water,b.water,t), sun:mixv(a.sun,b.sun,t) };
+}
+
+/* ---------------- ripples ---------------- */
+const MAX_RIPPLES = 6;
+let ripples = []; // {x,z,t0}
+function addRipple(worldX, worldZ, t0) {
+  ripples.push({ x: worldX, z: worldZ, t0 });
+  if (ripples.length > MAX_RIPPLES) ripples.shift();
+}
+// mirrors the shader's camera math exactly — must stay in sync with render(uv)
+function screenToWorldXZ(clientX, clientY, camTime) {
+  const rect = oceanCv.getBoundingClientRect();
+  let uvx = ((clientX - rect.left) / rect.width) * 2 - 1;
+  let uvy = -(((clientY - rect.top) / rect.height) * 2 - 1);
+  uvx *= rect.width / rect.height;
+  const fwd = norm([0, -0.06, -1]);
+  const right = norm(cross(fwd, [0,1,0]));
+  const camUp = cross(right, fwd);
+  const dir = norm(add(add(scale(right, uvx), scale(camUp, uvy)), scale(fwd, 1.5)));
+  const ori = [0, 3.6, camTime * 1.1];
+  if (dir[1] >= -1e-4) return null;
+  const t = -ori[1] / dir[1];
+  return [ori[0] + dir[0] * t, ori[2] + dir[2] * t];
+}
+function norm(v){ const l=Math.hypot(v[0],v[1],v[2])||1; return [v[0]/l,v[1]/l,v[2]/l]; }
+function cross(a,b){ return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]; }
+function add(a,b){ return [a[0]+b[0],a[1]+b[1],a[2]+b[2]]; }
+function scale(a,s){ return [a[0]*s,a[1]*s,a[2]*s]; }
+
+let lastUTime = 0;
+oceanCv.addEventListener('pointerdown', e => {
+  const w = screenToWorldXZ(e.clientX, e.clientY, lastUTime);
+  if (w) addRipple(w[0], w[1], lastUTime);
+  wake();
+});
+
+/* ==================================================================
+   Idle auto-hide chrome
+   ================================================================== */
+const chrome = document.getElementById('chrome');
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (reducedMotion) document.body.classList.add('no-motion');
+let idleTimer = null;
+function wake() {
+  chrome.classList.remove('idle');
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => chrome.classList.add('idle'), 3600);
+}
+['pointermove','pointerdown','keydown','touchstart','wheel'].forEach(ev =>
+  addEventListener(ev, wake, { passive:true }));
+wake();
+
+/* ==================================================================
+   Readouts + verdict
+   ================================================================== */
+const verdictEl = document.getElementById('verdict');
+const readoutsEl = document.getElementById('readouts');
+function fmt(n, d) { return n.toFixed(d); }
+function updateReadouts() {
+  const L0 = wavelengthDeep(state.T);
+  const c = celerityDeep(state.T, L0);
+  const xi = iribarren(state.slope, state.H, L0);
+  const type = breakerType(xi);
+  const db = breakDepth(state.H);
+  const power = wavePowerKw(state.H, state.T);
+
+  document.getElementById('Tval').textContent = state.T.toFixed(1) + ' s';
+  document.getElementById('Hval').textContent = state.H.toFixed(1) + ' m';
+  document.getElementById('windVal').textContent = Math.round(state.wind) + ' kn';
+  document.getElementById('slopeVal').textContent = state.slope.toFixed(3);
+  document.getElementById('sunVal').textContent =
+    state.sun < 0.33 ? 'dawn' : state.sun < 0.66 ? 'midday' : 'dusk';
+  document.getElementById('viewVal').textContent =
+    state.view < 0.5 ? 'on the shoulder' : 'in the tube';
+
+  const xiNorm = Math.max(0, Math.min(1, (xi - 0.5) / (3.3 - 0.5)));
+  readoutsEl.innerHTML = mode === 'barrel'
+    ? `wavelength <b>${fmt(L0,0)} m</b> · celerity <b>${fmt(c,1)} m/s</b> · ` +
+      `Iribarren ξ <b>${fmt(xi,2)}</b> · barrel radius <b>${fmt(state.H*0.9,1)} m</b> · ` +
+      `hollowness <b>${fmt(xiNorm*100,0)}%</b> · power <b>${fmt(power,1)} kW/m</b>`
+    : `wavelength <b>${fmt(L0,0)} m</b> · celerity <b>${fmt(c,1)} m/s</b> · ` +
+      `Iribarren ξ <b>${fmt(xi,2)}</b> · breaks near <b>${fmt(db,1)} m</b> depth · ` +
+      `power <b>${fmt(power,1)} kW/m</b>`;
+
+  const words = {
+    spilling: 'a soft, crumbling spiller — foam sliding gently down the face',
+    plunging: 'a plunging barrel — the crest outruns the base and throws over',
+    surging: 'a surging wave — too steep a slope-ratio to curl, it just rushes the shore',
+  };
+  verdictEl.className = type;
+  const physicsLine =
+    `<b>${state.T.toFixed(0)}s</b> period, <b>${state.H.toFixed(1)}m</b> over a ` +
+    `<b>tan α = ${state.slope.toFixed(3)}</b> bottom → ${words[type]}. ` +
+    `<b>${fmt(power,0)} kW</b> per metre of crest.`;
+  verdictEl.innerHTML = (typeof storyOn !== 'undefined' && storyOn && storyCaption)
+    ? `${storyCaption}<br><span style="color:var(--faint);font-size:.78em;">${physicsLine}</span>`
+    : physicsLine;
+
+  drawCrossSection(L0, xi, type, db);
+}
+
+/* ==================================================================
+   2D side-view breaker diagram — the exactly-verifiable teaching layer
+   ================================================================== */
+const crossCv = document.getElementById('cross');
+const cctx = crossCv.getContext('2d');
+function drawCrossSection(L0, xi, type, db) {
+  const w = crossCv.width, h = crossCv.height;
+  cctx.clearRect(0, 0, w, h);
+
+  const seaLevel = h * 0.42;
+  const shoreX = w * 0.86;
+  const deepX = w * 0.04;
+  const beachTopY = h * 0.94;
+
+  // seabed: flat-ish offshore, then rises with the chosen slope toward shore
+  const shelfStart = w * 0.42;
+  cctx.beginPath();
+  cctx.moveTo(deepX, h * 0.86);
+  cctx.lineTo(shelfStart, h * 0.86);
+  const rise = Math.min(state.slope * (shoreX - shelfStart) * 1.4, beachTopY - seaLevel + h*0.1);
+  cctx.quadraticCurveTo(shelfStart + (shoreX-shelfStart)*0.3, h*0.86, shoreX, h*0.86 - rise);
+  cctx.lineTo(shoreX + w*0.06, beachTopY);
+  cctx.lineTo(deepX, beachTopY);
+  cctx.closePath();
+  cctx.fillStyle = '#2a2118';
+  cctx.fill();
+
+  // water body
+  cctx.fillStyle = 'rgba(110,168,255,.10)';
+  cctx.fillRect(0, seaLevel, w, h - seaLevel);
+
+  // break point marker: where H/d ~= 0.78, i.e. depth == breakDepth
+  const breakFrac = Math.max(0.15, Math.min(0.92, 1 - (db / (state.H * 6))));
+  const breakX = deepX + (shoreX - deepX) * breakFrac;
+
+  // incoming wave train — shoaling: shortens & steepens toward the break point
+  cctx.beginPath();
+  const steps = 90;
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const x = deepX + t * (shoreX - deepX);
+    const depthFactor = Math.max(0.15, 1 - t * 0.85);
+    const localL = Math.max(10, L0 * depthFactor * 0.16);
+    const shoal = Math.pow(1 / depthFactor, 0.28); // Green's law-ish amplitude growth
+    const amp = Math.min(h*0.16, (state.H * 3.2) * shoal * (t < breakFrac ? 1 : 0.35));
+    const phase = (x / localL) * Math.PI * 2 - performance.now() * 0.0006;
+    const y = seaLevel - Math.max(0, Math.sin(phase)) * amp * Math.max(0, 1 - Math.max(0, t-breakFrac)*3);
+    if (i === 0) cctx.moveTo(x, y); else cctx.lineTo(x, y);
+  }
+  cctx.strokeStyle = 'rgba(140,238,221,.85)';
+  cctx.lineWidth = 2;
+  cctx.stroke();
+
+  // breaker glyph at the break point, shaped by type
+  cctx.save();
+  cctx.translate(breakX, seaLevel - state.H * 5.5);
+  const col = type === 'plunging' ? '#ffc46b' : type === 'surging' ? '#ff9d7a' : '#8ceedd';
+  cctx.strokeStyle = col; cctx.fillStyle = col + '33'; cctx.lineWidth = 2.2;
+  cctx.beginPath();
+  if (type === 'plunging') {
+    cctx.moveTo(-16, 14);
+    cctx.quadraticCurveTo(-14, -16, 4, -14);
+    cctx.quadraticCurveTo(18, -12, 10, 2);   // the curling lip, overhanging
+    cctx.quadraticCurveTo(6, 8, -4, 6);
+  } else if (type === 'spilling') {
+    cctx.moveTo(-16, 12);
+    cctx.quadraticCurveTo(-6, -10, 8, -6);
+    cctx.quadraticCurveTo(14, -4, 18, 4);
+    for (let i=0;i<4;i++) { cctx.moveTo(2+i*4, -2+i*2); cctx.arc(2+i*4, -2+i*2, 1.6, 0, Math.PI*2); }
+  } else {
+    cctx.moveTo(-18, 10);
+    cctx.lineTo(6, -14);
+    cctx.lineTo(20, 8);
+  }
+  cctx.stroke(); cctx.fill();
+  cctx.restore();
+
+  // dashed break line + label
+  cctx.setLineDash([3,3]);
+  cctx.strokeStyle = 'rgba(232,242,240,.35)';
+  cctx.beginPath(); cctx.moveTo(breakX, h*0.1); cctx.lineTo(breakX, h*0.9); cctx.stroke();
+  cctx.setLineDash([]);
+  cctx.fillStyle = 'rgba(232,242,240,.55)';
+  cctx.font = '10px ui-sans-serif,system-ui,sans-serif';
+  cctx.textAlign = 'center';
+  cctx.fillText(type, breakX, h*0.1 - 4);
+
+  cctx.fillStyle = 'rgba(232,242,240,.4)';
+  cctx.textAlign = 'left';
+  cctx.fillText('deep water', deepX, h*0.98);
+  cctx.textAlign = 'right';
+  cctx.fillText('shore', shoreX + w*0.06, h*0.98);
+}
+
+/* ==================================================================
+   Story mode
+   ================================================================== */
+const STORY = [
+  { T:16, H:1.2, wind:4,  slope:0.03, sun:0.20, caption:'A long-period groundswell rolls in from a storm far offshore — 16 s between crests, barely a ripple in deep water.' },
+  { T:14, H:1.6, wind:6,  slope:0.05, sun:0.30, caption:'It reaches shallower water and starts to feel the bottom — the swell slows, bunches up, steepens.' },
+  { T:12, H:2.4, wind:8,  slope:0.07, sun:0.42, caption:'Over a steepening reef the wave jacks up fast — height climbing, period barely changing.' },
+  { T:11, H:2.8, wind:6,  slope:0.09, sun:0.55, caption:'Iribarren number lands in the plunging range: the crest outruns the base and throws over itself — the barrel.' },
+  { T:18, H:0.4, wind:3,  slope:0.14, sun:0.75, caption:'A very long, gentle swell meets a steep rocky point — too gradual a slope-ratio to curl, so it just surges and collapses at the rocks.' },
+];
+let storyOn = false, storyIdx = 0, storyTimer = null, storyCaption = '';
+const storyBtn = document.getElementById('storyBtn');
+storyBtn.addEventListener('click', () => storyOn ? stopStory() : startStory());
+function startStory() {
+  storyOn = true; storyIdx = 0; storyBtn.textContent = '■ stop'; storyBtn.classList.add('on');
+  stepStory();
+}
+function stopStory() {
+  storyOn = false; storyBtn.textContent = '▶ story'; storyBtn.classList.remove('on');
+  clearTimeout(storyTimer); storyCaption = '';
+}
+function stepStory() {
+  if (!storyOn) return;
+  const s = STORY[storyIdx];
+  Object.assign(target, { T:s.T, H:s.H, wind:s.wind, slope:s.slope, sun:s.sun });
+  ['T','H','wind','slope','sun'].forEach(k => { els[k].value = target[k]; });
+  storyCaption = s.caption;
+  storyIdx++;
+  if (storyIdx >= STORY.length) { storyTimer = setTimeout(stopStory, 4500); return; }
+  storyTimer = setTimeout(stepStory, reducedMotion ? 100 : 4500);
+}
+
+/* ==================================================================
+   Debug overlay (?debug=1)
+   ================================================================== */
+const debugEl = document.getElementById('debug');
+if (debugOn) debugEl.classList.add('show');
+let fpsAvg = 60, lastT = 0;
+
+/* ==================================================================
+   Resize + adaptive resolution
+   ================================================================== */
+let dpr = 1, resScale = 1, vw = 0, vh = 0;
+function resize() {
+  dpr = Math.min(devicePixelRatio || 1, 1.5);
+  vw = oceanCv.clientWidth; vh = oceanCv.clientHeight;
+  const w = Math.max(2, Math.round(vw * dpr * resScale));
+  const hh = Math.max(2, Math.round(vh * dpr * resScale));
+  oceanCv.width = w; oceanCv.height = hh;
+  fallbackCv.width = Math.round(vw * dpr); fallbackCv.height = Math.round(vh * dpr);
+  if (gl) gl.viewport(0, 0, w, hh);
+}
+addEventListener('resize', resize); resize();
+
+/* ==================================================================
+   Main render loop
+   ================================================================== */
+let t0 = performance.now();
+function frame(now) {
+  const dt = Math.min(0.1, (now - (lastT || now)) / 1000);
+  lastT = now;
+  fpsAvg += ((dt > 0 ? 1/dt : fpsAvg) - fpsAvg) * 0.05;
+
+  // adaptive resolution: one-way step down if sustained low fps
+  if (fpsAvg < 24 && resScale > 0.55 && now - t0 > 2000) {
+    resScale = Math.max(0.55, resScale - 0.15);
+    resize(); t0 = now;
+  }
+
+  // smooth sliders toward targets (tau ~= 0.8s)
+  const tau = 0.8, k = 1 - Math.exp(-dt / tau);
+  SLIDER_KEYS.forEach(key => { state[key] += (target[key] - state[key]) * k; });
+  updateReadouts();
+
+  const time = (now - performance.timeOrigin) ? now / 1000 : now / 1000;
+  lastUTime = time;
+
+  const L0 = wavelengthDeep(state.T);
+  const c = celerityDeep(state.T, L0);
+  const freq = (2 * Math.PI / L0) * 4.0;                 // SCENE_SCALE = 4
+  const heightU = state.H * 0.3;                          // HEIGHT_SCALE = 0.3
+  const choppy = 1.0 + Math.min(1, state.wind / 30) * 5.0;
+  const speed = c * 0.05;                                 // SPEED_SCALE = 0.05
+
+  const pal = paletteAt(state.sun);
+  const sunElev = 0.15 + 0.7 * Math.sin(Math.PI * state.sun);
+  const sunAz = -0.4 + state.sun * 0.8;
+  const sunDir = norm([sunAz, sunElev, -0.6]);
+
+  function bindQuadAttrib(activeProg) {
+    if (glVersion !== 1) return;
+    gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+    const loc = gl.getAttribLocation(activeProg, 'a_pos');
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  }
+
+  const inBarrel = usingGL && mode === 'barrel' && barrelReady;
+
+  if (usingGL && !inBarrel) {
+    gl.useProgram(prog);
+    bindQuadAttrib(prog);
+    gl.uniform2f(uniforms.u_res, oceanCv.width, oceanCv.height);
+    gl.uniform1f(uniforms.u_time, time);
+    gl.uniform1f(uniforms.u_freq, freq);
+    gl.uniform1f(uniforms.u_height, heightU);
+    gl.uniform1f(uniforms.u_choppy, choppy);
+    gl.uniform1f(uniforms.u_speed, speed);
+    gl.uniform3f(uniforms.u_sunDir, sunDir[0], sunDir[1], sunDir[2]);
+    gl.uniform3f(uniforms.u_sunColor, pal.sun[0], pal.sun[1], pal.sun[2]);
+    gl.uniform3f(uniforms.u_skyTop, pal.top[0], pal.top[1], pal.top[2]);
+    gl.uniform3f(uniforms.u_skyHorizon, pal.hor[0], pal.hor[1], pal.hor[2]);
+    gl.uniform3f(uniforms.u_seaBase, pal.base[0], pal.base[1], pal.base[2]);
+    gl.uniform3f(uniforms.u_seaWater, pal.water[0], pal.water[1], pal.water[2]);
+
+    const flat = new Float32Array(MAX_RIPPLES * 3);
+    ripples.forEach((r, i) => { flat[i*3]=r.x; flat[i*3+1]=r.z; flat[i*3+2]=r.t0; });
+    gl.uniform3fv(uniforms.u_ripples, flat);
+    gl.uniform1i(uniforms.u_rippleCount, ripples.length);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  } else if (inBarrel) {
+    const L0 = wavelengthDeep(state.T);
+    const xi = iribarren(state.slope, state.H, L0);
+    const xiNorm = Math.max(0, Math.min(1, (xi - 0.5) / (3.3 - 0.5)));
+    const bR = Math.max(0.15, state.H * 0.9);
+    // How far the ring wraps, in radians measured from the crest. The floor
+    // matters: below ~2 rad the "arc" stops being a tube at all and collapses
+    // into a cap sitting on the water, which renders as a featureless mound —
+    // and since the default sliders (T 10, H 2, slope 0.04) give xi = 0.35, they
+    // sit at xiNorm = 0, so that floor is exactly what the page shows on load.
+    // Iribarren still sets how hollow it throws, it just never un-barrels.
+    const aperHalf = 2.10 + (2.55 - 2.10) * xiNorm;
+    // plunging waves throw a thinner lip than spilling ones
+    const wLip = bR * (0.30 - 0.13 * xiNorm);
+    const peelSpeed = c * 0.1;
+    const peelLen = bR * 3.0;
+
+    gl.useProgram(progBarrel);
+    bindQuadAttrib(progBarrel);
+    const bu = barrelUniforms;
+    gl.uniform2f(bu.u_res, oceanCv.width, oceanCv.height);
+    gl.uniform1f(bu.u_time, time);
+    gl.uniform1f(bu.u_choppy, choppy);
+    gl.uniform3f(bu.u_sunDir, sunDir[0], sunDir[1], sunDir[2]);
+    gl.uniform3f(bu.u_sunColor, pal.sun[0], pal.sun[1], pal.sun[2]);
+    gl.uniform3f(bu.u_skyTop, pal.top[0], pal.top[1], pal.top[2]);
+    gl.uniform3f(bu.u_skyHorizon, pal.hor[0], pal.hor[1], pal.hor[2]);
+    gl.uniform3f(bu.u_seaBase, pal.base[0], pal.base[1], pal.base[2]);
+    gl.uniform3f(bu.u_seaWater, pal.water[0], pal.water[1], pal.water[2]);
+    gl.uniform1f(bu.u_bR, bR);
+    gl.uniform1f(bu.u_aperHalf, aperHalf);
+    gl.uniform1f(bu.u_wLip, wLip);
+    gl.uniform1f(bu.u_peelSpeed, peelSpeed);
+    gl.uniform1f(bu.u_peelLen, peelLen);
+    gl.uniform1f(bu.u_reefSlope, state.slope);
+    gl.uniform1f(bu.u_view, state.view);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+    if (debugOn) {
+      debugEl.textContent =
+        `fps ${fpsAvg.toFixed(0)}  mode barrel  gl${glVersion || '-'}\n` +
+        `T ${state.T.toFixed(2)} H ${state.H.toFixed(2)} slope ${state.slope.toFixed(3)} view ${state.view.toFixed(2)}\n` +
+        `bR ${bR.toFixed(2)} aperHalf ${aperHalf.toFixed(2)} wLip ${wLip.toFixed(3)} xi ${xi.toFixed(2)} xiNorm ${xiNorm.toFixed(2)}\n` +
+        `peelSpeed ${peelSpeed.toFixed(2)} peelLen ${peelLen.toFixed(2)}`;
+    }
+    requestAnimationFrame(frame);
+    return;
+  } else {
+    drawFallback(time, state, pal);
+  }
+
+  if (debugOn) {
+    debugEl.textContent =
+      `fps ${fpsAvg.toFixed(0)}  resScale ${resScale.toFixed(2)}  gl${glVersion || '-'}  mode ${mode}\n` +
+      `T ${state.T.toFixed(2)} H ${state.H.toFixed(2)} wind ${state.wind.toFixed(1)} slope ${state.slope.toFixed(3)} sun ${state.sun.toFixed(2)}\n` +
+      `freq ${freq.toFixed(4)} height ${heightU.toFixed(3)} choppy ${choppy.toFixed(2)} speed ${speed.toFixed(3)}\n` +
+      `ripples ${ripples.length}`;
+  }
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ==================================================================
+   Canvas2D fallback ocean (no WebGL at all) — layered sine waves,
+   same physics-driven parameters, far simpler but always works.
+   ================================================================== */
+function drawFallback(time, s, pal) {
+  const w = fallbackCv.width, h = fallbackCv.height;
+  const rgb = a => `rgb(${Math.round(a[0]*255)},${Math.round(a[1]*255)},${Math.round(a[2]*255)})`;
+  const g = fctx.createLinearGradient(0, 0, 0, h*0.6);
+  g.addColorStop(0, rgb(pal.top)); g.addColorStop(1, rgb(pal.hor));
+  fctx.fillStyle = g; fctx.fillRect(0, 0, w, h*0.62);
+
+  fctx.fillStyle = rgb(pal.base); fctx.fillRect(0, h*0.55, w, h*0.45);
+
+  const L0 = wavelengthDeep(s.T);
+  const c = celerityDeep(s.T, L0);
+  const layers = 4;
+  for (let l = 0; l < layers; l++) {
+    const amp = (s.H * 6) * Math.pow(0.55, l) + s.wind * 0.15;
+    const wl = Math.max(24, (L0 * 0.6) * Math.pow(0.5, l));
+    const speed = c * 0.6 * (l % 2 ? -1 : 1);
+    const yBase = h * (0.6 + l * 0.09);
+    fctx.beginPath();
+    fctx.moveTo(0, h);
+    for (let x = 0; x <= w; x += 6) {
+      const y = yBase + Math.sin(x / wl + time * speed * 0.02) * amp;
+      fctx.lineTo(x, y);
+    }
+    fctx.lineTo(w, h); fctx.closePath();
+    const alpha = 0.9 - l * 0.15;
+    fctx.fillStyle = `rgba(${Math.round(pal.water[0]*140)},${Math.round(pal.water[1]*180)},${Math.round(pal.water[2]*200)},${alpha})`;
+    fctx.fill();
+  }
+}
+
+updateReadouts();
+</script>
+</body>
+</html>

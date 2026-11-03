@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>lab · Corentin Bel</title>
-<meta name="description" content="The lab: a night greenhouse where every experiment grows on its own bench — foils, flight, space, brains, money, carbon, statistics, sound.">
+<meta name="description" content="The lab: a night greenhouse where every experiment grows on its own bench — foils, waves, wind, space, brains, money, drugs, carbon, statistics, sound.">
 <meta name="theme-color" content="#0b1412">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -138,9 +138,15 @@
   <radialGradient id="brainGlow" cx=".5" cy=".5" r=".5">
     <stop offset="0" stop-color="#8fe0ff" stop-opacity=".55"/><stop offset="1" stop-color="#8fe0ff" stop-opacity="0"/>
   </radialGradient>
-  <radialGradient id="shroomGlow" cx=".5" cy=".5" r=".5">
-    <stop offset="0" stop-color="#7dffcf" stop-opacity=".5"/><stop offset="1" stop-color="#7dffcf" stop-opacity="0"/>
+  <radialGradient id="flumeGlow" cx=".5" cy=".5" r=".5">
+    <stop offset="0" stop-color="#6fd8ff" stop-opacity=".32"/><stop offset="1" stop-color="#6fd8ff" stop-opacity="0"/>
   </radialGradient>
+  <radialGradient id="steamGlow" cx=".5" cy=".5" r=".5">
+    <stop offset="0" stop-color="#ffb070" stop-opacity=".35"/><stop offset="1" stop-color="#ffb070" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="bottleGlass" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#bfe8c8" stop-opacity=".55"/><stop offset=".5" stop-color="#7fbf9a" stop-opacity=".22"/><stop offset="1" stop-color="#3f7f5a" stop-opacity=".5"/>
+  </linearGradient>
   <radialGradient id="vignette" cx=".5" cy=".45" r=".75">
     <stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".6"/>
   </radialGradient>
@@ -152,6 +158,8 @@
   </mask>
   <filter id="blur6" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
   <filter id="blur2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2"/></filter>
+  <clipPath id="flumeClip"><rect x="668" y="812" width="264" height="102"/></clipPath>
+  <clipPath id="bottleClip"><rect x="266" y="712" width="88" height="36" rx="16"/></clipPath>
   <clipPath id="troughClip"><rect x="404" y="598" width="182" height="40"/></clipPath>
 </defs>
 
@@ -281,6 +289,59 @@
 </g>
 </a>
 
+<!-- the price of freedom: a ship in a bottle on the lower shelf -->
+<a class="door" href="freedom/" data-label="the price of freedom" data-sub="your savings rate decides how long the voyage to free time is">
+<g>
+  <ellipse cx="312" cy="751" rx="52" ry="4" fill="#000" opacity=".35"/>
+  <path d="M282 750 l6 -10 h8 l6 10 M326 750 l6 -10 h8 l6 10" fill="#7a5034" class="thin"/>
+  <g clip-path="url(#bottleClip)">
+    <rect x="266" y="712" width="88" height="36" fill="#0f2a33"/>
+    <path id="bottleSea" d="" fill="#2f8aa0"/>
+    <path d="M330 738 q8 -10 18 0z" fill="#d9b77a" class="thin"/>
+    <path d="M339 734 q-1 -10 2 -16 M341 718 q-8 0 -10 4 M341 718 q8 -2 10 3 M341 718 q-4 -6 -10 -6 M341 718 q6 -6 10 -4" fill="none" stroke="#3d7d44" stroke-width="2" stroke-linecap="round"/>
+    <g id="bottleBoat">
+      <path d="M-11 0 h22 l-4 5 h-14z" fill="#8a4a2c" class="thin"/>
+      <path d="M0 0 v-20" stroke="#1d2026" stroke-width="1.4"/>
+      <path d="M1 -19 q9 9 9 17 h-9z" fill="#f6f2e6" class="thin"/><path d="M-1 -16 q-7 8 -8 14 h8z" fill="#f6f2e6" class="thin"/>
+      <path d="M0 -20 l5 2 l-5 2" fill="#e04848"/>
+    </g>
+  </g>
+  <rect x="266" y="712" width="88" height="36" rx="16" fill="url(#bottleGlass)" stroke="#cfeedd" stroke-opacity=".8" stroke-width="2"/>
+  <path d="M354 722 h18 q4 0 4 4 v8 q0 4 -4 4 h-18" fill="url(#bottleGlass)" stroke="#cfeedd" stroke-opacity=".8" stroke-width="2"/>
+  <rect x="374" y="723" width="12" height="14" rx="3" fill="#b8865a" class="thin"/>
+  <path d="M276 718 q30 -5 66 0" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="2.4" stroke-linecap="round"/>
+  <g class="tag"><rect x="262" y="762" width="124" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="324" y="775" text-anchor="middle">the price of freedom</text></g>
+</g>
+</a>
+
+<!-- how long does it stay?: espresso, wine glass and an hourglass on the lower shelf -->
+<a class="door" href="half-lives/" data-label="how long does it stay?" data-sub="coffee, alcohol, nicotine: watch them rise and fade in your blood">
+<g>
+  <ellipse cx="490" cy="751" rx="82" ry="4" fill="#000" opacity=".35"/>
+  <ellipse cx="430" cy="728" rx="34" ry="30" fill="url(#steamGlow)" class="glow"/>
+  <g id="steam" fill="none" stroke="#e8e0d0" stroke-width="2" stroke-linecap="round" opacity=".7"></g>
+  <ellipse cx="430" cy="749" rx="22" ry="4" fill="#efe8d6" class="thin"/>
+  <path d="M416 728 h28 q0 20 -14 20 q-14 0 -14 -20z" fill="#f4efe2" class="ink"/>
+  <path d="M444 732 q10 0 8 8 q-2 6 -10 4" fill="none" stroke="#0d1110" stroke-width="3"/>
+  <path d="M444 732 q10 0 8 8 q-2 6 -10 4" fill="none" stroke="#f4efe2" stroke-width="1.4"/>
+  <ellipse cx="430" cy="729" rx="13" ry="2.6" fill="#5a2e14"/>
+  <path d="M470 750 h22 M481 750 v-20" stroke="#d9f3ff" stroke-opacity=".8" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M468 704 h26 q0 26 -13 26 q-13 0 -13 -26z" fill="url(#glass)" stroke="#d9f3ff" stroke-opacity=".8" stroke-width="2"/>
+  <path d="M469.5 716 h23 q-2 13 -11.5 13 q-9.5 0 -11.5 -13z" fill="#8a1f3a"/>
+  <path d="M472 708 q2 12 6 18" stroke="#fff" stroke-opacity=".5" stroke-width="1.6" fill="none"/>
+  <g transform="translate(540 0)">
+    <rect x="-20" y="700" width="40" height="6" rx="2" fill="url(#wood)" class="thin"/>
+    <rect x="-20" y="744" width="40" height="6" rx="2" fill="url(#wood)" class="thin"/>
+    <path d="M-16 706 v38 M16 706 v38" stroke="#5a3c24" stroke-width="3"/>
+    <path d="M-12 706 h24 q0 12 -10 17 q10 5 10 21 h-24 q0 -16 10 -21 q-10 -5 -10 -17z" fill="url(#glass)" stroke="#d9f3ff" stroke-opacity=".8" stroke-width="1.6"/>
+    <path id="sandTop" d="" fill="#f0c86a"/>
+    <path id="sandBot" d="" fill="#f0c86a"/>
+    <path id="sandStream" d="M0 723 v20" stroke="#f0c86a" stroke-width="1.2"/>
+  </g>
+  <g class="tag"><rect x="420" y="762" width="140" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="490" y="775" text-anchor="middle">how long does it stay?</text></g>
+</g>
+</a>
+
 <a class="deco flytrap" data-info="flytrap" tabindex="0" role="button" aria-label="Venus flytrap"><g id="flytrap"></g></a>
 
 <!-- three sisters (invest) -->
@@ -293,8 +354,8 @@
 <g id="jars"></g>
 </a>
 
-<!-- ============ centre: glass brain on a pedestal ============ -->
-<a class="door" href="glass-brain/" data-label="glass brain" data-sub="a brain of light — click to stimulate">
+<!-- ============ centre: a brain under a bell jar, with a stopwatch ============ -->
+<a class="door" href="speed-of-thought/" data-label="one second in the brain" data-sub="what your brain does, millisecond by millisecond, when you hear, read or say a word">
 <g>
   <ellipse cx="800" cy="520" rx="120" ry="110" fill="url(#brainGlow)" class="glow"/>
   <path d="M756 760 l8 -150 h72 l8 150z" fill="#d8d2c2" class="ink"/>
@@ -306,7 +367,8 @@
   <path d="M762 580 V500 q0 -50 38 -50 q38 0 38 50 V580z" fill="url(#glass)" stroke="#d9f3ff" stroke-opacity=".6" stroke-width="2"/>
   <circle cx="800" cy="446" r="6" fill="#d9f3ff" fill-opacity=".4" stroke="#d9f3ff" stroke-opacity=".6"/>
   <path d="M772 566 V506 q0 -30 18 -40" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="3"/>
-  <g class="tag"><rect x="752" y="772" width="96" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="800" y="785" text-anchor="middle">glass brain</text></g>
+  <g id="stopwatch"></g>
+  <g class="tag"><rect x="730" y="772" width="140" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="800" y="785" text-anchor="middle">one second in the brain</text></g>
 </g>
 </a>
 
@@ -331,6 +393,19 @@
     <path d="M470 340 L528 338" stroke="#0d1110" stroke-width="1.2"/>
   </g>
   <g class="tag"><rect x="466" y="378" width="110" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="521" y="391" text-anchor="middle">how things fly</text></g>
+</g>
+</a>
+
+<!-- the Beaufort scale: a windsock on the left column, flapping in a wind that comes and goes -->
+<a class="door" href="beaufort/" data-label="the Beaufort scale" data-sub="force 0 to 12, painted — and what each force means on the water">
+<g>
+  <path d="M136 318 h56" stroke="#0d1110" stroke-width="7" stroke-linecap="round"/>
+  <path d="M136 318 h56" stroke="url(#brass)" stroke-width="4" stroke-linecap="round"/>
+  <rect x="130" y="306" width="14" height="26" rx="3" fill="#e9e4d6" class="thin"/>
+  <path d="M192 318 v10" stroke="#0d1110" stroke-width="2"/>
+  <g id="sock"></g>
+  <g id="sockRing"></g>
+  <g class="tag"><rect x="78" y="344" width="104" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="130" y="357" text-anchor="middle">Beaufort scale</text></g>
 </g>
 </a>
 
@@ -367,31 +442,42 @@
 
 <a class="deco" data-info="soon" tabindex="0" role="button" aria-label="Seedlings: experiments coming soon"><g id="seedlings"></g></a>
 
-<!-- redacted: newspaper on a stool -->
-<a class="door" href="redacted/" data-label="redacted" data-sub="a wikipedia page, blacked out — type words to un-redact it">
+<!-- cowries to crypto: a bowl of shells and coins on a stool -->
+<a class="door" href="money-shells/" data-label="from cowries to crypto" data-sub="shells, stones, coins, cigarettes, bits: what people have used as money">
 <g>
   <path d="M556 840 l-10 90 M640 840 l10 90 M574 840 l-4 96 M622 840 l4 96" stroke="#5a3c24" stroke-width="7" stroke-linecap="round"/>
   <path d="M556 884 h84" stroke="#5a3c24" stroke-width="5"/>
   <ellipse cx="598" cy="840" rx="58" ry="12" fill="url(#wood)" class="ink"/>
-  <g transform="rotate(-8 598 820)">
-    <path d="M552 836 l6 -48 h82 l-4 48z" fill="#efe8d6" class="ink"/>
-    <text x="598" y="802" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="600" font-size="10" fill="#222">THE DAILY ████</text>
-    <g fill="#1a1a1a"><rect x="562" y="808" width="30" height="5"/><rect x="596" y="808" width="36" height="5"/><rect x="561" y="817" width="44" height="5"/><rect x="610" y="817" width="20" height="5"/><rect x="560" y="826" width="22" height="4"/></g>
-    <rect x="586" y="827" width="40" height="2" fill="#9a9384"/>
-  </g>
-  <g class="tag"><rect x="556" y="944" width="84" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="598" y="957" text-anchor="middle">redacted</text></g>
+  <g id="coinStack"></g>
+  <path d="M560 832 q38 30 76 0 z" fill="#3d6b72" class="ink"/>
+  <path d="M566 834 q32 20 64 0" fill="none" stroke="#9fd0d4" stroke-width="2" opacity=".6"/>
+  <g id="cowries"></g>
+  <g class="tag"><rect x="540" y="944" width="116" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="598" y="957" text-anchor="middle">cowries to crypto</text></g>
 </g>
 </a>
 
-<!-- mycelium: raised bed of glowing mushrooms -->
-<a class="door" href="mycelium/" data-label="mycelium" data-sub="grow a glowing fungal network, then some facts that'll mess with you">
+<!-- the perfect wave: a wave flume with a little beach -->
+<a class="door" href="waves/" data-label="the perfect wave" data-sub="real swell physics: why a wave spills, plunges or surges">
 <g>
-  <ellipse cx="800" cy="880" rx="190" ry="60" fill="url(#shroomGlow)" class="glow"/>
-  <path d="M664 860 h272 l-10 60 h-252z" fill="#4a2e1c" class="ink"/>
-  <g id="hyphae" fill="none" stroke="#7dffcf" stroke-width="1.2" opacity=".75" class="glow"></g>
-  <rect x="656" y="850" width="288" height="14" rx="3" fill="url(#wood)" class="ink"/>
-  <g id="shrooms"></g>
-  <g class="tag"><rect x="752" y="926" width="96" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="800" y="939" text-anchor="middle">mycelium</text></g>
+  <ellipse cx="800" cy="874" rx="200" ry="56" fill="url(#flumeGlow)" class="glow"/>
+  <path d="M684 924 l-8 26 M916 924 l8 26 M760 924 v22 M840 924 v22" stroke="#5a3c24" stroke-width="7" stroke-linecap="round"/>
+  <rect x="662" y="912" width="276" height="16" rx="3" fill="url(#wood)" class="ink"/>
+  <rect x="668" y="812" width="264" height="102" fill="#16303a"/>
+  <g clip-path="url(#flumeClip)">
+    <path id="flumeWater" d="" fill="url(#water)"/>
+    <path id="flumeLine" d="" fill="none" stroke="#c8f4ff" stroke-width="2" opacity=".85"/>
+    <path id="flumeFoam" d="" fill="none" stroke="#f4fbff" stroke-width="3" stroke-linecap="round" opacity=".9"/>
+    <path d="M770 914 L932 842 V914z" fill="#d9b77a" class="thin"/>
+    <path d="M790 914 L932 852" stroke="#b8935a" stroke-width="1.4" stroke-dasharray="3 6"/>
+    <g id="flumeSpray" fill="#f4fbff"></g>
+  </g>
+  <path d="M676 820 v84" stroke="#3a3f48" stroke-width="5"/>
+  <rect x="670" y="816" width="12" height="20" rx="2" fill="#7a868f" class="thin"/>
+  <rect x="668" y="812" width="264" height="102" fill="url(#glass)" stroke="#d9f3ff" stroke-opacity=".6" stroke-width="2.4"/>
+  <path d="M668 812 h264" stroke="#a9b3bb" stroke-width="5" stroke-linecap="round"/>
+  <path d="M688 826 v60" stroke="#fff" stroke-opacity=".3" stroke-width="3" stroke-linecap="round"/>
+  <g font-family="ui-monospace, Menlo, monospace" font-size="8" fill="#d9f3ff" opacity=".55"><text x="914" y="826">1m</text><path d="M926 832 h4 M926 852 h4 M926 872 h4 M926 892 h4" stroke="#d9f3ff"/></g>
+  <g class="tag"><rect x="742" y="934" width="116" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="800" y="947" text-anchor="middle">the perfect wave</text></g>
 </g>
 </a>
 
@@ -444,10 +530,10 @@ const GREENS = ["#2f6b3a", "#3d7d44", "#28572f", "#4a8a4c"];
 
 /* ============ the plain list ============ */
 const GROUPS = [
-  ["sea & sky", [["foil-designer/", "foil designer", "shape a front wing, get star ratings — speed, glide, carve"], ["foil-rl/", "foil pilot", "a stickman learns to wing foil"], ["aero/", "how things fly", "planes, foils, stalls — potential-flow playground"], ["space/", "space", "zoom from your hand to the observable universe"]]],
-  ["numbers, sound, scale", [["tokens/", "token footprint", "what an LLM prompt costs the planet"], ["correlation/", "what does r look like?", "correlation as two coloured vectors"], ["economy/", "orders of magnitude", "french public money, to scale"], ["invest/", "three sisters", "how investing grows — three paths"], ["codec/", "codec", "how sound gets squeezed"]]],
-  ["minds & society", [["glass-brain/", "glass brain", "a brain of light — click to stimulate"], ["mindblown/", "mind, blown", "things you probably believe that aren't quite true"], ["substances/", "what's actually dangerous?", "drug harms, deaths and the law — EN / FR"]]],
-  ["play & grow", [["redacted/", "redacted", "a wikipedia page, blacked out"], ["mycelium/", "mycelium", "grow a glowing fungal network"]]],
+  ["sea & sky", [["foil-designer/", "foil designer", "shape a front wing, get star ratings — speed, glide, carve"], ["foil-rl/", "foil pilot", "a stickman learns to wing foil"], ["aero/", "how things fly", "planes, foils, stalls — potential-flow playground"], ["waves/", "the perfect wave", "why a wave spills, plunges or surges"], ["beaufort/", "the Beaufort scale", "force 0 to 12, painted — and what each means on the water"], ["space/", "space", "zoom from your hand to the observable universe"]]],
+  ["money & scale", [["freedom/", "the price of freedom", "savings rate → years until your time is yours"], ["invest/", "three sisters", "how investing grows — three paths"], ["money-shells/", "from cowries to crypto", "what humans have used as money"], ["economy/", "orders of magnitude", "french public money, to scale"], ["tokens/", "token footprint", "what an LLM prompt costs the planet"]]],
+  ["body & mind", [["speed-of-thought/", "one second in the brain", "hearing, reading, saying a word — in milliseconds"], ["half-lives/", "how long does it stay?", "coffee, alcohol, nicotine: curves in your blood"], ["substances/", "what's actually dangerous?", "drug harms, deaths and the law — EN / FR"], ["mindblown/", "mind, blown", "things you probably believe that aren't quite true"]]],
+  ["signals", [["correlation/", "what does r look like?", "correlation as two coloured vectors"], ["codec/", "codec", "how sound gets squeezed"]]],
 ];
 {
   const nav = $("list");
@@ -466,7 +552,7 @@ const INFO = {
   monstera:   { t: "Monstera", l: "Monstera deliciosa", p: "The holes are thought to let light through to its own lower leaves and wind through without tearing. Its fruit tastes like pineapple and banana; eat it unripe and needle-shaped oxalate crystals sting your mouth." },
   banana:     { t: "Banana", l: "Musa", p: "Not a tree but a giant herb: the 'trunk' is leaf sheaths rolled tightly together. Botanically, bananas are berries and strawberries are not." },
   lemon:      { t: "Lemon tree", l: "Citrus × limon", p: "Menton, on the Côte d'Azur, has held a lemon festival every February since the 1930s: giant sculptures made of tonnes of citrus, rebuilt every year." },
-  orchid:     { t: "Moth orchid", l: "Phalaenopsis", p: "Orchid seeds are as fine as dust and carry no food. To germinate, each one has to be colonised by a fungus that feeds it, so the mycelium bed is the orchid's best friend. Vanilla is an orchid too." },
+  orchid:     { t: "Moth orchid", l: "Phalaenopsis", p: "Orchid seeds are as fine as dust and carry no food. To germinate, each one has to be colonised by a fungus that feeds it: no fungus, no orchid. Vanilla is an orchid too." },
   cactus:     { t: "Cacti", l: "Cactaceae", p: "A saguaro can take fifty to seventy-five years to grow its first arm. Almost every cactus is from the Americas; the one exception, Rhipsalis, probably reached Africa inside a bird." },
   strelitzia: { t: "Bird of paradise", l: "Strelitzia reginae", p: "The orange-and-blue flower is a landing pad. When a sunbird perches on the blue petals they open under its weight and dust its feet with pollen. It is named after Queen Charlotte, born a duchess of Mecklenburg-Strelitz." },
   soon:       { t: "Seedlings", l: "coming soon", p: "Two experiments are still sprouting: movie → brain (predicting brain responses to a film, à la TRIBE) and Python running right in your browser." },
@@ -550,10 +636,6 @@ bench($("benches"), 230, 610, 640);
 bench($("benches"), 1036, 1300, 640);
 {
   const g = $("benches");
-  pot(g, 300, 752, 40, 28); pot(g, 300, 726, 36, 24);
-  el("path", { d: "M380 752 h52 v-38 h-52z", fill: "#6f8a8a", class: "ink" }, g);
-  el("path", { d: "M432 728 l34 -22", stroke: "#6f8a8a", "stroke-width": 7, "stroke-linecap": "round" }, g);
-  el("path", { d: "M392 714 q14 -26 30 0", fill: "none", stroke: "#4a6060", "stroke-width": 5 }, g);
   for (let i = 0; i < 4; i++) pot(g, 1090 + i * 52, 752, 34, 24);
 }
 
@@ -658,20 +740,106 @@ for (let i = 0; i < 4; i++) el("circle", { cx: 1433, cy: 200, r: 10, fill: "#b9c
   el("circle", { cx: 954, cy: 768, r: 6, fill: "#6fae3a", class: "thin" }, g);
   pot(g, 954, 782, 54, 26);
 }
+/* ============ new props: stopwatch, cowries, steam, windsock ============ */
 {
-  const h = $("hyphae");
-  for (let i = 0; i < 18; i++) {
-    let x = rr(680, 920), y = rr(872, 912), d = `M${x.toFixed(0)} ${y.toFixed(0)}`;
-    for (let k = 0; k < 4; k++) { x += rr(-30, 30); y = Math.max(870, Math.min(916, y + rr(-8, 8))); d += ` Q${(x + rr(-10, 10)).toFixed(0)} ${(y + rr(-6, 6)).toFixed(0)} ${x.toFixed(0)} ${y.toFixed(0)}`; }
-    el("path", { d }, h);
-  }
-  const g = $("shrooms");
-  for (const [x, hgt, w, c] of [[700, 30, 22, "#7dffcf"], [728, 44, 30, "#a9ffe0"], [760, 22, 16, "#7dffcf"], [800, 54, 40, "#b8fff0"], [842, 30, 22, "#7dffcf"], [872, 40, 26, "#a9ffe0"], [904, 24, 18, "#7dffcf"]]) {
-    el("rect", { x: x - w * .14, y: 852 - hgt, width: w * .28, height: hgt, rx: 3, fill: "#e8f5ee", class: "thin" }, g);
-    el("path", { d: `M${x - w / 2} ${852 - hgt + 2} q${w / 2} -${w * .9} ${w} 0z`, fill: c, class: "thin glow", style: `animation-delay:-${rr(0, 3).toFixed(1)}s` }, g);
-    el("circle", { cx: x - w * .15, cy: 852 - hgt - w * .2, r: w * .07, fill: "#fff", opacity: .8 }, g);
+  const g = $("stopwatch");
+  el("path", { d: "M800 660 v-8 M794 650 h12", stroke: "#8a6420", "stroke-width": 4, "stroke-linecap": "round" }, g);
+  el("circle", { cx: 800, cy: 682, r: 22, fill: "url(#brass)", class: "ink" }, g);
+  el("circle", { cx: 800, cy: 682, r: 16, fill: "#f6f2e6", class: "thin" }, g);
+  for (let k = 0; k < 12; k++) { const a = k * Math.PI / 6; el("path", { d: `M${(800 + Math.sin(a) * 13).toFixed(1)} ${(682 - Math.cos(a) * 13).toFixed(1)} L${(800 + Math.sin(a) * 15.5).toFixed(1)} ${(682 - Math.cos(a) * 15.5).toFixed(1)}`, stroke: "#1d2026", "stroke-width": k % 3 ? 1 : 2 }, g); }
+  el("path", { id: "swHand", d: "M800 682 V669", stroke: "#c8323a", "stroke-width": 1.8, "stroke-linecap": "round" }, g);
+  el("circle", { cx: 800, cy: 682, r: 2, fill: "#1d2026" }, g);
+}
+{
+  const g = $("coinStack");
+  for (let i = 0; i < 5; i++) el("ellipse", { cx: 624, cy: 836 - i * 4, rx: 11, ry: 3.6, fill: i === 4 ? "#ffd86a" : "#d6a94f", class: "thin" }, g);
+  el("circle", { cx: 568, cy: 824, r: 9, fill: "#f2a33a", class: "thin" }, g);
+  el("text", { x: 568, y: 828, "text-anchor": "middle", "font-family": "Inter, sans-serif", "font-weight": 600, "font-size": 11, fill: "#fff8e0" }, g).textContent = "₿";
+  const c = $("cowries");
+  for (const [x, y, a] of [[578, 828, -20], [592, 824, 10], [606, 828, 30], [586, 832, 60], [600, 833, -40], [614, 832, 0]]) {
+    const t = el("g", { transform: `translate(${x} ${y}) rotate(${a})` }, c);
+    el("ellipse", { rx: 7, ry: 4.6, fill: "#f4ead2", class: "thin" }, t);
+    el("path", { d: "M-5 0 h10", stroke: "#8a6a3a", "stroke-width": 1.2 }, t);
+    el("path", { d: "M-3 -1 v2 M0 -1 v2 M3 -1 v2", stroke: "#8a6a3a", "stroke-width": .7 }, t);
   }
 }
+for (let i = 0; i < 3; i++) el("path", { d: `M${424 + i * 6} 722 q-5 -8 0 -16 q5 -8 0 -16`, class: "puff", style: `animation-delay:${i * 1.3}s;animation-duration:4s` }, $("steam"));
+const sock = $("sock"), sockRing = $("sockRing");
+function drawSock(T) {
+  // the wind breathes between force 2 and force 5: the sock lifts as it rises
+  const wind = .5 + .5 * Math.sin(T * .35) * Math.sin(T * .13 + 1);
+  let x = 192, y = 330, ang = 1.25 - wind * 1.05, r = 12;
+  const pts = [[x, y, r]];
+  for (let k = 0; k < 5; k++) {
+    ang += .06 * (1 - wind) + .07 * Math.sin(T * (2 + wind * 4) - k * 1.1) * (.4 + wind);
+    x += Math.cos(ang) * 20; y += Math.sin(ang) * 20; r *= .86;
+    pts.push([x, y, r, ang]);
+  }
+  sock.textContent = "";
+  for (let k = 0; k < 5; k++) {
+    const [x0, y0, r0] = pts[k], [x1, y1, r1, a1] = pts[k + 1];
+    const a0 = k ? pts[k][3] : pts[1][3];
+    const nx0 = -Math.sin(a0), ny0 = Math.cos(a0), nx1 = -Math.sin(a1), ny1 = Math.cos(a1);
+    el("path", { d: `M${(x0 + nx0 * r0).toFixed(1)} ${(y0 + ny0 * r0).toFixed(1)} L${(x1 + nx1 * r1).toFixed(1)} ${(y1 + ny1 * r1).toFixed(1)} L${(x1 - nx1 * r1).toFixed(1)} ${(y1 - ny1 * r1).toFixed(1)} L${(x0 - nx0 * r0).toFixed(1)} ${(y0 - ny0 * r0).toFixed(1)}z`, fill: k % 2 ? "#f4efe6" : "#e8562a", class: "thin" }, sock);
+  }
+  const [ex, ey, er, ea] = pts[5];
+  el("ellipse", { cx: ex.toFixed(1), cy: ey.toFixed(1), rx: 2.5, ry: er.toFixed(1), fill: "#7a2a14", class: "thin", transform: `rotate(${(ea * 180 / Math.PI).toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)})` }, sock);
+  sockRing.textContent = "";
+  el("ellipse", { cx: 192, cy: 330, rx: 4, ry: 13, fill: "none", stroke: "#0d1110", "stroke-width": 4, transform: `rotate(${((pts[1][3] - Math.PI / 2) * 180 / Math.PI).toFixed(1)} 192 330)` }, sockRing);
+  el("ellipse", { cx: 192, cy: 330, rx: 4, ry: 13, fill: "none", stroke: "url(#brass)", "stroke-width": 2, transform: `rotate(${((pts[1][3] - Math.PI / 2) * 180 / Math.PI).toFixed(1)} 192 330)` }, sockRing);
+}
+// flume: a single swell shoals on the beach, steepens, plunges, then rushes up as foam
+const flL = $("flumeLine"), flW = $("flumeWater"), flF = $("flumeFoam"), flS = $("flumeSpray");
+const sandY = x => 914 - (x - 770) * (72 / 162);
+function drawFlume(T) {
+  const P = 4.2, ph = (T % P) / P;
+  const c = 650 + ph * 260;                  // crest position
+  const shoal = Math.max(0, Math.min(1, (c - 760) / 110));
+  const H = 9 + shoal * 18;                  // height grows as the water gets shallow
+  const broken = c > 872, fade = broken ? Math.max(0, 1 - (c - 872) / 30) : 1;
+  const lean = shoal * shoal * 1.5 * fade;   // and the front leans forward, until it falls
+  const pts = [];
+  for (let x = 664; x <= 936; x += 3) {
+    const u = (x - c) / 26;
+    let h = H * Math.exp(-u * u) * fade;
+    h += 1.6 * Math.sin(x * .09 - T * 3);
+    const px = x + lean * h;
+    pts.push([px, 864 - h]);
+  }
+  let d = "M664 920 L664 864";
+  for (const [x, y] of pts) d += ` L${x.toFixed(1)} ${y.toFixed(1)}`;
+  flW.setAttribute("d", d + " L936 920z");
+  flL.setAttribute("d", "M" + pts.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join(" L"));
+  // foam line on the beach after the break
+  if (broken) {
+    const run = Math.min(1, (c - 872) / 38), xf = 890 + run * 26;
+    flF.setAttribute("d", `M${(xf - 30).toFixed(1)} ${sandY(xf - 30).toFixed(1)} L${xf.toFixed(1)} ${sandY(xf).toFixed(1)}`);
+    flF.setAttribute("opacity", (.95 - run * .6).toFixed(2));
+  } else flF.setAttribute("d", "");
+  flS.textContent = "";
+  if (c > 860 && c < 900) for (let i = 0; i < 7; i++) {
+    const k = (c - 860) / 40, a = i * .9 + 1;
+    el("circle", { cx: (c + 8 + Math.cos(a) * 14 * k).toFixed(1), cy: (862 - H * .9 - Math.sin(a) * 10 * k).toFixed(1), r: (2.2 - k * 1.4).toFixed(2) }, flS);
+  }
+}
+// hourglass: the top bulb empties over 20 s, then flips
+const sTop = $("sandTop"), sBot = $("sandBot");
+function drawSand(T) {
+  const f = (T % 20) / 20;
+  const ht = 13 * (1 - f), hb = 15 * f;
+  sTop.setAttribute("d", `M${-10 + (13 - ht) * .55} ${723 - ht} h${20 - (13 - ht) * 1.1} L0 723z`);
+  sBot.setAttribute("d", `M-11 744 h22 q-2 ${-hb * .5} -11 ${-hb} q-9 ${hb * .5} -11 ${hb}z`);
+}
+// ship in a bottle: a little sea and a boat that bobs
+const bSea = $("bottleSea"), bBoat = $("bottleBoat");
+function drawBottle(T) {
+  let d = "M266 748 V740";
+  for (let x = 266; x <= 354; x += 4) d += ` L${x} ${(737 + Math.sin(x * .2 + T * 2) * 1.4).toFixed(1)}`;
+  bSea.setAttribute("d", d + " V748z");
+  bBoat.setAttribute("transform", `translate(${(300 + Math.sin(T * .5) * 6).toFixed(1)} ${(737 + Math.sin(T * 2 + 6.8) * 1.4).toFixed(1)}) rotate(${(Math.sin(T * 1.6) * 5).toFixed(1)})`);
+}
+const swHand = $("swHand");
+
 
 /* ============ hanging plants ============ */
 function basket(g, x, y) {
@@ -795,7 +963,7 @@ for (let i = 0; i < 14; i++) flies.push({ e: el("circle", { r: 2.2, fill: "#e8ff
 
 /* ============ animation ============ */
 const foiler = $("foiler"), wave = $("troughWave");
-let T = 0, last = performance.now();
+let T = 3.2, last = performance.now();
 function frame(now) {
   const dt = Math.min(.05, (now - last) / 1000); last = now; T += dt;
   const u = (T * .12) % 2, dir = u < 1 ? 1 : -1, s = u < 1 ? u : 2 - u;
@@ -804,6 +972,8 @@ function frame(now) {
   let d = "M400 646 V612";
   for (let x = 400; x <= 590; x += 10) d += ` L${x} ${(610 + Math.sin(x * .08 + T * 3) * 2).toFixed(1)}`;
   wave.setAttribute("d", d + " V646z");
+  drawSock(T); drawFlume(T); drawSand(T); drawBottle(T);
+  const sa = (T % 1) * Math.PI * 2; swHand.setAttribute("d", `M800 682 L${(800 + Math.sin(sa) * 13).toFixed(1)} ${(682 - Math.cos(sa) * 13).toFixed(1)}`);
   for (const f of flies) { f.p += dt; f.e.setAttribute("cx", (f.x + Math.sin(f.p * .7) * 40).toFixed(1)); f.e.setAttribute("cy", (f.y + Math.sin(f.p * 1.1) * 26).toFixed(1)); f.e.setAttribute("opacity", (.4 + .6 * Math.max(0, Math.sin(f.p * 2))).toFixed(2)); }
   if (!reduced) requestAnimationFrame(frame);
 }
