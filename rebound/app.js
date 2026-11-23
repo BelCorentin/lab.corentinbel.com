@@ -71,8 +71,8 @@ const store = {
   const W = 640, H = 270, X0 = 118, XMAX = 600, MAXL = 1300;
   const sx = l => X0 + (XMAX - X0) * Math.min(l, MAXL) / MAXL;
   function bar(y, label, sub, parts) {
-    el("text", { x: 8, y: y + 20, "font-family": "Fraunces,serif", "font-weight": 600, "font-size": 17, fill: "#1b1a22" }, svg, label);
-    el("text", { x: 8, y: y + 38, "font-size": 11.5, fill: "#6b5f52" }, svg, sub);
+    el("text", { x: 8, y: y + 20, "font-family": "Oswald,sans-serif", "font-weight": 700, "font-size": 15.5, "letter-spacing": ".03em", fill: "#141210" }, svg, label.toUpperCase());
+    el("text", { x: 8, y: y + 38, "font-size": 11.5, fill: "#5f5852" }, svg, sub);
     let x = X0;
     for (const [w, fill, stroke, hatch] of parts) {
       if (w <= 0) continue;
@@ -87,25 +87,25 @@ const store = {
     const E = before - paper, A = before - real, R = E > 0 ? 1 - A / E : 0;
     $("#newConsV").textContent = nw.toFixed(1) + " L/100 km";
     $("#extraKmV").textContent = "+" + Math.round(ex * 100) + " % km";
-    svg.innerHTML = `<defs><pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#efb0a0"/><path d="M0 0V7" stroke="#c0503a" stroke-width="2.4"/></pattern></defs>`;
+    svg.innerHTML = `<defs><pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#ffd2bf"/><path d="M0 0V7" stroke="#b8170e" stroke-width="2.6"/></pattern></defs>`;
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
     for (let l = 0; l <= MAXL; l += 200) {
-      el("line", { x1: sx(l), x2: sx(l), y1: 14, y2: 228, stroke: "#e2cfac", "stroke-width": 1 }, svg);
-      el("text", { x: sx(l), y: 246, "text-anchor": "middle", "font-size": 11, fill: "#6b5f52" }, svg, l);
+      el("line", { x1: sx(l), x2: sx(l), y1: 14, y2: 228, stroke: "#cfc8bd", "stroke-width": 1 }, svg);
+      el("text", { x: sx(l), y: 246, "text-anchor": "middle", "font-size": 11, fill: "#5f5852" }, svg, l);
     }
-    el("text", { x: XMAX, y: 264, "text-anchor": "end", "font-size": 11, fill: "#6b5f52" }, svg, T.L);
-    bar(14, T.before, `${OLD} L/100 · ${KM / 1000}k km`, [[before, "#3a3530", "#1b1a22"]]);
-    bar(84, T.paper, `${nw} L/100 · ${KM / 1000}k km`, [[paper, "#d9761e", "#1b1a22"], [E, "#9bc8b8", "#3f7a6c"]]);
+    el("text", { x: XMAX, y: 264, "text-anchor": "end", "font-size": 11, fill: "#5f5852" }, svg, T.L);
+    bar(14, T.before, `${OLD} L/100 · ${KM / 1000}k km`, [[before, "#2a2522", "#141210"]]);
+    bar(84, T.paper, `${nw} L/100 · ${KM / 1000}k km`, [[paper, "#ff6a13", "#141210"], [E, "#f5cf1d", "#141210"]]);
     const kmReal = Math.round(KM * (1 + ex) / 100) / 10;
-    if (real <= before) bar(154, T.real, `${nw} L/100 · ${kmReal}k km`, [[paper, "#d9761e", "#1b1a22"], [real - paper, 0, "#c0503a", 1], [A, "#9bc8b8", "#3f7a6c"]]);
-    else bar(154, T.real, `${nw} L/100 · ${kmReal}k km`, [[before, "#d9761e", "#1b1a22"], [real - before, "#c0503a", "#1b1a22"]]);
-    el("line", { x1: sx(before), x2: sx(before), y1: 8, y2: 230, stroke: "#1b1a22", "stroke-width": 1.6, "stroke-dasharray": "4 4" }, svg);
+    if (real <= before) bar(154, T.real, `${nw} L/100 · ${kmReal}k km`, [[paper, "#ff6a13", "#141210"], [real - paper, 0, "#b8170e", 1], [A, "#f5cf1d", "#141210"]]);
+    else bar(154, T.real, `${nw} L/100 · ${kmReal}k km`, [[before, "#ff6a13", "#141210"], [real - before, "#b8170e", "#141210"]]);
+    el("line", { x1: sx(before), x2: sx(before), y1: 8, y2: 230, stroke: "#141210", "stroke-width": 1.8, "stroke-dasharray": "4 4" }, svg);
     // legend
-    const lg = [["#9bc8b8", T.saved], [0, T.eaten], ["#c0503a", T.extra]];
+    const lg = [["#f5cf1d", T.saved], [0, T.eaten], ["#b8170e", T.extra]];
     let lx = X0;
     for (const [f, t] of lg) {
-      el("rect", { x: lx, y: 254, width: 12, height: 12, fill: f || "url(#hatch)", stroke: "#1b1a22", "stroke-width": 1.2, rx: 2 }, svg);
-      const tx = el("text", { x: lx + 17, y: 264, "font-size": 11.5, fill: "#1b1a22" }, svg, t);
+      el("rect", { x: lx, y: 254, width: 12, height: 12, fill: f || "url(#hatch)", stroke: "#141210", "stroke-width": 1.4, rx: 0 }, svg);
+      const tx = el("text", { x: lx + 17, y: 264, "font-size": 11.5, fill: "#141210" }, svg, t);
       lx += 26 + t.length * 6.2;
     }
     const f = nw / OLD;
@@ -122,22 +122,22 @@ const store = {
 {
   const svg = $("#scales");
   if (svg) {
-    const cx = 170, cy = 155, cols = ["#d9761e", "#3f7fb0", "#7a5aa8", "#3f7a6c"];
+    const cx = 170, cy = 155, cols = ["#ff6a13", "#e8550c", "#b3140c", "#4a5560"];
     svg.setAttribute("viewBox", "0 0 820 300");
     const rs = [26, 70, 112, 148];
     for (let i = 3; i >= 1; i--) {
-      el("circle", { cx, cy, r: rs[i], fill: cols[i], "fill-opacity": .12, stroke: cols[i], "stroke-width": 2.4 }, svg);
+      el("circle", { cx, cy, r: rs[i], fill: cols[i], "fill-opacity": .13, stroke: cols[i], "stroke-width": 3.2 }, svg);
     }
-    el("circle", { cx, cy, r: rs[0], fill: "#f6c56b", stroke: "#1b1a22", "stroke-width": 2.4 }, svg);
-    el("text", { x: cx, y: cy + 5, "text-anchor": "middle", "font-family": "Fraunces,serif", "font-size": 15, "font-weight": 600 }, svg, "−50 %");
+    el("circle", { cx, cy, r: rs[0], fill: "#f5cf1d", stroke: "#141210", "stroke-width": 3 }, svg);
+    el("text", { x: cx, y: cy + 5, "text-anchor": "middle", "font-family": "Oswald,sans-serif", "font-size": 15, "font-weight": 700, fill: "#141210" }, svg, "−50 %");
     const ys = [140, 180, 220, 262];
     svg.setAttribute("viewBox", "0 0 820 310");
     T.scales.forEach(([h, s], i) => {
       const py = ys[i], px = cx + Math.sqrt(rs[i] * rs[i] - (py - cy) * (py - cy));
-      el("path", { d: `M${px.toFixed(1)} ${py} H 360`, fill: "none", stroke: "#1b1a22", "stroke-width": 1.2, "stroke-dasharray": "3 4" }, svg);
-      el("circle", { cx: px, cy: py, r: 4, fill: i ? cols[i] : "#1b1a22", stroke: "#1b1a22" }, svg);
-      el("text", { x: 370, y: py - 4, "font-size": 12, "font-weight": 600, "letter-spacing": ".08em", fill: i ? cols[i] : "#6b5f52" }, svg, h.toUpperCase());
-      el("text", { x: 370, y: py + 14, "font-family": "Fraunces,serif", "font-size": 16, fill: "#1b1a22" }, svg, s);
+      el("path", { d: `M${px.toFixed(1)} ${py} H 360`, fill: "none", stroke: "#141210", "stroke-width": 1.4, "stroke-dasharray": "3 4" }, svg);
+      el("circle", { cx: px, cy: py, r: 4, fill: i ? cols[i] : "#141210", stroke: "#141210" }, svg);
+      el("text", { x: 370, y: py - 4, "font-family": "Oswald,sans-serif", "font-size": 13, "font-weight": 700, "letter-spacing": ".1em", fill: i ? cols[i] : "#5f5852" }, svg, h.toUpperCase());
+      el("text", { x: 370, y: py + 14, "font-family": "Archivo,sans-serif", "font-size": 16, fill: "#141210" }, svg, s);
     });
   }
 }
@@ -156,15 +156,15 @@ const fmtX = v => v >= 1 ? "×" + v.toLocaleString(FR ? "fr-FR" : "en-GB") : "÷
   const svg = $("#lightViz");
   if (svg) {
     svg.setAttribute("viewBox", "0 0 560 170");
-    const rows = [[L.price, 1 / 3000, "#3f7fb0"], [L.income, 15, "#b9a68a"], [L.use, 6500, "#d9761e"]];
+    const rows = [[L.price, 1 / 3000, "#8a96a0"], [L.income, 15, "#d8d2c8"], [L.use, 6500, "#ff6a13"]];
     const cx = 250, k = 200 / Math.log10(10000); // centre = ×1
-    el("line", { x1: cx, x2: cx, y1: 8, y2: 150, stroke: "#1b1a22", "stroke-width": 1.6 }, svg);
-    el("text", { x: cx, y: 166, "text-anchor": "middle", "font-size": 11, fill: "#6b5f52" }, svg, FR ? "1800 = 1" : "1800 = 1");
+    el("line", { x1: cx, x2: cx, y1: 8, y2: 150, stroke: "#141210", "stroke-width": 2 }, svg);
+    el("text", { x: cx, y: 166, "text-anchor": "middle", "font-size": 11, fill: "#5f5852" }, svg, FR ? "1800 = 1" : "1800 = 1");
     rows.forEach(([lab, v, c], i) => {
       const y = 14 + i * 46, w = Math.log10(v) * k, x = w < 0 ? cx + w : cx;
-      el("rect", { x, y, width: Math.abs(w), height: 26, fill: c, stroke: "#1b1a22", "stroke-width": 1.8, rx: 4 }, svg);
-      el("text", { x: w < 0 ? cx + 8 : cx - 8, y: y + 18, "text-anchor": w < 0 ? "start" : "end", "font-size": 12.5, fill: "#1b1a22" }, svg, lab);
-      el("text", { x: w < 0 ? x - 6 : x + w + 6, y: y + 18, "text-anchor": w < 0 ? "end" : "start", "font-family": "Fraunces,serif", "font-weight": 600, "font-size": 15 }, svg, fmtX(v));
+      el("rect", { x, y, width: Math.abs(w), height: 26, fill: c, stroke: "#141210", "stroke-width": 2, rx: 0 }, svg);
+      el("text", { x: w < 0 ? cx + 8 : cx - 8, y: y + 18, "text-anchor": w < 0 ? "start" : "end", "font-size": 12.5, fill: "#141210" }, svg, lab);
+      el("text", { x: w < 0 ? x - 6 : x + w + 6, y: y + 18, "text-anchor": w < 0 ? "end" : "start", "font-family": "Oswald,sans-serif", "font-weight": 700, "font-size": 16, fill: "#141210" }, svg, fmtX(v));
     });
   }
 }
@@ -177,16 +177,16 @@ const fmtX = v => v >= 1 ? "×" + v.toLocaleString(FR ? "fr-FR" : "en-GB") : "÷
     const pts = [[2010, 194], [2018, 205], [2024, 415], [2030, 945]];
     const sx = t => x0 + (x1 - x0) * (t - 2010) / 20, sy = v => y0 - (y0 - y1) * v / 1000;
     for (const v of [0, 250, 500, 750, 1000]) {
-      el("line", { x1: x0, x2: x1, y1: sy(v), y2: sy(v), stroke: "#4a4d86", "stroke-width": 1 }, svg);
-      el("text", { x: x0 - 5, y: sy(v) + 4, "text-anchor": "end", "font-size": 10, fill: "#b8b2cf" }, svg, v);
+      el("line", { x1: x0, x2: x1, y1: sy(v), y2: sy(v), stroke: "#4a423c", "stroke-width": 1 }, svg);
+      el("text", { x: x0 - 5, y: sy(v) + 4, "text-anchor": "end", "font-size": 10, fill: "#c4b9ab" }, svg, v);
     }
-    for (const t of [2010, 2015, 2020, 2025, 2030]) el("text", { x: sx(t), y: y0 + 16, "text-anchor": "middle", "font-size": 10, fill: "#b8b2cf" }, svg, t);
-    el("text", { x: x0, y: 10, "font-size": 10, fill: "#b8b2cf" }, svg, L.dcY);
-    el("path", { d: `M${sx(2010)} ${sy(194)} L${sx(2018)} ${sy(205)} L${sx(2024)} ${sy(415)}`, fill: "none", stroke: "#ffd88a", "stroke-width": 3 }, svg);
-    el("path", { d: `M${sx(2024)} ${sy(415)} L${sx(2030)} ${sy(945)}`, fill: "none", stroke: "#ffd88a", "stroke-width": 3, "stroke-dasharray": "6 5" }, svg);
+    for (const t of [2010, 2015, 2020, 2025, 2030]) el("text", { x: sx(t), y: y0 + 16, "text-anchor": "middle", "font-size": 10, fill: "#c4b9ab" }, svg, t);
+    el("text", { x: x0, y: 10, "font-size": 10, fill: "#c4b9ab" }, svg, L.dcY);
+    el("path", { d: `M${sx(2010)} ${sy(194)} L${sx(2018)} ${sy(205)} L${sx(2024)} ${sy(415)}`, fill: "none", stroke: "#f5cf1d", "stroke-width": 3 }, svg);
+    el("path", { d: `M${sx(2024)} ${sy(415)} L${sx(2030)} ${sy(945)}`, fill: "none", stroke: "#f5cf1d", "stroke-width": 3, "stroke-dasharray": "6 5" }, svg);
     pts.forEach(([t, v], i) => {
-      el("circle", { cx: sx(t), cy: sy(v), r: 4.5, fill: i === 3 ? "#33366b" : "#ffd88a", stroke: "#ffd88a", "stroke-width": 2 }, svg);
-      el("text", { x: sx(t) + (i === 3 ? -8 : i === 0 ? 4 : 0), y: sy(v) - 9, "text-anchor": i === 3 ? "end" : i === 0 ? "start" : "middle", "font-size": 11, "font-weight": 600, fill: "#fff3d6" }, svg, v + (i === 3 ? " (" + L.proj + ")" : ""));
+      el("circle", { cx: sx(t), cy: sy(v), r: 4.5, fill: i === 3 ? "#221e1b" : "#f5cf1d", stroke: "#f5cf1d", "stroke-width": 2 }, svg);
+      el("text", { x: sx(t) + (i === 3 ? -8 : i === 0 ? 4 : 0), y: sy(v) - 9, "text-anchor": i === 3 ? "end" : i === 0 ? "start" : "middle", "font-size": 11, "font-weight": 600, fill: "#ffffff" }, svg, v + (i === 3 ? " (" + L.proj + ")" : ""));
     });
   }
 }
@@ -199,18 +199,18 @@ const fmtX = v => v >= 1 ? "×" + v.toLocaleString(FR ? "fr-FR" : "en-GB") : "÷
       const x0 = ox + 8, x1 = ox + 142, y0 = 170, y1 = 30;
       const sy = v => y0 - (y0 - y1) * (Math.log10(v) - lo) / (hi - lo);
       const t0 = pts[0][0], t1 = pts[pts.length - 1][0], sx = t => x0 + (x1 - x0) * (t - t0) / (t1 - t0);
-      el("text", { x: ox + 75, y: 14, "text-anchor": "middle", "font-size": 10.5, fill: "#b8b2cf" }, svg, lab);
-      el("line", { x1: x0, x2: x1, y1: y0, y2: y0, stroke: "#4a4d86" }, svg);
+      el("text", { x: ox + 75, y: 14, "text-anchor": "middle", "font-size": 10.5, fill: "#c4b9ab" }, svg, lab);
+      el("line", { x1: x0, x2: x1, y1: y0, y2: y0, stroke: "#4a423c" }, svg);
       el("path", { d: pts.map(([t, v], i) => (i ? "L" : "M") + sx(t).toFixed(1) + " " + sy(v).toFixed(1)).join(" "), fill: "none", stroke: col, "stroke-width": 3 }, svg);
       pts.forEach(([t, v, tl], i) => {
-        el("circle", { cx: sx(t), cy: sy(v), r: 4.5, fill: col, stroke: "#0e0f22", "stroke-width": 1.5 }, svg);
+        el("circle", { cx: sx(t), cy: sy(v), r: 4.5, fill: col, stroke: "#0b0a09", "stroke-width": 1.5 }, svg);
         const [dx, dy, an] = place(i, pts.length);
-        el("text", { x: sx(t) + dx, y: sy(v) + dy, "text-anchor": an, "font-size": 11, "font-weight": 600, fill: "#fff3d6" }, svg, fmt(v));
-        el("text", { x: sx(t), y: y0 + 16, "text-anchor": i === 0 ? "start" : i === pts.length - 1 ? "end" : "middle", "font-size": 10, fill: "#b8b2cf" }, svg, tl);
+        el("text", { x: sx(t) + dx, y: sy(v) + dy, "text-anchor": an, "font-size": 11, "font-weight": 600, fill: "#ffffff" }, svg, fmt(v));
+        el("text", { x: sx(t), y: y0 + 16, "text-anchor": i === 0 ? "start" : i === pts.length - 1 ? "end" : "middle", "font-size": 10, fill: "#c4b9ab" }, svg, tl);
       });
     };
-    panel(0, L.aiPrice, [[2021.9, 60, "2021"], [2024.9, 0.06, "2024"]], -1.5, 2, "#ffd88a", v => "$" + v, (i, n) => i === 0 ? [8, -6, "start"] : [-10, 4, "end"]);
+    panel(0, L.aiPrice, [[2021.9, 60, "2021"], [2024.9, 0.06, "2024"]], -1.5, 2, "#f5cf1d", v => "$" + v, (i, n) => i === 0 ? [8, -6, "start"] : [-10, 4, "end"]);
     const T = v => v >= 1000 ? (v / 1000).toLocaleString(FR ? "fr-FR" : "en-GB") + (FR ? " 10¹⁵" : " quadr.") : v + " T";
-    panel(165, L.aiUse, [[2024.3, 9.7, "04/24"], [2025.3, 480, "04/25"], [2025.8, 1300, "10/25"]], 0.5, 3.4, "#9bc8ff", T, (i, n) => i === 0 ? [8, 16, "start"] : [-8, -6, "end"]);
+    panel(165, L.aiUse, [[2024.3, 9.7, "04/24"], [2025.3, 480, "04/25"], [2025.8, 1300, "10/25"]], 0.5, 3.4, "#ff7a3d", T, (i, n) => i === 0 ? [8, 16, "start"] : [-8, -6, "end"]);
   }
 }
