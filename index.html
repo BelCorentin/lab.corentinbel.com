@@ -31,6 +31,8 @@
   .ink { stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
   .thin { stroke: var(--ink); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
   .door, .deco { cursor: pointer; outline: none; }
+.lampFlame { transform-box: fill-box; transform-origin: 50% 100%; animation: lampFlick 1.7s ease-in-out infinite alternate; }
+@keyframes lampFlick { 0% { transform: scale(1,1); } 40% { transform: scale(.9,1.08); } 100% { transform: scale(1.05,.94); } }
   .door > g, .deco > g { transition: filter .25s, transform .25s; transform-box: fill-box; transform-origin: 50% 100%; }
   .door:hover > g, .door:focus-visible > g { filter: drop-shadow(0 0 10px rgba(190, 255, 200, .7)) brightness(1.15); transform: translateY(-3px); }
   .deco:hover > g, .deco:focus-visible > g { filter: drop-shadow(0 0 7px rgba(240, 255, 220, .5)) brightness(1.1); }
@@ -85,7 +87,7 @@
   #pane .x { position: absolute; right: 12px; top: 10px; background: none; border: 0; color: var(--dim); font-size: 22px; cursor: pointer; }
 
   .hint { position: fixed; right: clamp(12px, 2vw, 28px); bottom: clamp(10px, 1.6vw, 22px); z-index: 4; color: rgba(241,234,214,.5); font-size: 12px; pointer-events: none; }
-  @media (prefers-reduced-motion: reduce) { .sway, .swayTop, .glow, .twinkle, .puff, .note, .flow, .drop { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .sway, .swayTop, .glow, .twinkle, .puff, .note, .flow, .drop, .lampFlame { animation: none; } }
 </style>
 </head>
 <body>
@@ -214,6 +216,33 @@
   
   <g id="drawers"></g>
   <g class="tag"><rect x="1358" y="526" width="104" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="1410" y="539" text-anchor="middle">substances</text></g>
+</g>
+</a>
+
+<!-- rebound: an oil lamp and an LED bulb hanging side by side from the arch -->
+<a class="door" href="rebound/" data-label="the rebound effect" data-sub="light got thousands of times cheaper, so did we save energy? Jevons, cars, heating, AI — EN / FR">
+<g>
+  <defs>
+    <radialGradient id="flameGlow"><stop offset="0" stop-color="#ffcf6b" stop-opacity=".55"/><stop offset="1" stop-color="#ffcf6b" stop-opacity="0"/></radialGradient>
+    <radialGradient id="ledGlow"><stop offset="0" stop-color="#eaf6ff" stop-opacity=".75"/><stop offset=".45" stop-color="#cfe8ff" stop-opacity=".25"/><stop offset="1" stop-color="#cfe8ff" stop-opacity="0"/></radialGradient>
+  </defs>
+  <!-- oil lamp: small warm glow -->
+  <circle cx="746" cy="186" r="34" fill="url(#flameGlow)"/>
+  <path d="M746 56 v92" stroke="#c9c2ae" stroke-width="1.6" stroke-dasharray="3 2"/>
+  <path d="M736 154 q10 -12 20 0" fill="none" stroke="#2b2620" stroke-width="2.4"/>
+  <rect x="734" y="152" width="24" height="7" rx="2" fill="#7a5a2e" class="thin"/>
+  <path d="M737 159 q-8 20 1 36 h16 q9 -16 1 -36 z" fill="#fff4d6" fill-opacity=".35" stroke="#2b2620" stroke-width="1.6"/>
+  <path class="lampFlame" d="M746 168 q-5 9 0 16 q5 -7 0 -16 z" fill="#ffb43a" stroke="#c0611c" stroke-width="1"/>
+  <rect x="733" y="195" width="26" height="12" rx="3" fill="#a8742f" class="thin"/>
+  <path d="M736 201 h20" stroke="#6b4a1e" stroke-width="1.2"/>
+  <!-- LED bulb: big cool glow -->
+  <circle cx="824" cy="190" r="62" fill="url(#ledGlow)"/>
+  <path d="M824 52 v110" stroke="#1b1a22" stroke-width="1.8"/>
+  <rect x="817" y="160" width="14" height="14" rx="2" fill="#9aa0a8" class="thin"/>
+  <path d="M817 165 h14 M817 169 h14" stroke="#5c6168" stroke-width="1"/>
+  <path d="M816 174 q-14 8 -12 22 a20 20 0 0 0 40 0 q2 -14 -12 -22 z" fill="#f6fbff" stroke="#1b1a22" stroke-width="1.8"/>
+  <path d="M818 182 v14 M824 182 v16 M830 182 v14" stroke="#ffd27a" stroke-width="1.6" stroke-linecap="round"/>
+  <g class="tag"><rect x="738" y="226" width="78" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="777" y="239" text-anchor="middle">rebound</text></g>
 </g>
 </a>
 
@@ -531,7 +560,7 @@ const GREENS = ["#2f6b3a", "#3d7d44", "#28572f", "#4a8a4c"];
 /* ============ the plain list ============ */
 const GROUPS = [
   ["sea & sky", [["foil-designer/", "foil designer", "shape a front wing, get star ratings — speed, glide, carve"], ["foil-rl/", "foil pilot", "a stickman learns to wing foil"], ["aero/", "how things fly", "planes, foils, stalls — potential-flow playground"], ["waves/", "the perfect wave", "why a wave spills, plunges or surges"], ["beaufort/", "the Beaufort scale", "force 0 to 12, painted — and what each means on the water"], ["space/", "space", "zoom from your hand to the observable universe"]]],
-  ["money & scale", [["freedom/", "the price of freedom", "savings rate → years until your time is yours"], ["invest/", "three sisters", "how investing grows — three paths"], ["money-shells/", "from cowries to crypto", "what humans have used as money"], ["economy/", "orders of magnitude", "french public money, to scale"], ["tokens/", "token footprint", "what an LLM prompt costs the planet"]]],
+  ["money & scale", [["freedom/", "the price of freedom", "savings rate → years until your time is yours"], ["invest/", "three sisters", "how investing grows — three paths"], ["money-shells/", "from cowries to crypto", "what humans have used as money"], ["economy/", "orders of magnitude", "french public money, to scale"], ["tokens/", "token footprint", "what an LLM prompt costs the planet"], ["rebound/", "the rebound effect", "efficiency up, consumption… up? — EN / FR"]]],
   ["body & mind", [["speed-of-thought/", "one second in the brain", "hearing, reading, saying a word — in milliseconds"], ["half-lives/", "how long does it stay?", "coffee, alcohol, nicotine: curves in your blood"], ["substances/", "what's actually dangerous?", "drug harms, deaths and the law — EN / FR"], ["mindblown/", "mind, blown", "things you probably believe that aren't quite true"]]],
   ["signals", [["correlation/", "what does r look like?", "correlation as two coloured vectors"], ["codec/", "codec", "how sound gets squeezed"]]],
 ];

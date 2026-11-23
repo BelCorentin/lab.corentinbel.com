@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>l'effet rebond · lab · Corentin Bel</title>
+<meta name="description" content="Rendez une chose plus efficace et on finit souvent par en consommer plus. L'effet rebond et le paradoxe de Jevons, du charbon aux lampes, des voitures au chauffage, des politiques climatiques à l'IA, chaque chiffre sourcé.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💡</text></svg>">
+<link rel="alternate" hreflang="en" href="../">
+<link rel="alternate" hreflang="fr" href="./">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400;1,9..144,600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav class="top"><span><a href="../../">← lab</a> · <a href="https://corentinbel.com">accueil</a></span>
+  <span><a href="../" hreflang="en" lang="en" title="English version"><svg class="flag" viewBox="0 0 60 30" aria-hidden="true"><rect width="60" height="30" fill="#012169"/><path d="M0 0L60 30M60 0L0 30" stroke="#fff" stroke-width="6"/><path d="M0 0L60 30M60 0L0 30" stroke="#C8102E" stroke-width="2.4"/><path d="M30 0V30M0 15H60" stroke="#fff" stroke-width="10"/><path d="M30 0V30M0 15H60" stroke="#C8102E" stroke-width="6"/></svg> english</a> · <a href="#sources">sources</a></span></nav>
+
+<main>
+<header class="hero wrap">
+  <div class="kicker">énergie · économie · climat · IA</div>
+  <h1>on l'a rendu efficace.<br>alors pourquoi en consomme-t-on <em>plus ?</em></h1>
+  <p class="lede">L'effet rebond est une des idées les moins intuitives de l'économie du climat, et une des plus importantes.
+    Cette page commence par une question sur l'IA. Ne cherchez pas la réponse: faites un pari, on y revient tout en bas.</p>
+
+  <div class="card poll" id="poll">
+    <div class="kicker">votre pari</div>
+    <p class="q">Le prix pour faire tourner un modèle d'IA d'un niveau donné est divisé par environ <b>dix chaque année</b>.<sup><a href="#s16">16</a></sup>
+      Chaque réponse demande de moins en moins d'électricité. Alors, dans cinq ans, l'électricité consommée par l'IA au total sera…</p>
+    <div class="opts">
+      <button class="opt" data-k="down"><span>bien plus basse</span><small>l'efficacité gagne</small></button>
+      <button class="opt" data-k="flat"><span>à peu près pareille</span><small>ça se compense</small></button>
+      <button class="opt" data-k="up"><span>bien plus haute</span><small>on s'en servira juste plus</small></button>
+    </div>
+    <p class="pollnote" id="pollNote"></p>
+  </div>
+</header>
+
+<!-- ================= 1. intuition ================= -->
+<section class="ch wrap" id="intuition">
+  <div class="prose" style="padding:0">
+    <div class="kicker">1 · l'idée</div>
+    <h2>moins cher à l'usage, donc <em>plus d'usages</em></h2>
+    <p>Vous changez de voiture pour une qui consomme deux fois moins. Un ingénieur vous dirait: mêmes trajets, moitié moins de carburant. Sauf que chaque kilomètre vous coûte
+      maintenant deux fois moins cher, alors vous prenez la voiture un peu plus souvent: la plage le week-end, l'ami qui habite loin. Une partie du carburant économisé
+      est brûlée à nouveau. Cette partie-là, c'est le <b>rebond</b>.</p>
+    <p class="eq">rebond = 1 − (économie réellement obtenue ÷ économie promise par l'ingénieur)</p>
+    <p>À vous de jouer. L'ancienne voiture consomme 8 L aux 100 km, sur 10 000 km par an.</p>
+  </div>
+  <div class="bench">
+    <div class="card ctrl">
+      <div class="ctl"><label for="newCons">nouvelle voiture <b id="newConsV"></b></label>
+        <input type="range" id="newCons" min="2" max="8" step="0.5" value="4"></div>
+      <div class="ctl"><label for="extraKm">ensuite vous roulez <b id="extraKmV"></b></label>
+        <input type="range" id="extraKm" min="0" max="150" step="5" value="20"></div>
+      <div class="kicker" style="margin-top:.4rem">essayez</div>
+      <div class="chips">
+        <button class="chip" data-preset="4,0">personne ne change</button>
+        <button class="chip" data-preset="4,20">ménage typique</button>
+        <button class="chip" data-preset="4,100">rebond 100 %</button>
+        <button class="chip" data-preset="4,140">retour de flamme</button>
+      </div>
+      <p class="hint">« Typique »: les études sur les automobilistes trouvent en général que 10 à 30 % de l'économie de carburant promise est reconsommée.<sup><a href="#s4">4</a></sup></p>
+    </div>
+    <div class="card viz">
+      <svg id="carViz" role="img" aria-label="Carburant consommé par an: avant, sur le papier et en vrai"></svg>
+      <div class="verdict" id="verdict"></div>
+    </div>
+  </div>
+  <div class="prose" style="padding:0">
+    <p>Trois zones à retenir:</p>
+    <ul class="plain">
+      <li><b>0 %</b>: l'économie arrive en entier. Rare en dehors d'un tableur.</li>
+      <li><b>entre 0 et 100 %</b>: l'économie fond mais reste réelle. <b>C'est de loin le cas le plus fréquent.</b></li>
+      <li><b>au-delà de 100 %</b>: <b>retour de flamme</b> (<i>backfire</i>). Le gain d'efficacité finit par <i>augmenter</i> la consommation totale. C'est le <b>paradoxe de Jevons</b>.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= 2. questions ================= -->
+<section class="ch wrap" id="stories">
+  <div class="prose" style="padding:0">
+    <div class="kicker">2 · cinq questions surprenantes</div>
+    <h2>ce qui s'est passé <em>en vrai</em></h2>
+    <p>Pariez d'abord, puis ouvrez la carte.</p>
+  </div>
+  <div class="qs">
+
+    <details class="card q">
+      <summary><span class="n">1</span><span class="t">1865. La machine à vapeur de Watt brûle bien moins de charbon par unité de travail que les vieilles pompes de Newcomen. Alors pourquoi la Grande-Bretagne brûle-t-elle plus de charbon que jamais ?<small>ouvrir</small></span></summary>
+      <div class="a">
+        <p>C'est la question que pose William Stanley Jevons dans <i>The Coal Question</i>. Sa réponse est devenue le paradoxe qui porte son nom:</p>
+        <p class="callout">« C'est une pure confusion d'idées que de croire que l'usage économe du combustible équivaut à une consommation moindre. C'est exactement le contraire qui est vrai. »<sup><a href="#s1">1</a></sup></p>
+        <p>Les machines efficaces ont rendu la vapeur assez bon marché pour qu'on la mette partout: mines, filatures, chemins de fer, navires. Chaque machine consommait moins; il y en avait infiniment plus.
+          Jevons note lui-même que le rendement des machines a été multiplié par au moins dix en moins d'un siècle, et la production britannique de charbon ne cesse de grimper: environ 65 millions de tonnes en 1854, 98 millions en 1865, 287 millions en 1913.<sup><a href="#s1">1</a>,<a href="#s2">2</a></sup>
+          L'idée revient dans les années 1980, quand les économistes Daniel Khazzoom et Leonard Brookes soutiennent que les normes d'efficacité économiseront moins que promis: on parle depuis du <b>postulat de Khazzoom–Brookes</b>.<sup><a href="#s11">11</a></sup></p>
+      </div>
+    </details>
+
+    <details class="card q">
+      <summary><span class="n">2</span><span class="t">La lumière coûte des milliers de fois moins cher qu'en 1800. Est-ce qu'on dépense moins pour s'éclairer ?<small>ouvrir</small></span></summary>
+      <div class="a">
+        <p>Au Royaume-Uni entre 1800 et 2000, le prix d'une unité de lumière est tombé à <b>moins de 1/3000</b> de sa valeur de 1800. Sur la même période, chaque habitant s'est mis à consommer environ <b>6 500 fois plus de lumière</b>, alors que les revenus n'ont été multipliés que par 15 environ.<sup><a href="#s3">3</a></sup>
+          La part du revenu consacrée à l'éclairage a bien baissé, mais la quantité d'énergie transformée en lumière a explosé.</p>
+        <svg id="lightViz" role="img" aria-label="Prix et usage de la lumière au Royaume-Uni, 1800 contre 2000"></svg>
+        <p>Bougies, puis gaz, pétrole lampant, ampoules à incandescence, LED: chaque saut d'efficacité a été suivi de plus de lumière, dans plus de pièces, pendant plus d'heures, et dans des endroits
+          qui restaient dans le noir (rues, vitrines, écrans). On n'a pas éclairé la même maison pour moins cher. On a éclairé le monde.</p>
+      </div>
+    </details>
+
+    <details class="card q">
+      <summary><span class="n">3</span><span class="t">Les moteurs sont bien plus efficaces qu'en 1980. Pourquoi la consommation d'une voiture neuve n'a-t-elle pas baissé d'autant ?<small>ouvrir</small></span></summary>
+      <div class="a">
+        <p>Parce que le gain est parti dans le poids et la puissance. L'économiste Christopher Knittel a estimé que si les voitures américaines avaient gardé le poids, la puissance et le couple de 1980, leur consommation aurait pu s'améliorer de <b>près de 60 %</b> entre 1980 et 2006. L'essentiel du progrès technique a servi à faire des voitures plus lourdes et plus rapides.<sup><a href="#s7">7</a></sup>
+          À l'échelle mondiale, les SUV ont été le <b>deuxième contributeur</b> à la hausse des émissions de CO₂ dans les années 2010, après la production d'électricité et devant l'industrie lourde, les camions et l'aviation.<sup><a href="#s8">8</a></sup></p>
+        <p>C'est un rebond plus discret: le gain ne sert pas à rouler <i>plus</i>, mais à rouler <i>plus gros</i>. Même carburant, plus de voiture.</p>
+      </div>
+    </details>
+
+    <details class="card q">
+      <summary><span class="n">4</span><span class="t">Vous isolez votre maison. Votre facture va-t-elle baisser autant que l'audit énergétique le promettait ?<small>ouvrir</small></span></summary>
+      <div class="a">
+        <p>En général non. Pour le chauffage dans les pays riches, les meilleures estimations situent le rebond direct entre <b>10 et 30 %</b> de l'économie promise.<sup><a href="#s4">4</a>,<a href="#s5">5</a></sup>
+          Et il y a un piège: dans une étude sur 3 400 logements allemands, la consommation de chauffage mesurée était en moyenne environ <b>30 % plus basse</b> que celle prévue par le diagnostic, et autour de 40 % plus basse pour les logements les plus mal notés.<sup><a href="#s6">6</a></sup>
+          L'économie promise par l'audit était calculée à partir d'une consommation qui n'existait pas.</p>
+        <p>Deux choses se passent. Après les travaux, on chauffe à une température plus confortable (un <b>rebond</b>: la maison froide était sous-chauffée).
+          Et avant les travaux, les maisons mal notées consommaient déjà bien moins que leur étiquette, parce que leurs habitants les chauffaient moins (un <b>« prebound »</b>, ou effet pré-rebond).
+          Les deux réduisent l'économie réelle. Aucun ne rend l'isolation inutile: les gens ont plus chaud, et la facture baisse quand même.</p>
+      </div>
+    </details>
+
+    <details class="card q">
+      <summary><span class="n">5</span><span class="t">Trains, voitures et avions vont bien plus vite que la marche. Passe-t-on moins de temps à se déplacer ?<small>ouvrir</small></span></summary>
+      <div class="a">
+        <p>Non. Dans des sociétés et à des époques très différentes, on passe en moyenne environ <b>une heure par jour</b> à se déplacer. Le physicien Cesare Marchetti y voyait un « invariant anthropologique », dans la lignée des travaux de Yacov Zahavi sur les transports.<sup><a href="#s9">9</a></sup>
+          Quand on est allé plus vite, on ne s'est pas moins déplacé: on est allé plus loin, dans la même heure.</p>
+        <p>Ici le rebond porte sur la <b>distance</b>, pas sur l'énergie: la vitesse n'a jamais été transformée en temps libre, mais en logements plus loin du travail, en courses plus loin, en vacances plus loin.
+          La même logique vaut pour presque n'importe quel gain d'efficacité, y compris votre propre temps: un outil qui vous fait gagner une heure vous donne en général plus de travail, pas plus de vacances.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ================= 3. scales ================= -->
+<section class="ch wrap" id="scales-sec">
+  <div class="prose" style="padding:0">
+    <div class="kicker">3 · jusqu'où vont les ronds dans l'eau</div>
+    <h2>trois sortes de <em>rebond</em></h2>
+    <p>Jetez un gain d'efficacité dans la mare. Les ronds vont bien plus loin que votre propre voiture.</p>
+  </div>
+  <svg id="scales" role="img" aria-label="Rebond direct, indirect et macroéconomique, en ronds dans l'eau"></svg>
+  <div class="three">
+    <div class="card"><span class="tag" style="background:#d8e6f2">direct</span><h3>on consomme plus de la même chose</h3>
+      <p>On roule plus avec la voiture sobre, on chauffe plus la maison isolée, on laisse la LED allumée. Le plus facile à mesurer.</p></div>
+    <div class="card"><span class="tag" style="background:#e6dcf2">indirect</span><h3>on dépense l'économie ailleurs</h3>
+      <p>Les 300 € qu'on ne met plus dans l'essence paient un week-end en avion, un nouveau téléphone, une télé plus grande. Tout ça a demandé de l'énergie pour être fabriqué.</p></div>
+    <div class="card"><span class="tag" style="background:#d6ece5">macroéconomique</span><h3>tout devient moins cher à produire</h3>
+      <p>Les entreprises qui paient l'énergie moins cher baissent leurs prix, vendent plus, grandissent, inventent de nouveaux usages. C'est l'échelle dont parlait Jevons, et la plus dure à mesurer.</p></div>
+  </div>
+
+  <div class="prose" style="padding:0">
+    <h3>alors, il est gros comment ?</h3>
+    <table class="facts">
+      <tr><th>quoi</th><th>ordre de grandeur</th><th>preuves</th></tr>
+      <tr><td>voiture, direct</td><td class="num">10–30 %</td><td>17 études, pays riches<sup><a href="#s4">4</a></sup></td></tr>
+      <tr><td>chauffage, direct</td><td class="num">10–30 %</td><td>9 études, pays riches<sup><a href="#s4">4</a>,<a href="#s5">5</a></sup></td></tr>
+      <tr><td>économie entière</td><td class="num">souvent &gt; 50 %</td><td>« peut effacer plus de la moitié des économies d'énergie attendues »<sup><a href="#s10">10</a></sup></td></tr>
+      <tr><td>retour de flamme (&gt; 100 %)</td><td class="num">rare</td><td>« peu d'éléments » dans les cas mesurés de ménages et d'entreprises<sup><a href="#s14">14</a></sup>; plausible pour les technologies généralistes<sup><a href="#s4">4</a></sup></td></tr>
+    </table>
+    <p class="callout"><b>Résumé honnête.</b> À l'échelle de votre voiture ou de votre maison, le rebond mange en général une minorité du gain: l'efficacité fait bien économiser de l'énergie.
+      À l'échelle d'une économie entière, la taille est vraiment débattue, et les revues les plus récentes la jugent plus grosse que ce que supposent la plupart des modèles énergétiques.
+      Le retour de flamme existe, mais il apparaît surtout avec les technologies <i>généralistes</i> qui ouvrent de nouveaux usages: la vapeur, la lumière, l'informatique. Gardez ça en tête pour la fin.</p>
+  </div>
+</section>
+
+<!-- ================= 4. policy ================= -->
+<section class="ch wrap" id="policy">
+  <div class="prose" style="padding:0">
+    <div class="kicker">4 · climat et politique énergétique</div>
+    <h2>pourquoi l'efficacité <em>seule</em> ne suffira pas</h2>
+    <p>Presque tous les plans climat misent beaucoup sur l'efficacité: bâtiments mieux isolés, moteurs plus sobres, appareils plus performants. L'effet rebond ne dit pas que c'est une erreur.
+      Il dit qu'un gain d'efficacité est un <b>gain</b>, et qu'un gain finit dépensé si rien ne décide de ce qu'on en fait.</p>
+    <p>Le GIEC le dit désormais clairement: des politiques bien conçues ont permis de limiter les « effets rebond », et son dernier rapport ajoute un troisième pilier à côté de l'efficacité et des énergies propres, la <b>sobriété</b>.<sup><a href="#s12">12</a></sup>
+      La stratégie nationale bas-carbone française de 2026 (SNBC-3) demande explicitement de « maîtriser l'effet rebond post-rénovation » et de respecter les 19 °C de consigne de chauffage.<sup><a href="#s22">22</a></sup> Quatre leviers empêchent que le gain soit redépensé:</p>
+  </div>
+  <div class="levers">
+    <div class="card"><div class="kicker">levier 1</div><h3>plafonner le total</h3>
+      <p>Si les émissions totales sont plafonnées, un rebond quelque part doit être compensé ailleurs sous le même plafond. C'est la logique du marché carbone européen (EU ETS) pour l'électricité et l'industrie: c'est le plafond, pas l'efficacité, qui fixe le total.<sup><a href="#s23">23</a></sup>
+        Bémol: depuis la réforme de 2018, le plafond s'ajuste en partie à la demande (le « matelas d'eau percé »), et il ne couvre pas tout.</p></div>
+    <div class="card"><div class="kicker">levier 2</div><h3>garder le prix de l'énergie là où il était</h3>
+      <p>Le rebond vient du fait que l'efficacité rend chaque usage moins cher. Une taxe carbone ou énergie qui monte à mesure que l'efficacité progresse peut garder le coût par usage stable,
+        pour que le gain se traduise en moins d'énergie et pas en plus d'usages. Reverser les recettes aux ménages (un « dividende carbone ») garde la mesure juste, même si dépenser cet argent crée un peu de rebond indirect.</p></div>
+    <div class="card"><div class="kicker">levier 3</div><h3>la sobriété</h3>
+      <p>Décider de ce qui suffit: une voiture plus petite, un salon à 19 °C, le train plutôt qu'un vol court, un petit modèle pour une tâche simple. Le GIEC définit la sobriété comme l'ensemble des mesures et pratiques quotidiennes qui « évitent la demande d'énergie, de matériaux, de terres et d'eau tout en assurant le bien-être de tous ».<sup><a href="#s12">12</a></sup>
+        En France, l'association négaWatt construit ses scénarios sur ces trois piliers: sobriété, efficacité, renouvelables, dans cet ordre.<sup><a href="#s13">13</a></sup></p></div>
+    <div class="card"><div class="kicker">levier 4</div><h3>compter le rebond dans les plans</h3>
+      <p>Beaucoup de modèles énergétiques utilisés pour fixer les objectifs supposent peu ou pas de rebond. L'intégrer (ou au minimum vérifier que le plan tient avec 20 à 50 % de rebond) évite de promettre des économies qui n'arriveront pas,
+        et oriente l'argent vers les mesures qui font vraiment baisser les totaux.</p></div>
+  </div>
+  <div class="prose" style="padding:0">
+    <h3>les deux mauvaises conclusions</h3>
+    <ul class="plain">
+      <li><b>« Le rebond prouve que l'efficacité ne sert à rien. »</b> Non. Dans la plupart des cas mesurés, l'essentiel de l'économie reste, et même la part qui rebondit achète quelque chose de réel (une maison plus chaude, plus de mobilité, plus de lumière).
+        Sans efficacité, tous les autres leviers coûtent plus cher.<sup><a href="#s14">14</a></sup></li>
+      <li><b>« L'efficacité va régler le problème toute seule. »</b> Non plus. Sans plafond, sans prix ou sans choix de s'arrêter à « assez », une partie de chaque gain est redépensée, et pour les technologies qui transforment tout, peut-être la totalité.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= 5. ending ================= -->
+<section class="dark" id="answer">
+  <div class="wrap">
+    <div class="prose" style="padding:0">
+      <div class="kicker">5 · retour à la question</div>
+      <h2>l'informatique: le rebond <em>en direct</em></h2>
+      <p>S'il y a une technologie qui colle à la description de Jevons, c'est l'ordinateur. De 1946 à 2009, le nombre de calculs qu'on peut faire avec un kilowattheure a <b>doublé tous les 1,57 ans</b>: quarante doublements en soixante ans.<sup><a href="#s15">15</a></sup>
+        Personne n'en a profité pour faire tourner les calculs de 1960 sur une pile de montre. On a mis des ordinateurs dans chaque poche, chaque voiture et chaque frigo.</p>
+    </div>
+    <div class="twin">
+      <div class="card"><h3>data centers: le frein, puis l'emballement</h3><svg id="dcViz" role="img" aria-label="Consommation d'électricité des data centers"></svg><p class="hint" style="color:#b8b2cf">2010 et 2018: Masanet et al.; 2024 et 2030: AIE. Méthodes différentes: lisez la forme, pas l'écart exact.</p></div>
+      <div class="card"><h3>IA: prix ÷1000, usage ×100</h3><svg id="aiViz" role="img" aria-label="Prix de l'IA contre usage de l'IA"></svg><p class="hint" style="color:#b8b2cf">À gauche: prix par million de tokens pour un niveau GPT-3 (a16z). À droite: tokens traités par mois dans les produits Google (Google).</p></div>
+    </div>
+    <div class="prose" style="padding:0">
+      <p>Pendant un temps, l'efficacité a gagné. Entre 2010 et 2018, le travail réalisé dans les data centers a augmenté d'environ <b>550 %</b> pendant que leur consommation d'électricité n'augmentait que de <b>6 %</b>, grâce à de meilleures puces et à d'immenses installations cloud très efficaces.<sup><a href="#s20">20</a></sup>
+        Puis l'IA est arrivée. Les data centers ont consommé environ <b>415 TWh en 2024</b> (autour de 1,5 % de l'électricité mondiale), leur demande a bondi de <b>17 % rien qu'en 2025</b>, et l'Agence internationale de l'énergie (AIE) prévoit qu'elle <b>double d'ici 2030</b>, la part liée à l'IA triplant.<sup><a href="#s18">18</a>,<a href="#s19">19</a></sup></p>
+      <p>Pendant ce temps, le prix d'un niveau donné d'IA a été divisé par environ <b>dix chaque année</b>: une réponse de niveau GPT-3 coûtait 60 $ le million de tokens en 2021, et 0,06 $ trois ans plus tard.<sup><a href="#s16">16</a>,<a href="#s17">17</a></sup>
+        Et l'usage a explosé: Google est passé d'environ 9 700 milliards de tokens traités par mois en 2024 à 480 000 milliards un an plus tard, puis à plus d'un million de milliards fin 2025.<sup><a href="#s21">21</a></sup> Un prix divisé par mille, un usage multiplié par cent en un an et demi: du Jevons de manuel.</p>
+      <div class="card answer">
+        <p id="pollBack"></p>
+        <p class="big">La réponse est <b>bien plus haute</b>. Les projections de l'AIE vont vers le haut, pas vers le bas. Pas parce que l'efficacité échoue: chaque réponse demande vraiment moins d'énergie. Mais l'IA est une technologie généraliste, comme la vapeur, la lumière et l'informatique avant elle, et pour celles-là, moins cher a toujours voulu dire <i>beaucoup</i> plus.</p>
+      </div>
+      <h3 style="color:#fff3d6">ce que ça veut dire pour le code, le calcul et l'IA</h3>
+      <ul class="plain">
+        <li><b>Un token moins cher n'est pas une empreinte plus petite.</b> L'empreinte, c'est le coût par token × le nombre de tokens, et le second grandit plus vite que le premier ne rétrécit. (La page voisine <a href="../../tokens/">token footprint</a> calcule le premier nombre; celle-ci parle du second.)</li>
+        <li><b>Les agents multiplient les appels.</b> Un assistant de code qui lit tout un dépôt, planifie, lance les tests et recommence fait des centaines d'appels au modèle là où un chatbot en faisait un. Chaque gain d'efficacité rend abordable de les laisser en faire plus.</li>
+        <li><b>Le levier est le même que pour l'énergie.</b> Un réseau électrique décarboné (un plafond sur les émissions, pas sur le calcul), des prix qui incluent le coût de l'électricité, et choisir quand un modèle « suffit » pour la tâche.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= sources ================= -->
+<section class="ch prose" id="sources">
+  <div class="kicker">sources</div>
+  <p class="hint">Les sources sont en anglais sauf la SNBC et négaWatt; la citation de Jevons est traduite par mes soins.</p>
+  <ol class="sources">
+<li id="s1">Jevons W.S. (1865). <i>The Coal Question</i>, ch. VII "Of the Economy of Fuel". Londres: Macmillan. <a href="https://www.econlib.org/library/YPDBooks/Jevons/jvnCQ7.html">econlib.org</a></li>
+<li id="s2">Production de charbon du Royaume-Uni, NBER Macrohistory Database, series A01211 (via FRED, St. Louis Fed). <a href="https://fred.stlouisfed.org/data/A01211GBA418NNBR">fred.stlouisfed.org</a></li>
+<li id="s3">Fouquet R. &amp; Pearson P.J.G. (2006). Seven centuries of energy services: the price and use of light in the United Kingdom (1300–2000). <i>The Energy Journal</i> 27(1):139–178. <a href="https://ideas.repec.org/a/aen/journl/2006v27-01-a07.html">ideas.repec.org</a></li>
+<li id="s4">Sorrell S. (2007). <i>The Rebound Effect: an assessment of the evidence for economy-wide energy savings from improved energy efficiency</i>. UK Energy Research Centre. <a href="https://ukerc.ac.uk/publications/the-rebound-effect-an-assessment-of-the-evidence-for-economy-wide-energy-savings-from-improved-energy-efficiency/">ukerc.ac.uk</a></li>
+<li id="s5">Sorrell S., Dimitropoulos J. &amp; Sommerville M. (2009). Empirical estimates of the direct rebound effect: a review. <i>Energy Policy</i> 37:1356–1371. <a href="https://doi.org/10.1016/j.enpol.2008.11.026">doi:10.1016/j.enpol.2008.11.026</a></li>
+<li id="s6">Sunikka-Blank M. &amp; Galvin R. (2012). Introducing the prebound effect: the gap between performance and actual energy consumption. <i>Building Research &amp; Information</i> 40(3):260–273. <a href="https://doi.org/10.1080/09613218.2012.690952">doi:10.1080/09613218.2012.690952</a>; résumé: <a href="https://www.cam.ac.uk/research/news/the-prebound-effect">University of Cambridge</a></li>
+<li id="s7">Knittel C.R. (2011). Automobiles on steroids: product attribute trade-offs and technological progress in the automobile sector. <i>American Economic Review</i> 101(7):3368–3399. <a href="https://doi.org/10.1257/aer.101.7.3368">doi:10.1257/aer.101.7.3368</a></li>
+<li id="s8">Cozzi L. &amp; Petropoulos A. (2019). Growing preference for SUVs challenges emissions reductions in passenger car market. IEA commentary. <a href="https://www.iea.org/commentaries/growing-preference-for-suvs-challenges-emissions-reductions-in-passenger-car-market">iea.org</a></li>
+<li id="s9">Marchetti C. (1994). Anthropological invariants in travel behavior. <i>Technological Forecasting and Social Change</i> 47(1):75–88. <a href="https://pure.iiasa.ac.at/id/eprint/4071/">réimpression IIASA</a></li>
+<li id="s10">Brockway P.E., Sorrell S., Semieniuk G., Heun M.K. &amp; Court V. (2021). Energy efficiency and economy-wide rebound effects: a review of the evidence and its implications. <i>Renewable and Sustainable Energy Reviews</i> 141:110781. <a href="https://doi.org/10.1016/j.rser.2021.110781">doi:10.1016/j.rser.2021.110781</a></li>
+<li id="s11">Khazzoom J.D. (1980). Economic implications of mandated efficiency standards for household appliances. <i>The Energy Journal</i> 1(4):21–40. Brookes L. (1990). The greenhouse effect: the fallacies in the energy efficiency solution. <i>Energy Policy</i> 18(2):199–201. Saunders H.D. (1992). The Khazzoom–Brookes postulate and neoclassical growth. <i>The Energy Journal</i> 13(4):131–148. <a href="https://ideas.repec.org/a/aen/journl/1992v13-04-a07.html">ideas.repec.org</a></li>
+<li id="s12">IPCC (2022). <i>Climate Change 2022: Mitigation of Climate Change</i>, Summary for Policymakers (B.4.2; footnote 59 on sufficiency) and chapter 5. <a href="https://www.ipcc.ch/report/ar6/wg3/downloads/report/IPCC_AR6_WGIII_SPM.pdf">ipcc.ch</a></li>
+<li id="s13">Association négaWatt. La démarche négaWatt: sobriété, efficacité, renouvelables. <a href="https://www.negawatt.org/La-demarche-negaWatt">negawatt.org</a></li>
+<li id="s14">Gillingham K., Rapson D. &amp; Wagner G. (2016). The rebound effect and energy efficiency policy. <i>Review of Environmental Economics and Policy</i> 10(1):68–88. <a href="https://doi.org/10.1093/reep/rev017">doi:10.1093/reep/rev017</a>; document de travail: <a href="https://www.rff.org/publications/working-papers/the-rebound-effect-and-energy-efficiency-policy/">RFF</a></li>
+<li id="s15">Koomey J., Berard S., Sanchez M. &amp; Wong H. (2011). Implications of historical trends in the electrical efficiency of computing. <i>IEEE Annals of the History of Computing</i> 33(3):46–54. <a href="https://doi.org/10.1109/MAHC.2010.28">doi:10.1109/MAHC.2010.28</a></li>
+<li id="s16">Appenzeller G. (2024). Welcome to LLMflation: LLM inference cost is going down fast. a16z. <a href="https://a16z.com/llmflation-llm-inference-cost/">a16z.com</a></li>
+<li id="s17">Epoch AI (2025). LLM inference prices have fallen rapidly but unequally across tasks (÷9 à ÷900 par an selon la tâche). <a href="https://epoch.ai/data-insights/llm-inference-price-trends">epoch.ai</a></li>
+<li id="s18">IEA (2025). <i>Energy and AI</i>, executive summary. <a href="https://www.iea.org/reports/energy-and-ai/executive-summary">iea.org</a></li>
+<li id="s19">IEA (2026). Data centre electricity use surged in 2025 (<i>Key Questions on Energy and AI</i>). <a href="https://www.iea.org/news/data-centre-electricity-use-surged-in-2025-even-with-tightening-bottlenecks-driving-a-scramble-for-solutions">iea.org</a></li>
+<li id="s20">Masanet E., Shehabi A., Lei N., Smith S. &amp; Koomey J. (2020). Recalibrating global data center energy-use estimates. <i>Science</i> 367:984–986. <a href="https://doi.org/10.1126/science.aba3758">doi:10.1126/science.aba3758</a></li>
+<li id="s21">Google: I/O 2025 keynote (9,7 T → 480 T tokens par mois) <a href="https://blog.google/technology/ai/io-2025-keynote/">blog.google</a>; Alphabet Q3 2025 earnings remarks (plus de 1,3 million de milliards de tokens par mois) <a href="https://blog.google/inside-google/message-ceo/alphabet-earnings-q3-2025/">blog.google</a></li>
+<li id="s22">Ministère de la Transition écologique (2026). Stratégie nationale bas-carbone 3, résumé. <a href="https://www.ecologie.gouv.fr/sites/default/files/documents/SNBC3-Resume-Juillet2026-numerique.pdf">ecologie.gouv.fr</a></li>
+<li id="s23">IEA (2020). Implementing effective emissions trading systems: policy interactions. <a href="https://www.iea.org/reports/implementing-effective-emissions-trading-systems/policy-interactions">iea.org</a>; Perino G., Ritz R. &amp; van Benthem A. Understanding overlapping policies: internal carbon leakage and the punctured waterbed. <a href="https://www.repository.cam.ac.uk/handle/1810/291495">repository.cam.ac.uk</a></li>
+  </ol>
+  <p class="hint">Le simulateur de voiture est un jouet: il applique votre « roulez plus » à la nouvelle voiture seulement et ignore le coût d'achat. Les vraies estimations du rebond viennent de statistiques sur la façon dont les gens roulent quand le prix du carburant change.</p>
+</section>
+</main>
+<footer>une page du <a href="../../">lab</a> · Corentin Bel · <a href="../">english version</a></footer>
+<script src="../app.js"></script>
+</body>
+</html>
