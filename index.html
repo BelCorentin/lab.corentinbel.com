@@ -31,6 +31,8 @@
   .ink { stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
   .thin { stroke: var(--ink); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
   .door, .deco { cursor: pointer; outline: none; }
+.scaleBeam { transform-box: view-box; transform-origin: 344px 178px; animation: scaleTip 6s ease-in-out infinite alternate; }
+@keyframes scaleTip { 0% { transform: rotate(-4deg); } 100% { transform: rotate(4deg); } }
 .lampFlame { transform-box: fill-box; transform-origin: 50% 100%; animation: lampFlick 1.7s ease-in-out infinite alternate; }
 @keyframes lampFlick { 0% { transform: scale(1,1); } 40% { transform: scale(.9,1.08); } 100% { transform: scale(1.05,.94); } }
   .door > g, .deco > g { transition: filter .25s, transform .25s; transform-box: fill-box; transform-origin: 50% 100%; }
@@ -87,7 +89,7 @@
   #pane .x { position: absolute; right: 12px; top: 10px; background: none; border: 0; color: var(--dim); font-size: 22px; cursor: pointer; }
 
   .hint { position: fixed; right: clamp(12px, 2vw, 28px); bottom: clamp(10px, 1.6vw, 22px); z-index: 4; color: rgba(241,234,214,.5); font-size: 12px; pointer-events: none; }
-  @media (prefers-reduced-motion: reduce) { .sway, .swayTop, .glow, .twinkle, .puff, .note, .flow, .drop, .lampFlame { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .sway, .swayTop, .glow, .twinkle, .puff, .note, .flow, .drop, .lampFlame, .scaleBeam { animation: none; } }
 </style>
 </head>
 <body>
@@ -216,6 +218,24 @@
   
   <g id="drawers"></g>
   <g class="tag"><rect x="1358" y="526" width="104" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="1410" y="539" text-anchor="middle">substances</text></g>
+</g>
+</a>
+
+<!-- debate: a brass balance scale hanging from the arch, facts in one pan, a book in the other -->
+<a class="door" href="https://debate.corentinbel.com/" data-label="debate · les faits avant le débat" data-sub="the arguments you hear at every dinner, checked against official numbers — FR">
+<g>
+  <path d="M344 134 v38" stroke="#c9c2ae" stroke-width="1.6" stroke-dasharray="3 2"/>
+  <g class="scaleBeam">
+    <path d="M292 178 L396 178" stroke="#b98a33" stroke-width="5" stroke-linecap="round"/>
+    <path d="M292 178 L396 178" stroke="#1b1a22" stroke-width="1.2" fill="none" opacity=".5"/>
+    <circle cx="344" cy="178" r="6" fill="#d9a441" class="thin"/>
+    <path d="M296 180 l-14 42 M296 180 l14 42 M392 180 l-14 42 M392 180 l14 42" stroke="#c9c2ae" stroke-width="1.2"/>
+    <path d="M278 222 h36 q-2 14 -18 14 q-16 0 -18 -14 z" fill="#d9a441" class="thin"/>
+    <path d="M374 222 h36 q-2 14 -18 14 q-16 0 -18 -14 z" fill="#d9a441" class="thin"/>
+    <rect x="285" y="210" width="5" height="12" fill="#e8452c" class="thin"/><rect x="292" y="204" width="5" height="18" fill="#0d8a8a" class="thin"/><rect x="299" y="214" width="5" height="8" fill="#f1ead6" class="thin"/>
+    <rect x="381" y="212" width="22" height="10" rx="1.5" fill="#7a3ec2" class="thin"/><path d="M383 215 h18" stroke="#f1ead6" stroke-width="1"/>
+  </g>
+  <g class="tag"><rect x="352" y="140" width="64" height="18" rx="9" fill="#f1ead6" class="thin"/><text x="384" y="153" text-anchor="middle">debate</text></g>
 </g>
 </a>
 
@@ -561,7 +581,7 @@ const GREENS = ["#2f6b3a", "#3d7d44", "#28572f", "#4a8a4c"];
 const GROUPS = [
   ["sea & sky", [["foil-designer/", "foil designer", "shape a front wing, get star ratings — speed, glide, carve"], ["foil-rl/", "foil pilot", "a stickman learns to wing foil"], ["aero/", "how things fly", "planes, foils, stalls — potential-flow playground"], ["waves/", "the perfect wave", "why a wave spills, plunges or surges"], ["beaufort/", "the Beaufort scale", "force 0 to 12, painted — and what each means on the water"], ["space/", "space", "zoom from your hand to the observable universe"]]],
   ["money & scale", [["freedom/", "the price of freedom", "savings rate → years until your time is yours"], ["invest/", "three sisters", "how investing grows — three paths"], ["money-shells/", "from cowries to crypto", "what humans have used as money"], ["economy/", "orders of magnitude", "french public money, to scale"], ["tokens/", "token footprint", "what an LLM prompt costs the planet"], ["rebound/", "the rebound effect", "efficiency up, consumption… up? — EN / FR"]]],
-  ["body & mind", [["speed-of-thought/", "one second in the brain", "hearing, reading, saying a word — in milliseconds"], ["half-lives/", "how long does it stay?", "coffee, alcohol, nicotine: curves in your blood"], ["substances/", "what's actually dangerous?", "drug harms, deaths and the law — EN / FR"], ["mindblown/", "mind, blown", "things you probably believe that aren't quite true"]]],
+  ["body & mind", [["speed-of-thought/", "one second in the brain", "hearing, reading, saying a word — in milliseconds"], ["half-lives/", "how long does it stay?", "coffee, alcohol, nicotine: curves in your blood"], ["substances/", "what's actually dangerous?", "drug harms, deaths and the law — EN / FR"], ["https://debate.corentinbel.com/", "debate", "les faits avant le débat: the arguments you hear at every dinner, checked — FR"], ["mindblown/", "mind, blown", "things you probably believe that aren't quite true"]]],
   ["signals", [["correlation/", "what does r look like?", "correlation as two coloured vectors"], ["codec/", "codec", "how sound gets squeezed"]]],
 ];
 {
